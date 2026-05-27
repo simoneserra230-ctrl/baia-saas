@@ -39,8 +39,8 @@ def _q(sql):
     # Tipi
     out = out.replace("INTEGER PRIMARY KEY AUTOINCREMENT", "SERIAL PRIMARY KEY")
     out = out.replace("AUTOINCREMENT", "")
-    # Date
-    out = out.replace("datetime('now')", "CURRENT_TIMESTAMP")
+    # Date — cast to text so TEXT DEFAULT CURRENT_TIMESTAMP::text is valid in PG
+    out = out.replace("datetime('now')", "CURRENT_TIMESTAMP::text")
     # JSON_EXTRACT → ->>
     out = re.sub(
         r"JSON_EXTRACT\(\s*(\w+(?:\.\w+)?)\s*,\s*['\"]\$\.(\w+)['\"]\s*\)",
