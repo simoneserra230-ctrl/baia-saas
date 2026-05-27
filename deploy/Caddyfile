@@ -1,0 +1,37 @@
+# ── BA.IA — Caddy reverse proxy con HTTPS automatico ──────
+# Caddy ottiene e rinnova il certificato SSL da Let's Encrypt in automatico.
+#
+# SETUP (5 minuti):
+#   1. Installa Caddy:  https://caddyserver.com/docs/install
+#   2. Sostituisci "app.tuodominio.it" con il tuo dominio reale
+#   3. Il dominio deve puntare all'IP del server (record DNS A/AAAA)
+#   4. Copia in /etc/caddy/Caddyfile  oppure avvia con:
+#        caddy run --config Caddyfile
+#   5. Avvia il backend:  python backend/app_locale.py
+#   6. Imposta nel .env:  APP_URL=https://app.tuodominio.it
+
+app.tuodominio.it {
+    # Proxy API verso FastAPI (porta 8000)
+    handle /api/* {
+        reverse_proxy localhost:8000
+    }
+
+    # Proxy tutto il resto verso FastAPI (che serve anche il frontend)
+    reverse_proxy localhost:8000
+
+    # Headers di sicurezza HTTP
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options    "nosniff"
+        X-Frame-Options           "SAMEORIGIN"
+        Referrer-Policy           "strict-origin-when-cross-origin"
+        Permissions-Policy        "camera=(), microphone=(), geolocation=()"
+        -Server
+    }
+
+    # Logging accessi
+    log {
+        output file /var/log/caddy/baia-access.log
+        format json
+    }
+}

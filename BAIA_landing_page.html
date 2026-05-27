@@ -1,0 +1,1356 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BA.IA — L'AI che trova i fondi per la tua azienda</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════
+   TOKENS
+═══════════════════════════════════════════ */
+:root{
+  --bg:#04080F;
+  --bg2:#070D1A;
+  --bg3:#0A1428;
+  --surface:rgba(255,255,255,0.04);
+  --surface2:rgba(255,255,255,0.07);
+  --glass:rgba(10,20,40,0.7);
+  --blue:#4A8EFF;
+  --blue2:#2D6FE8;
+  --cyan:#00D4FF;
+  --purple:#7B5CF0;
+  --gold:#F5C842;
+  --gold2:#FFDC70;
+  --green:#00E5A0;
+  --border:rgba(255,255,255,0.08);
+  --border2:rgba(74,142,255,0.25);
+  --glow-blue:rgba(74,142,255,0.18);
+  --glow-cyan:rgba(0,212,255,0.12);
+  --glow-gold:rgba(245,200,66,0.15);
+  --text:#EEF2FF;
+  --text2:#8B9EC7;
+  --text3:#5A6B8A;
+  --ff-display:'Instrument Serif',Georgia,serif;
+  --ff-body:'Plus Jakarta Sans',system-ui,sans-serif;
+  --ff-mono:'Space Mono',monospace;
+  --r:12px;
+  --r2:20px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;font-size:16px}
+body{background:var(--bg);color:var(--text);font-family:var(--ff-body);overflow-x:hidden;line-height:1.65}
+::selection{background:rgba(74,142,255,0.35);color:#fff}
+img,svg{display:block}
+a{text-decoration:none;color:inherit}
+
+/* ─── SCROLLBAR ─── */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--blue2);border-radius:2px}
+
+/* ─── CURSOR ─── */
+.cursor{position:fixed;width:8px;height:8px;background:var(--cyan);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);transition:transform 0.1s,width 0.3s,height 0.3s,opacity 0.3s;mix-blend-mode:screen}
+.cursor-ring{position:fixed;width:36px;height:36px;border:1px solid rgba(74,142,255,0.4);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:transform 0.12s cubic-bezier(.215,.61,.355,1),width 0.3s,height 0.3s,opacity 0.3s}
+body:hover .cursor{opacity:1}
+
+/* ─── NOISE ─── */
+body::after{content:'';position:fixed;inset:0;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:0;opacity:0.7}
+
+/* ─── UTILS ─── */
+.container{max-width:1200px;margin:0 auto;padding:0 40px;position:relative;z-index:2}
+.gradient-text{background:linear-gradient(135deg,var(--blue) 0%,var(--cyan) 50%,var(--purple) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.gold-text{background:linear-gradient(135deg,var(--gold) 0%,var(--gold2) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.label{font-family:var(--ff-mono);font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:var(--blue);opacity:0.9;display:inline-flex;align-items:center;gap:8px}
+.label::before{content:'';width:20px;height:1px;background:var(--blue);opacity:0.6}
+
+/* ─── ORBS ─── */
+.orb{position:absolute;border-radius:50%;filter:blur(80px);pointer-events:none;animation:orb-float 8s ease-in-out infinite}
+.orb-1{width:500px;height:500px;background:radial-gradient(circle,rgba(74,142,255,0.15) 0%,transparent 70%);top:-100px;left:-100px;animation-delay:0s}
+.orb-2{width:400px;height:400px;background:radial-gradient(circle,rgba(123,92,240,0.12) 0%,transparent 70%);top:100px;right:-80px;animation-delay:2s}
+.orb-3{width:300px;height:300px;background:radial-gradient(circle,rgba(0,212,255,0.08) 0%,transparent 70%);bottom:0;left:30%;animation-delay:4s}
+@keyframes orb-float{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-40px) scale(1.05)}}
+
+/* ─── DOTS GRID ─── */
+.dots-bg{position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,0.06) 1px,transparent 1px);background-size:32px 32px;mask-image:radial-gradient(ellipse 80% 60% at 50% 30%,black 0%,transparent 80%)}
+
+/* ═══════════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════════ */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:18px 0;transition:all 0.4s}
+nav.scrolled{padding:10px 0;background:rgba(4,8,15,0.85);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-bottom:1px solid var(--border)}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;max-width:1200px;margin:0 auto;padding:0 40px}
+.nav-logo{display:flex;align-items:center;gap:10px}
+
+/* SVG LOGO */
+.logo-mark{width:36px;height:36px}
+.logo-wordmark{font-family:var(--ff-display);font-size:22px;font-weight:400;letter-spacing:-0.01em;color:var(--text)}
+.logo-wordmark span{color:var(--blue)}
+.nav-menu{display:flex;align-items:center;gap:32px;list-style:none}
+.nav-menu a{font-size:14px;font-weight:400;color:var(--text2);transition:color 0.2s;letter-spacing:-0.01em}
+.nav-menu a:hover{color:var(--text)}
+.nav-pill{display:flex;align-items:center;gap:12px}
+.btn-ghost{font-size:14px;color:var(--text2);padding:8px 18px;border:1px solid var(--border);border-radius:8px;transition:all 0.2s;font-family:var(--ff-body);cursor:pointer;background:transparent}
+.btn-ghost:hover{border-color:var(--border2);color:var(--text);background:var(--surface)}
+.btn-cta-nav{font-size:14px;font-weight:600;color:#04080F;padding:10px 22px;background:var(--blue);border-radius:8px;border:none;cursor:pointer;font-family:var(--ff-body);transition:all 0.2s;display:inline-flex;align-items:center;gap:8px}
+.btn-cta-nav:hover{background:var(--cyan);transform:translateY(-1px);box-shadow:0 8px 32px rgba(74,142,255,0.4)}
+.btn-cta-nav svg{transition:transform 0.2s}
+.btn-cta-nav:hover svg{transform:translateX(3px)}
+
+/* ═══════════════════════════════════════════
+   HERO
+═══════════════════════════════════════════ */
+.hero{min-height:100vh;display:flex;align-items:center;padding:120px 0 80px;position:relative;overflow:hidden}
+.hero-bg{position:absolute;inset:0}
+.hero-content{text-align:center;max-width:900px;margin:0 auto}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(74,142,255,0.1);border:1px solid rgba(74,142,255,0.2);border-radius:100px;padding:6px 16px 6px 8px;margin-bottom:32px;animation:fade-up 0.8s ease both}
+.badge-pill{background:var(--blue);color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:100px;letter-spacing:0.08em;text-transform:uppercase;font-family:var(--ff-mono)}
+.badge-text{font-size:13px;color:var(--text2)}
+.hero-h1{font-family:var(--ff-display);font-size:clamp(56px,8vw,100px);line-height:0.97;letter-spacing:-0.03em;margin-bottom:28px;animation:fade-up 0.8s 0.1s ease both;font-weight:400}
+.hero-h1 em{font-style:italic}
+.hero-sub{font-size:18px;font-weight:400;color:var(--text2);max-width:580px;margin:0 auto 48px;line-height:1.7;animation:fade-up 0.8s 0.2s ease both}
+.hero-sub strong{color:var(--text);font-weight:600}
+.hero-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;animation:fade-up 0.8s 0.3s ease both}
+.btn-primary{display:inline-flex;align-items:center;gap:10px;padding:16px 32px;background:var(--blue);color:#04080F;font-family:var(--ff-body);font-size:15px;font-weight:700;border:none;border-radius:10px;cursor:pointer;transition:all 0.25s;letter-spacing:-0.01em;position:relative;overflow:hidden}
+.btn-primary::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,var(--cyan),var(--blue));opacity:0;transition:opacity 0.3s}
+.btn-primary:hover{transform:translateY(-3px);box-shadow:0 20px 60px rgba(74,142,255,0.45)}
+.btn-primary:hover::before{opacity:1}
+.btn-primary span{position:relative;z-index:1}
+.btn-outline{display:inline-flex;align-items:center;gap:10px;padding:16px 32px;background:var(--surface);color:var(--text);font-family:var(--ff-body);font-size:15px;font-weight:500;border:1px solid var(--border);border-radius:10px;cursor:pointer;transition:all 0.25s;backdrop-filter:blur(12px);letter-spacing:-0.01em}
+.btn-outline:hover{border-color:var(--border2);background:var(--surface2);transform:translateY(-2px)}
+
+/* HERO VISUAL */
+.hero-visual{margin-top:80px;position:relative;animation:fade-up 0.8s 0.5s ease both}
+.hero-visual::before{content:'';position:absolute;inset:-1px;background:linear-gradient(135deg,rgba(74,142,255,0.4),rgba(123,92,240,0.2),rgba(0,212,255,0.3));border-radius:24px;filter:blur(20px);opacity:0.5}
+.ui-card{background:var(--glass);backdrop-filter:blur(32px);-webkit-backdrop-filter:blur(32px);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:28px;position:relative;overflow:hidden;box-shadow:0 40px 100px rgba(0,0,0,0.5)}
+.ui-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(74,142,255,0.05) 0%,rgba(123,92,240,0.03) 50%,rgba(0,212,255,0.05) 100%);pointer-events:none}
+.ui-topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--border)}
+.ui-dots{display:flex;gap:6px}
+.ui-dot{width:10px;height:10px;border-radius:50%}
+.ui-dot-r{background:#FF5F57}
+.ui-dot-y{background:#FEBC2E}
+.ui-dot-g{background:#28C840}
+.ui-title{font-family:var(--ff-mono);font-size:12px;color:var(--text3);letter-spacing:0.08em}
+.match-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.match-item{background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px;padding:20px;transition:all 0.3s;cursor:default;position:relative;overflow:hidden}
+.match-item::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(74,142,255,0.06),transparent);opacity:0;transition:opacity 0.3s}
+.match-item:hover{border-color:rgba(74,142,255,0.3);transform:translateY(-3px);box-shadow:0 12px 40px rgba(74,142,255,0.1)}
+.match-item:hover::after{opacity:1}
+.match-rank{font-family:var(--ff-mono);font-size:10px;color:var(--text3);margin-bottom:10px;letter-spacing:0.1em}
+.match-rank.gold{color:var(--gold)}
+.match-rank.silver{color:#A8B8D0}
+.match-rank.bronze{color:#CD7F32}
+.match-score{font-family:var(--ff-mono);font-size:32px;font-weight:700;line-height:1;margin-bottom:6px}
+.match-score.s1{color:var(--gold)}
+.match-score.s2{color:var(--blue)}
+.match-score.s3{color:var(--purple)}
+.match-name{font-size:13px;font-weight:600;margin-bottom:4px;line-height:1.4}
+.match-ente{font-size:11px;color:var(--text3)}
+.match-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:12px}
+.chip{font-size:10px;padding:3px 8px;border-radius:4px;font-family:var(--ff-mono);letter-spacing:0.04em}
+.chip-blue{background:rgba(74,142,255,0.1);color:var(--blue);border:1px solid rgba(74,142,255,0.2)}
+.chip-green{background:rgba(0,229,160,0.1);color:var(--green);border:1px solid rgba(0,229,160,0.2)}
+.chip-gold{background:rgba(245,200,66,0.1);color:var(--gold);border:1px solid rgba(245,200,66,0.2)}
+.ui-footer{display:flex;align-items:center;justify-content:space-between;margin-top:20px;padding-top:18px;border-top:1px solid var(--border)}
+.ui-footer-l{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text3)}
+.pulse-dot{width:8px;height:8px;background:var(--green);border-radius:50%;animation:pulse-anim 2s ease infinite}
+@keyframes pulse-anim{0%,100%{box-shadow:0 0 0 0 rgba(0,229,160,0.4)}50%{box-shadow:0 0 0 8px rgba(0,229,160,0)}}
+
+/* FLOATING BADGES */
+.float-badge{position:absolute;background:var(--glass);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:10px;box-shadow:0 20px 40px rgba(0,0,0,0.4);animation:badge-float 4s ease-in-out infinite}
+.float-badge-1{top:-24px;left:-40px;animation-delay:0s}
+.float-badge-2{bottom:20px;right:-40px;animation-delay:2s}
+.badge-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.badge-icon-blue{background:rgba(74,142,255,0.2)}
+.badge-icon-gold{background:rgba(245,200,66,0.15)}
+.badge-info-label{font-size:10px;color:var(--text3);font-family:var(--ff-mono);letter-spacing:0.06em}
+.badge-info-val{font-size:15px;font-weight:700;letter-spacing:-0.02em}
+@keyframes badge-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+
+/* ═══════════════════════════════════════════
+   TICKER
+═══════════════════════════════════════════ */
+.ticker-section{padding:24px 0;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);overflow:hidden;position:relative;z-index:2}
+.ticker-track{display:flex;gap:48px;animation:ticker 30s linear infinite;width:max-content}
+.ticker-item{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text3);white-space:nowrap;font-family:var(--ff-mono);letter-spacing:0.04em}
+.ticker-item::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--blue);opacity:0.5}
+@keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+
+/* ═══════════════════════════════════════════
+   SOCIAL PROOF LOGOS
+═══════════════════════════════════════════ */
+.logos-section{padding:64px 0;border-bottom:1px solid var(--border)}
+.logos-label{text-align:center;font-size:13px;color:var(--text3);margin-bottom:32px;letter-spacing:0.04em}
+.logos-row{display:flex;align-items:center;justify-content:center;gap:48px;flex-wrap:wrap;opacity:0.45;filter:grayscale(1)}
+.logo-item{font-family:var(--ff-mono);font-size:14px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text);font-weight:700}
+
+/* ═══════════════════════════════════════════
+   BENTO GRID — WHY
+═══════════════════════════════════════════ */
+.bento-section{padding:120px 0}
+.bento-header{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:end;margin-bottom:60px}
+.bento-h2{font-family:var(--ff-display);font-size:clamp(44px,5.5vw,68px);line-height:1.02;letter-spacing:-0.03em;font-weight:400}
+.bento-h2 em{font-style:italic}
+.bento-desc{font-size:17px;color:var(--text2);line-height:1.75;font-weight:300;max-width:440px}
+.bento-grid{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:auto auto;gap:16px}
+.bento-card{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:32px;position:relative;overflow:hidden;transition:all 0.4s cubic-bezier(.215,.61,.355,1)}
+.bento-card::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity 0.4s}
+.bento-card:hover{transform:translateY(-4px);border-color:rgba(74,142,255,0.2)}
+.bento-card:hover::before{opacity:1}
+.bento-card-wide{grid-column:span 2}
+.bento-card-tall{grid-row:span 2}
+.bc-blue::before{background:linear-gradient(135deg,rgba(74,142,255,0.06) 0%,transparent 60%)}
+.bc-purple::before{background:linear-gradient(135deg,rgba(123,92,240,0.06) 0%,transparent 60%)}
+.bc-gold::before{background:linear-gradient(135deg,rgba(245,200,66,0.06) 0%,transparent 60%)}
+.bc-green::before{background:linear-gradient(135deg,rgba(0,229,160,0.06) 0%,transparent 60%)}
+.bc-cyan::before{background:linear-gradient(135deg,rgba(0,212,255,0.06) 0%,transparent 60%)}
+.bento-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;font-size:22px}
+.bi-blue{background:rgba(74,142,255,0.12);border:1px solid rgba(74,142,255,0.2)}
+.bi-purple{background:rgba(123,92,240,0.12);border:1px solid rgba(123,92,240,0.2)}
+.bi-gold{background:rgba(245,200,66,0.12);border:1px solid rgba(245,200,66,0.2)}
+.bi-green{background:rgba(0,229,160,0.12);border:1px solid rgba(0,229,160,0.2)}
+.bi-cyan{background:rgba(0,212,255,0.12);border:1px solid rgba(0,212,255,0.2)}
+.bento-card h3{font-family:var(--ff-display);font-size:26px;font-weight:400;letter-spacing:-0.02em;margin-bottom:10px;line-height:1.2}
+.bento-card p{font-size:15px;color:var(--text2);line-height:1.7}
+.bento-big-num{font-family:var(--ff-display);font-size:72px;font-weight:400;line-height:1;letter-spacing:-0.04em;margin-bottom:12px}
+.bento-glow{position:absolute;width:200px;height:200px;border-radius:50%;filter:blur(60px);pointer-events:none;bottom:-40px;right:-40px;opacity:0.25}
+.bento-chart{margin-top:24px;display:flex;align-items:flex-end;gap:6px;height:60px}
+.bar{flex:1;border-radius:4px 4px 0 0;transition:height 0.5s ease;position:relative}
+.bar-1{background:linear-gradient(180deg,var(--blue),rgba(74,142,255,0.3));height:40%}
+.bar-2{background:linear-gradient(180deg,var(--blue),rgba(74,142,255,0.3));height:55%}
+.bar-3{background:linear-gradient(180deg,var(--blue),rgba(74,142,255,0.3));height:45%}
+.bar-4{background:linear-gradient(180deg,var(--cyan),rgba(0,212,255,0.3));height:70%}
+.bar-5{background:linear-gradient(180deg,var(--cyan),rgba(0,212,255,0.3));height:80%}
+.bar-6{background:linear-gradient(180deg,var(--gold),rgba(245,200,66,0.4));height:95%}
+.bento-ai-tag{display:inline-flex;align-items:center;gap:6px;background:rgba(123,92,240,0.1);border:1px solid rgba(123,92,240,0.25);border-radius:100px;padding:5px 12px;font-size:11px;color:#A78BFA;font-family:var(--ff-mono);letter-spacing:0.06em;margin-bottom:14px}
+.bento-ai-dot{width:6px;height:6px;background:#A78BFA;border-radius:50%;animation:pulse-anim 2s ease infinite}
+
+/* ═══════════════════════════════════════════
+   HOW IT WORKS
+═══════════════════════════════════════════ */
+.how-section{padding:120px 0;background:var(--bg2);position:relative;overflow:hidden}
+.how-grid{display:grid;grid-template-columns:1fr 1fr;gap:100px;align-items:center;margin-top:64px}
+.how-steps{display:flex;flex-direction:column;gap:0}
+.step-item{display:flex;gap:24px;padding:28px 0;border-bottom:1px solid var(--border);cursor:pointer;transition:all 0.3s;position:relative}
+.step-item:first-child{padding-top:0}
+.step-item:last-child{border-bottom:none;padding-bottom:0}
+.step-item.active{padding-left:0}
+.step-num-wrap{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:48px}
+.step-num{width:40px;height:40px;border-radius:10px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--ff-mono);font-size:13px;color:var(--text3);transition:all 0.3s;flex-shrink:0}
+.step-item.active .step-num{background:var(--blue);border-color:var(--blue);color:#04080F;box-shadow:0 0 24px rgba(74,142,255,0.5)}
+.step-line{width:1px;flex:1;background:var(--border);min-height:16px}
+.step-body h4{font-size:17px;font-weight:600;margin-bottom:6px;letter-spacing:-0.01em;transition:color 0.3s}
+.step-item.active .step-body h4{color:var(--text)}
+.step-body p{font-size:14px;color:var(--text2);line-height:1.65}
+.step-progress{display:none;height:2px;background:linear-gradient(90deg,var(--blue),var(--cyan));border-radius:1px;margin-top:12px;animation:progress-bar 3s linear forwards}
+.step-item.active .step-progress{display:block}
+@keyframes progress-bar{from{width:0}to{width:100%}}
+.how-visual-wrap{position:relative}
+.how-phone-frame{background:var(--bg3);border:1px solid var(--border);border-radius:28px;padding:28px;box-shadow:0 60px 120px rgba(0,0,0,0.6);position:relative;overflow:hidden}
+.how-phone-frame::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.1),transparent)}
+.phone-screen{background:var(--bg);border-radius:20px;overflow:hidden}
+.phone-top{background:var(--bg2);padding:16px 18px;border-bottom:1px solid var(--border)}
+.phone-top-row{display:flex;align-items:center;justify-content:space-between}
+.phone-app-name{font-family:var(--ff-mono);font-size:11px;color:var(--text2);letter-spacing:0.1em}
+.phone-status{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--green);font-family:var(--ff-mono)}
+.phone-body{padding:16px}
+.phone-section-title{font-size:11px;color:var(--text3);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;font-family:var(--ff-mono)}
+.phone-bando{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:8px;transition:all 0.3s}
+.phone-bando:hover{border-color:rgba(74,142,255,0.3)}
+.pb-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.pb-name{font-size:12px;font-weight:600;line-height:1.4;flex:1}
+.pb-score{font-family:var(--ff-mono);font-size:13px;font-weight:700;padding:3px 8px;border-radius:6px;margin-left:8px}
+.pb-score-high{background:rgba(245,200,66,0.12);color:var(--gold)}
+.pb-score-mid{background:rgba(74,142,255,0.12);color:var(--blue)}
+.pb-score-low{background:rgba(123,92,240,0.12);color:var(--purple)}
+.pb-meta{display:flex;gap:6px;flex-wrap:wrap}
+.pb-tag{font-size:9px;padding:2px 7px;border-radius:4px;font-family:var(--ff-mono);letter-spacing:0.04em;background:rgba(255,255,255,0.05);color:var(--text3);border:1px solid var(--border)}
+
+/* ═══════════════════════════════════════════
+   PRODOTTI TABS
+═══════════════════════════════════════════ */
+.products-section{padding:120px 0}
+.prod-tabs{display:inline-flex;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:4px;gap:4px;margin-top:40px;margin-bottom:56px}
+.prod-tab{padding:10px 28px;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;transition:all 0.25s;border:none;background:transparent;color:var(--text2);font-family:var(--ff-body);letter-spacing:-0.01em}
+.prod-tab.on{background:var(--surface2);color:var(--text);box-shadow:0 2px 8px rgba(0,0,0,0.3)}
+.prod-panel{display:none;animation:fade-in 0.4s ease}
+.prod-panel.on{display:block}
+@keyframes fade-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.prod-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:start}
+.prod-info .eyebrow{font-size:13px;color:var(--text2);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.prod-info .eyebrow span{background:var(--blue);color:#fff;font-size:10px;padding:2px 8px;border-radius:4px;font-family:var(--ff-mono);letter-spacing:0.06em}
+.prod-h3{font-family:var(--ff-display);font-size:42px;font-weight:400;letter-spacing:-0.03em;line-height:1.08;margin-bottom:18px}
+.prod-h3 em{font-style:italic}
+.prod-p{font-size:16px;color:var(--text2);line-height:1.75;margin-bottom:36px}
+.feature-items{display:flex;flex-direction:column;gap:14px}
+.feat-item{display:flex;gap:14px;align-items:flex-start}
+.feat-icon{width:28px;height:28px;border-radius:6px;background:rgba(74,142,255,0.1);border:1px solid rgba(74,142,255,0.2);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;margin-top:2px}
+.feat-text h5{font-size:14px;font-weight:600;margin-bottom:2px;letter-spacing:-0.01em}
+.feat-text p{font-size:13px;color:var(--text2);line-height:1.55}
+.plans-col{display:flex;flex-direction:column;gap:14px}
+.plan{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:28px 28px 24px;transition:all 0.3s;position:relative;overflow:hidden}
+.plan::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity 0.3s}
+.plan:hover{border-color:rgba(74,142,255,0.2)}
+.plan.pro{border-color:rgba(74,142,255,0.35);background:rgba(74,142,255,0.03)}
+.plan.pro::before{background:linear-gradient(135deg,rgba(74,142,255,0.04),transparent)}
+.plan:hover::before{opacity:1}
+.plan-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px}
+.plan-name-tag{font-family:var(--ff-mono);font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text3)}
+.plan-best-tag{font-family:var(--ff-mono);font-size:10px;padding:4px 10px;background:rgba(74,142,255,0.15);color:var(--blue);border-radius:100px;letter-spacing:0.08em;text-transform:uppercase}
+.plan-price-row{display:flex;align-items:baseline;gap:4px;margin-bottom:6px}
+.plan-eur{font-family:var(--ff-display);font-size:46px;font-weight:400;letter-spacing:-0.04em;line-height:1}
+.plan-period{font-size:14px;color:var(--text3)}
+.plan-note{font-size:12px;color:var(--text3);margin-bottom:20px}
+.plan-feats{list-style:none;display:flex;flex-direction:column;gap:9px;padding-top:18px;border-top:1px solid var(--border)}
+.plan-feats li{font-size:13px;color:var(--text2);display:flex;gap:8px;align-items:flex-start}
+.plan-feats li::before{content:'→';color:var(--blue);font-size:12px;margin-top:1px;flex-shrink:0}
+.btn-plan{display:block;width:100%;margin-top:20px;padding:13px;text-align:center;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;font-family:var(--ff-body);letter-spacing:-0.01em}
+.btn-plan-p{background:var(--blue);color:#04080F;border:none}
+.btn-plan-p:hover{background:var(--cyan);box-shadow:0 8px 32px rgba(74,142,255,0.4)}
+.btn-plan-s{background:transparent;color:var(--text);border:1px solid var(--border)}
+.btn-plan-s:hover{border-color:var(--border2);background:var(--surface)}
+
+/* ═══════════════════════════════════════════
+   B2B VERSIONI
+═══════════════════════════════════════════ */
+.versions-section{padding:120px 0;background:var(--bg2)}
+.versions-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:56px}
+.version-card{background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:36px;position:relative;overflow:hidden;transition:all 0.4s cubic-bezier(.215,.61,.355,1);cursor:default}
+.version-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;opacity:0;transition:opacity 0.3s}
+.vc-blue::after{background:linear-gradient(90deg,var(--blue),var(--cyan))}
+.vc-gold::after{background:linear-gradient(90deg,var(--gold),var(--gold2))}
+.vc-purple::after{background:linear-gradient(90deg,var(--purple),var(--blue))}
+.version-card:hover{transform:translateY(-6px);border-color:rgba(255,255,255,0.12)}
+.version-card:hover::after{opacity:1}
+.vc-rec-badge{display:inline-block;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a1000;font-family:var(--ff-mono);font-size:9px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;padding:4px 12px;border-radius:100px;margin-bottom:20px}
+.vc-icon-wrap{width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;margin-bottom:20px;position:relative}
+.vc-icon-wrap::before{content:'';position:absolute;inset:0;border-radius:14px;opacity:0.6;filter:blur(12px)}
+.vi-blue{background:rgba(74,142,255,0.12);border:1px solid rgba(74,142,255,0.2)}
+.vi-gold{background:rgba(245,200,66,0.12);border:1px solid rgba(245,200,66,0.2)}
+.vi-purple{background:rgba(123,92,240,0.12);border:1px solid rgba(123,92,240,0.2)}
+.version-card h3{font-family:var(--ff-display);font-size:28px;font-weight:400;letter-spacing:-0.02em;margin-bottom:10px;line-height:1.2}
+.version-card .vc-desc{font-size:14px;color:var(--text2);line-height:1.65;margin-bottom:24px}
+.vc-price{margin-bottom:24px}
+.vc-price-val{font-family:var(--ff-display);font-size:34px;font-weight:400;letter-spacing:-0.03em;line-height:1}
+.vc-price-note{font-size:12px;color:var(--text3);margin-top:2px}
+.vc-feats{list-style:none;display:flex;flex-direction:column;gap:8px;padding-top:20px;border-top:1px solid var(--border)}
+.vc-feats li{font-size:13px;color:var(--text2);display:flex;gap:8px;align-items:center}
+.vc-feats li::before{content:'';width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.vf-blue li::before{background:var(--blue)}
+.vf-gold li::before{background:var(--gold)}
+.vf-purple li::before{background:var(--purple)}
+
+/* ═══════════════════════════════════════════
+   PACK BANDI — SCROLL HORIZONTAL
+═══════════════════════════════════════════ */
+.pack-section{padding:120px 0;overflow:hidden}
+.pack-scroll-wrap{margin-top:56px;position:relative}
+.pack-scroll-wrap::before,.pack-scroll-wrap::after{content:'';position:absolute;top:0;bottom:0;width:120px;z-index:3;pointer-events:none}
+.pack-scroll-wrap::before{left:0;background:linear-gradient(90deg,var(--bg),transparent)}
+.pack-scroll-wrap::after{right:0;background:linear-gradient(-90deg,var(--bg),transparent)}
+.pack-track{display:flex;gap:20px;padding:0 40px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;-ms-overflow-style:none;padding-bottom:8px}
+.pack-track::-webkit-scrollbar{display:none}
+.pack-card{min-width:280px;background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:32px;scroll-snap-align:start;transition:all 0.3s;flex-shrink:0;position:relative;overflow:hidden}
+.pack-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;opacity:0;transition:opacity 0.3s}
+.pack-card:hover{border-color:rgba(255,255,255,0.12);transform:translateY(-4px)}
+.pack-card:hover::before{opacity:1}
+.pc-1::before{background:linear-gradient(90deg,var(--blue),var(--cyan))}
+.pc-2::before{background:linear-gradient(90deg,var(--purple),var(--blue))}
+.pc-3::before{background:linear-gradient(90deg,var(--gold),var(--gold2))}
+.pc-4::before{background:linear-gradient(90deg,var(--green),var(--cyan))}
+.pc-highlight{border-color:rgba(245,200,66,0.3)!important;background:rgba(245,200,66,0.03)!important}
+.pack-region-label{font-family:var(--ff-mono);font-size:10px;letter-spacing:0.16em;text-transform:uppercase;margin-bottom:16px;padding:4px 10px;border-radius:100px;display:inline-block}
+.prl-blue{background:rgba(74,142,255,0.1);color:var(--blue);border:1px solid rgba(74,142,255,0.2)}
+.prl-purple{background:rgba(123,92,240,0.1);color:#A78BFA;border:1px solid rgba(123,92,240,0.2)}
+.prl-gold{background:rgba(245,200,66,0.1);color:var(--gold);border:1px solid rgba(245,200,66,0.2)}
+.prl-green{background:rgba(0,229,160,0.1);color:var(--green);border:1px solid rgba(0,229,160,0.2)}
+.pack-card h4{font-family:var(--ff-display);font-size:24px;font-weight:400;letter-spacing:-0.02em;margin-bottom:8px;line-height:1.2}
+.pack-card .pc-desc{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:20px}
+.pc-bandi-count{display:flex;align-items:baseline;gap:4px;margin-bottom:6px}
+.pc-bandi-num{font-family:var(--ff-display);font-size:38px;font-weight:400;letter-spacing:-0.04em;line-height:1}
+.pc-bandi-label{font-size:13px;color:var(--text3)}
+.pc-price{font-family:var(--ff-mono);font-size:22px;font-weight:700;letter-spacing:-0.02em;padding-top:16px;border-top:1px solid var(--border)}
+.pc-price small{font-size:12px;color:var(--text3);font-weight:400}
+
+/* ═══════════════════════════════════════════
+   TESTIMONIALS
+═══════════════════════════════════════════ */
+.testi-section{padding:120px 0;background:var(--bg2)}
+.testi-grid{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:20px;margin-top:56px;align-items:start}
+.testi-card{background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:36px;position:relative;overflow:hidden;transition:all 0.3s}
+.testi-card:hover{border-color:rgba(74,142,255,0.2);transform:translateY(-3px)}
+.testi-quote{font-family:var(--ff-display);font-size:64px;line-height:0.7;color:var(--blue);opacity:0.15;margin-bottom:20px;display:block;font-style:italic}
+.testi-text{font-size:15px;color:var(--text2);line-height:1.78;margin-bottom:28px;font-style:italic}
+.testi-text strong{color:var(--text);font-style:normal}
+.testi-meta{display:flex;align-items:center;gap:12px}
+.testi-avatar{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0;border:1px solid var(--border);background:var(--bg2)}
+.testi-name{font-size:14px;font-weight:600;letter-spacing:-0.01em}
+.testi-role{font-size:12px;color:var(--text3)}
+.testi-stars{color:var(--gold);font-size:13px;margin-bottom:14px;letter-spacing:2px}
+.testi-card-featured{background:var(--bg3);border-color:rgba(74,142,255,0.25)}
+
+/* ═══════════════════════════════════════════
+   PRICING MODERNO
+═══════════════════════════════════════════ */
+.pricing-section{padding:120px 0}
+.pricing-toggle-wrap{display:flex;align-items:center;gap:14px;margin:32px 0 52px}
+.toggle-opts{display:flex;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:4px;gap:4px}
+.toggle-opt{padding:8px 20px;border-radius:6px;font-size:14px;color:var(--text3);cursor:pointer;transition:all 0.2s;border:none;background:transparent;font-family:var(--ff-body)}
+.toggle-opt.on{background:var(--surface2);color:var(--text)}
+.save-pill{background:rgba(0,229,160,0.1);color:var(--green);border:1px solid rgba(0,229,160,0.2);font-family:var(--ff-mono);font-size:11px;padding:4px 12px;border-radius:100px;letter-spacing:0.06em}
+.pricing-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.pricing-card2{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:36px;position:relative;overflow:hidden;transition:all 0.4s}
+.pricing-card2:hover{transform:translateY(-5px);border-color:rgba(74,142,255,0.2)}
+.pc2-featured{border-color:rgba(74,142,255,0.4);background:rgba(74,142,255,0.03)}
+.pc2-top-glow{position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--blue),transparent);opacity:0.6}
+.pc2-plan-name{font-family:var(--ff-mono);font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:var(--text3);margin-bottom:20px}
+.pc2-price{font-family:var(--ff-display);font-size:56px;font-weight:400;letter-spacing:-0.04em;line-height:1;margin-bottom:4px}
+.pc2-period{font-size:14px;color:var(--text3);margin-bottom:32px}
+.pc2-divider{height:1px;background:var(--border);margin-bottom:28px}
+.pc2-feats{list-style:none;display:flex;flex-direction:column;gap:13px;margin-bottom:36px}
+.pc2-feats li{font-size:14px;display:flex;align-items:center;gap:10px}
+.pc2-feats li .ck{color:var(--blue);font-size:14px;flex-shrink:0}
+.pc2-feats li .xk{color:var(--text3);opacity:0.4;font-size:14px;flex-shrink:0}
+.pc2-feats li .nk{color:var(--text3);opacity:0.5}
+.btn-pc{display:block;width:100%;padding:14px;text-align:center;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--ff-body);transition:all 0.25s;letter-spacing:-0.01em}
+.btn-pc-primary{background:var(--blue);color:#04080F;border:none}
+.btn-pc-primary:hover{background:var(--cyan);box-shadow:0 10px 36px rgba(74,142,255,0.45)}
+.btn-pc-outline{background:transparent;color:var(--text);border:1px solid var(--border)}
+.btn-pc-outline:hover{border-color:var(--border2);background:var(--surface)}
+
+/* ═══════════════════════════════════════════
+   CTA FINALE — FULL BLEED
+═══════════════════════════════════════════ */
+.cta-section{padding:160px 0;position:relative;overflow:hidden;text-align:center}
+.cta-bg{position:absolute;inset:0;background:radial-gradient(ellipse 70% 80% at 50% 50%,rgba(74,142,255,0.1) 0%,rgba(123,92,240,0.05) 50%,transparent 80%)}
+.cta-grid-bg{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px);background-size:40px 40px;mask-image:radial-gradient(ellipse 80% 70% at 50% 50%,black 0%,transparent 80%)}
+.cta-headline{font-family:var(--ff-display);font-size:clamp(48px,7vw,88px);font-weight:400;letter-spacing:-0.04em;line-height:1.0;margin-bottom:24px;position:relative}
+.cta-sub{font-size:18px;color:var(--text2);margin-bottom:52px;max-width:480px;margin-left:auto;margin-right:auto;line-height:1.65;position:relative}
+.cta-btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;position:relative}
+.cta-note{font-size:13px;color:var(--text3);margin-top:24px;position:relative}
+.cta-note a{color:var(--blue);transition:color 0.2s}
+.cta-note a:hover{color:var(--cyan)}
+.cta-trust{display:flex;align-items:center;justify-content:center;gap:32px;margin-top:64px;padding-top:40px;border-top:1px solid var(--border);position:relative}
+.trust-item{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text3)}
+.trust-icon{font-size:15px}
+
+/* ═══════════════════════════════════════════
+   FOOTER
+═══════════════════════════════════════════ */
+footer{border-top:1px solid var(--border);padding:72px 0 32px;background:var(--bg)}
+.footer-main{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:56px;margin-bottom:56px}
+.footer-logo-wrap{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+.footer-tagline{font-size:14px;color:var(--text3);line-height:1.65;max-width:240px;margin-bottom:28px}
+.footer-col-title{font-family:var(--ff-mono);font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--text3);margin-bottom:16px}
+.footer-col ul{list-style:none;display:flex;flex-direction:column;gap:10px}
+.footer-col a{font-size:14px;color:var(--text3);transition:color 0.2s}
+.footer-col a:hover{color:var(--text)}
+.footer-bottom{display:flex;justify-content:space-between;align-items:center;padding-top:24px;border-top:1px solid var(--border);font-size:13px;color:var(--text3)}
+.footer-badge{display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-family:var(--ff-mono);font-size:10px;letter-spacing:0.06em;color:var(--text3)}
+
+/* ═══════════════════════════════════════════
+   ANIMATIONS
+═══════════════════════════════════════════ */
+@keyframes fade-up{from{opacity:0;transform:translateY(32px)}to{opacity:1;transform:translateY(0)}}
+.reveal{opacity:0;transform:translateY(24px);transition:opacity 0.8s cubic-bezier(.215,.61,.355,1),transform 0.8s cubic-bezier(.215,.61,.355,1)}
+.reveal.in{opacity:1;transform:translateY(0)}
+.reveal-delay-1{transition-delay:0.1s}
+.reveal-delay-2{transition-delay:0.2s}
+.reveal-delay-3{transition-delay:0.3s}
+.reveal-delay-4{transition-delay:0.4s}
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════ */
+@media(max-width:1024px){
+  .bento-grid{grid-template-columns:1fr 1fr}
+  .bento-card-wide,.bento-card-tall{grid-column:span 1;grid-row:span 1}
+  .prod-grid,.how-grid,.versions-grid,.testi-grid,.footer-main{grid-template-columns:1fr;gap:40px}
+  .pricing-cards{grid-template-columns:1fr}
+  .pc2-featured{transform:none!important}
+  .how-visual-wrap{display:none}
+  .testi-grid{grid-template-columns:1fr 1fr}
+  nav .nav-menu{display:none}
+  .float-badge{display:none}
+  .match-grid{grid-template-columns:1fr}
+}
+@media(max-width:600px){
+  .container{padding:0 20px}
+  .bento-grid{grid-template-columns:1fr}
+  .versions-grid{grid-template-columns:1fr}
+  .testi-grid{grid-template-columns:1fr}
+  .hero-h1{font-size:48px}
+  .bento-header{grid-template-columns:1fr}
+  .pricing-toggle-wrap{flex-wrap:wrap}
+}
+</style>
+</head>
+<body>
+
+<!-- CUSTOM CURSOR -->
+<div class="cursor" id="cur"></div>
+<div class="cursor-ring" id="cur-ring"></div>
+
+<!-- ══════════════════════════════════════════
+     NAVIGATION
+══════════════════════════════════════════ -->
+<nav id="main-nav">
+  <div class="nav-inner">
+    <div class="nav-logo">
+      <!-- LOGO SVG -->
+      <svg class="logo-mark" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="36" height="36" rx="10" fill="#0A1428"/>
+        <rect x="0.5" y="0.5" width="35" height="35" rx="9.5" stroke="rgba(74,142,255,0.3)"/>
+        <!-- B letterform stylized -->
+        <path d="M10 9h8.5c2.8 0 4.5 1.5 4.5 3.8 0 1.4-.7 2.5-1.8 3.2 1.6.6 2.8 1.9 2.8 3.8 0 2.7-2 4.2-5.2 4.2H10V9z" fill="#4A8EFF" opacity="0.9"/>
+        <path d="M13 12h5c1 0 1.8.7 1.8 1.8s-.8 1.8-1.8 1.8h-5v-3.6z" fill="#04080F"/>
+        <path d="M13 17h5.5c1.2 0 2 .8 2 2s-.8 2-2 2H13v-4z" fill="#04080F"/>
+        <!-- AI dot cluster -->
+        <circle cx="27" cy="13" r="1.5" fill="#00D4FF" opacity="0.9"/>
+        <circle cx="27" cy="19" r="1.5" fill="#7B5CF0" opacity="0.7"/>
+        <circle cx="27" cy="25" r="1.5" fill="#4A8EFF" opacity="0.5"/>
+        <!-- connector lines -->
+        <line x1="26" y1="13" x2="22" y2="14" stroke="rgba(0,212,255,0.3)" stroke-width="0.8"/>
+        <line x1="26" y1="19" x2="22" y2="18" stroke="rgba(123,92,240,0.3)" stroke-width="0.8"/>
+        <line x1="26" y1="25" x2="22" y2="23" stroke="rgba(74,142,255,0.3)" stroke-width="0.8"/>
+        <line x1="27" y1="14.5" x2="27" y2="17.5" stroke="rgba(74,142,255,0.2)" stroke-width="0.8"/>
+        <line x1="27" y1="20.5" x2="27" y2="23.5" stroke="rgba(74,142,255,0.2)" stroke-width="0.8"/>
+      </svg>
+      <span class="logo-wordmark">BA<span>.</span>IA</span>
+    </div>
+    <ul class="nav-menu">
+      <li><a href="#come-funziona">Come funziona</a></li>
+      <li><a href="#prodotti">Prodotti</a></li>
+      <li><a href="#b2b">B2B Suite</a></li>
+      <li><a href="#prezzi">Prezzi</a></li>
+    </ul>
+    <div class="nav-pill">
+      <button class="btn-ghost">Accedi</button>
+      <a href="#prezzi" class="btn-cta-nav">Inizia gratis <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+    </div>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════════
+     HERO
+══════════════════════════════════════════ -->
+<section class="hero">
+  <div class="hero-bg">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div class="dots-bg"></div>
+  </div>
+  <div class="container">
+    <div class="hero-content">
+      <div class="hero-badge">
+        <span class="badge-pill">Nuovo</span>
+        <span class="badge-text">Match semantico con Claude AI — Anthropic</span>
+      </div>
+      <h1 class="hero-h1">
+        L'AI che trova<br>
+        <em><span class="gradient-text">i fondi giusti</span></em><br>
+        per te.
+      </h1>
+      <p class="hero-sub">
+        BA.IA monitora <strong>50 miliardi di euro</strong> in bandi attivi ogni giorno. Ti mostra solo quelli perfetti per la tua azienda — con motivazione AI, importo e scadenza. <strong>In 30 secondi.</strong>
+      </p>
+      <div class="hero-actions">
+        <a href="#prezzi" class="btn-primary"><span>Inizia gratis 14 giorni</span> <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="position:relative;z-index:1"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        <a href="#come-funziona" class="btn-outline">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.2"/><path d="M6.5 5.5L10.5 8l-4 2.5V5.5z" fill="currentColor"/></svg>
+          Guarda demo
+        </a>
+      </div>
+
+      <!-- UI MOCKUP -->
+      <div class="hero-visual" style="position:relative;max-width:800px;margin:80px auto 0">
+        <div class="float-badge float-badge-1">
+          <div class="badge-icon badge-icon-blue">⚡</div>
+          <div>
+            <div class="badge-info-label">Aggiornato</div>
+            <div class="badge-info-val" style="color:var(--blue)">2 ore fa</div>
+          </div>
+        </div>
+        <div class="float-badge float-badge-2">
+          <div class="badge-icon badge-icon-gold">💶</div>
+          <div>
+            <div class="badge-info-label">Media match</div>
+            <div class="badge-info-val" style="color:var(--gold)">€340K</div>
+          </div>
+        </div>
+        <div class="ui-card">
+          <div class="ui-topbar">
+            <div class="ui-dots">
+              <div class="ui-dot ui-dot-r"></div>
+              <div class="ui-dot ui-dot-y"></div>
+              <div class="ui-dot ui-dot-g"></div>
+            </div>
+            <span class="ui-title">BA.IA — MATCH RESULTS · Acme Srl · Sardegna · 2024</span>
+            <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--green);font-family:var(--ff-mono)">
+              <div class="pulse-dot"></div> LIVE
+            </div>
+          </div>
+          <div class="match-grid">
+            <div class="match-item">
+              <div class="match-rank gold">🥇 MATCH #1</div>
+              <div class="match-score s1" data-target="96">96%</div>
+              <div class="match-name">Nuova Sabatini — Beni Strumentali</div>
+              <div class="match-ente">MIMIT · Invitalia · Nazionale</div>
+              <div class="match-chips">
+                <span class="chip chip-gold">€4M max</span>
+                <span class="chip chip-green">45% fondo perduto</span>
+                <span class="chip chip-blue">Scade 31 mar</span>
+              </div>
+            </div>
+            <div class="match-item">
+              <div class="match-rank silver">🥈 MATCH #2</div>
+              <div class="match-score s2" data-target="88">88%</div>
+              <div class="match-name">POR FESR Sardegna — Asse 3.1</div>
+              <div class="match-ente">Regione Sardegna · Europeo</div>
+              <div class="match-chips">
+                <span class="chip chip-gold">€800K max</span>
+                <span class="chip chip-green">70% fondo perduto</span>
+                <span class="chip chip-blue">Scade 15 apr</span>
+              </div>
+            </div>
+            <div class="match-item">
+              <div class="match-rank bronze">🥉 MATCH #3</div>
+              <div class="match-score s3" data-target="81">81%</div>
+              <div class="match-name">SIMEST — Digitalizzazione Export</div>
+              <div class="match-ente">SIMEST · Nazionale</div>
+              <div class="match-chips">
+                <span class="chip chip-gold">€300K max</span>
+                <span class="chip chip-green">25% fondo perduto</span>
+                <span class="chip chip-blue">Aperto</span>
+              </div>
+            </div>
+          </div>
+          <div class="ui-footer">
+            <div class="ui-footer-l"><div class="pulse-dot"></div> 2.418 bandi analizzati · Claude AI</div>
+            <div style="font-size:11px;color:var(--text3);font-family:var(--ff-mono)">Aggiornato ogni 24h</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TICKER -->
+<div class="ticker-section">
+  <div class="ticker-track" id="ticker">
+    <span class="ticker-item">Invitalia · Bandi Attivi</span>
+    <span class="ticker-item">MIMIT · Incentivi PMI</span>
+    <span class="ticker-item">Regione Sardegna · POR FESR</span>
+    <span class="ticker-item">SIMEST · Export</span>
+    <span class="ticker-item">Fondazione Sud · Grants</span>
+    <span class="ticker-item">CDP · Finanza Agevolata</span>
+    <span class="ticker-item">EU · Fondi Strutturali</span>
+    <span class="ticker-item">Regione Lombardia · POR</span>
+    <span class="ticker-item">MUR · Ricerca e Innovazione</span>
+    <span class="ticker-item">Unioncamere · Voucher</span>
+    <span class="ticker-item">MISE · Transizione 4.0</span>
+    <span class="ticker-item">Regione Campania · FSE</span>
+    <span class="ticker-item">Regione Toscana · FESR</span>
+    <span class="ticker-item">Invitalia · Bandi Attivi</span>
+    <span class="ticker-item">MIMIT · Incentivi PMI</span>
+    <span class="ticker-item">Regione Sardegna · POR FESR</span>
+    <span class="ticker-item">SIMEST · Export</span>
+    <span class="ticker-item">Fondazione Sud · Grants</span>
+    <span class="ticker-item">CDP · Finanza Agevolata</span>
+    <span class="ticker-item">EU · Fondi Strutturali</span>
+    <span class="ticker-item">Regione Lombardia · POR</span>
+    <span class="ticker-item">MUR · Ricerca e Innovazione</span>
+    <span class="ticker-item">Unioncamere · Voucher</span>
+    <span class="ticker-item">MISE · Transizione 4.0</span>
+    <span class="ticker-item">Regione Campania · FSE</span>
+  </div>
+</div>
+
+<!-- LOGOS -->
+<section class="logos-section">
+  <div class="container">
+    <p class="logos-label">Fonte dati monitorata da BA.IA</p>
+    <div class="logos-row">
+      <span class="logo-item">Invitalia</span>
+      <span class="logo-item">MIMIT</span>
+      <span class="logo-item">Simest</span>
+      <span class="logo-item">CDP</span>
+      <span class="logo-item">Unioncamere</span>
+      <span class="logo-item">EU Cohesion</span>
+      <span class="logo-item">PNRR</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     BENTO — PERCHÉ
+══════════════════════════════════════════ -->
+<section class="bento-section">
+  <div class="container">
+    <div class="bento-header">
+      <div>
+        <span class="label reveal">Perché BA.IA</span>
+        <h2 class="bento-h2 reveal reveal-delay-1">Il mercato da 50 miliardi<br>che nessuno ti aiuta<br>a <em>navigare.</em></h2>
+      </div>
+      <p class="bento-desc reveal reveal-delay-2">L'accesso ai fondi pubblici è ancora un labirinto. BA.IA lo trasforma in un vantaggio competitivo immediato — per ogni azienda italiana, di ogni settore e dimensione.</p>
+    </div>
+
+    <div class="bento-grid">
+      <!-- Card 1 — largo -->
+      <div class="bento-card bento-card-wide bc-blue reveal">
+        <div class="bento-ai-tag"><div class="bento-ai-dot"></div> AI Powered</div>
+        <div class="bento-icon bi-blue">🧠</div>
+        <h3>Match semantico,<br>non solo filtri</h3>
+        <p>Non basta filtrare per ATECO. BA.IA usa Claude AI per capire davvero il profilo della tua azienda e trovare bandi che un filtro statico non troverebbe mai.</p>
+        <div class="bento-chart">
+          <div class="bar bar-1"></div><div class="bar bar-2"></div><div class="bar bar-3"></div>
+          <div class="bar bar-4"></div><div class="bar bar-5"></div><div class="bar bar-6"></div>
+          <div class="bar bar-5"></div><div class="bar bar-4"></div><div class="bar bar-6"></div>
+          <div class="bar bar-5"></div><div class="bar bar-6"></div>
+        </div>
+        <div class="bento-glow" style="background:var(--blue)"></div>
+      </div>
+
+      <!-- Card 2 — numero grande -->
+      <div class="bento-card bc-gold reveal reveal-delay-1">
+        <div class="bento-icon bi-gold">⚡</div>
+        <div class="bento-big-num"><span class="gold-text">30"</span></div>
+        <h3>Dal profilo al match</h3>
+        <p>Ricevi i tuoi Top 3 bandi personalizzati in trenta secondi. Non in ore.</p>
+        <div class="bento-glow" style="background:var(--gold)"></div>
+      </div>
+
+      <!-- Card 3 — aggiornamento -->
+      <div class="bento-card bc-green reveal reveal-delay-2">
+        <div class="bento-icon bi-green">🔄</div>
+        <div class="bento-big-num" style="color:var(--green)">24h</div>
+        <h3>Sempre aggiornato</h3>
+        <p>Lo scraper monitora 20+ fonti istituzionali ogni giorno. Nessun bando ti sfugge.</p>
+        <div class="bento-glow" style="background:var(--green)"></div>
+      </div>
+
+      <!-- Card 4 — alert -->
+      <div class="bento-card bc-purple reveal reveal-delay-1">
+        <div class="bento-icon bi-purple">🔔</div>
+        <h3>Alert intelligenti</h3>
+        <p>Quando arriva un nuovo bando compatibile con il tuo profilo, ricevi subito una notifica email. Non perdere mai una scadenza.</p>
+        <div style="margin-top:20px;background:rgba(123,92,240,0.08);border:1px solid rgba(123,92,240,0.2);border-radius:10px;padding:14px">
+          <div style="font-size:12px;color:var(--text3);font-family:var(--ff-mono);margin-bottom:6px">NUOVO BANDO TROVATO</div>
+          <div style="font-size:13px;font-weight:600;margin-bottom:4px">Bando Digitalizzazione PMI</div>
+          <div style="font-size:12px;color:#A78BFA">Score 91% · €500K · Scade 30 mar</div>
+        </div>
+        <div class="bento-glow" style="background:var(--purple)"></div>
+      </div>
+
+      <!-- Card 5 — multi fonte -->
+      <div class="bento-card bento-card-wide bc-cyan reveal reveal-delay-2">
+        <div class="bento-icon bi-cyan">🌐</div>
+        <h3>50B€ di fondi monitorati</h3>
+        <p>Bandi nazionali MIMIT, regionali POR/FSE, europei FESR, SIMEST, Invitalia, CDP, Unioncamere. Un'unica piattaforma per tutto l'ecosistema italiano della finanza agevolata.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:20px">
+          <span class="chip chip-blue">PNRR</span><span class="chip chip-blue">Transizione 4.0</span><span class="chip chip-blue">de minimis</span><span class="chip chip-blue">GBER</span><span class="chip chip-blue">POR FESR</span><span class="chip chip-blue">FSE+</span><span class="chip chip-blue">Horizon Europe</span><span class="chip chip-blue">SIMEST</span>
+        </div>
+        <div class="bento-glow" style="background:var(--cyan)"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     COME FUNZIONA
+══════════════════════════════════════════ -->
+<section id="come-funziona" class="how-section">
+  <div class="container">
+    <span class="label reveal">Come funziona</span>
+    <h2 class="section-title reveal reveal-delay-1" style="font-family:var(--ff-display);font-size:clamp(44px,5.5vw,64px);font-weight:400;letter-spacing:-0.03em;line-height:1.05;margin-top:16px">
+      Tre passi.<br><em>Un'unica dashboard.</em>
+    </h2>
+
+    <div class="how-grid">
+      <div class="how-steps reveal">
+        <div class="step-item active" data-step="0" onclick="setStep(0, this)">
+          <div class="step-num-wrap">
+            <div class="step-num">01</div>
+            <div class="step-line"></div>
+          </div>
+          <div class="step-body">
+            <h4>Descrivi la tua azienda</h4>
+            <p>Wizard guidato in 3 minuti: settore, regione, dimensione, fatturato, investimento previsto. Il motore AI capisce il tuo profilo nel dettaglio.</p>
+            <div class="step-progress"></div>
+          </div>
+        </div>
+        <div class="step-item" data-step="1" onclick="setStep(1, this)">
+          <div class="step-num-wrap">
+            <div class="step-num">02</div>
+            <div class="step-line"></div>
+          </div>
+          <div class="step-body">
+            <h4>Claude analizza il match</h4>
+            <p>L'AI confronta semanticamente il tuo profilo con il database di bandi aggiornato quotidianamente. Calcola uno score 0-100 per ogni bando.</p>
+            <div class="step-progress"></div>
+          </div>
+        </div>
+        <div class="step-item" data-step="2" onclick="setStep(2, this)">
+          <div class="step-num-wrap">
+            <div class="step-num">03</div>
+            <div class="step-line"></div>
+          </div>
+          <div class="step-body">
+            <h4>Ricevi i tuoi Top 3 bandi</h4>
+            <p>Importo, scadenza, % fondo perduto e una motivazione in linguaggio chiaro. Poi un click ti porta direttamente alla fonte ufficiale.</p>
+            <div class="step-progress"></div>
+          </div>
+        </div>
+        <div class="step-item" data-step="3" onclick="setStep(3, this)">
+          <div class="step-num-wrap">
+            <div class="step-num">04</div>
+          </div>
+          <div class="step-body">
+            <h4>Resta sempre aggiornato</h4>
+            <p>Ogni nuovo bando compatibile → email istantanea. Ogni 24 ore il sistema fa il check completo su tutte le fonti.</p>
+            <div class="step-progress"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="how-visual-wrap reveal reveal-delay-2">
+        <div class="how-phone-frame">
+          <div class="phone-screen">
+            <div class="phone-top">
+              <div class="phone-top-row">
+                <span class="phone-app-name">BA.IA · DASHBOARD</span>
+                <span class="phone-status"><div class="pulse-dot"></div> LIVE</span>
+              </div>
+            </div>
+            <div class="phone-body">
+              <div class="phone-section-title">I tuoi match oggi</div>
+              <div class="phone-bando" id="pb1">
+                <div class="pb-top">
+                  <div class="pb-name">Nuova Sabatini — MIMIT</div>
+                  <div class="pb-score pb-score-high">96%</div>
+                </div>
+                <div class="pb-meta">
+                  <span class="pb-tag">€4M max</span><span class="pb-tag">45% f.p.</span><span class="pb-tag">31 mar</span>
+                </div>
+              </div>
+              <div class="phone-bando" id="pb2">
+                <div class="pb-top">
+                  <div class="pb-name">POR FESR Sardegna 3.1</div>
+                  <div class="pb-score pb-score-mid">88%</div>
+                </div>
+                <div class="pb-meta">
+                  <span class="pb-tag">€800K max</span><span class="pb-tag">70% f.p.</span><span class="pb-tag">15 apr</span>
+                </div>
+              </div>
+              <div class="phone-bando" id="pb3">
+                <div class="pb-top">
+                  <div class="pb-name">SIMEST Digitalizzazione</div>
+                  <div class="pb-score pb-score-low">81%</div>
+                </div>
+                <div class="pb-meta">
+                  <span class="pb-tag">€300K max</span><span class="pb-tag">25% f.p.</span><span class="pb-tag">Aperto</span>
+                </div>
+              </div>
+              <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--text3);font-family:var(--ff-mono)">2.418 bandi · aggiornato 2h fa</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     PRODOTTI
+══════════════════════════════════════════ -->
+<section id="prodotti" class="products-section">
+  <div class="container">
+    <span class="label reveal">Prodotti</span>
+    <h2 class="reveal reveal-delay-1" style="font-family:var(--ff-display);font-size:clamp(44px,5.5vw,64px);font-weight:400;letter-spacing:-0.03em;line-height:1.05;margin-top:16px">Due strumenti.<br>Un ecosistema.</h2>
+    <div class="prod-tabs reveal reveal-delay-2">
+      <button class="prod-tab on" onclick="switchProd('b2c',this)">🌐 Per Imprenditori</button>
+      <button class="prod-tab" onclick="switchProd('b2b-info',this)">🏢 Per Consulenti</button>
+    </div>
+    <div class="prod-panel on" id="pp-b2c">
+      <div class="prod-grid">
+        <div class="prod-info reveal">
+          <div class="eyebrow"><span>B2C SAAS</span> WebApp pubblica</div>
+          <h3 class="prod-h3">Il tuo advisor AI<br><em>per la finanza agevolata.</em></h3>
+          <p class="prod-p">Nessuna competenza tecnica richiesta. Inserisci il profilo della tua azienda una volta sola e BA.IA lavora per te ogni giorno — trovando i bandi giusti, monitorando le scadenze, avvisandoti in tempo reale.</p>
+          <div class="feature-items">
+            <div class="feat-item"><div class="feat-icon">🎯</div><div class="feat-text"><h5>Matching AI personalizzato</h5><p>Claude confronta il tuo profilo con migliaia di bandi. Score semantico, non semplici filtri ATECO.</p></div></div>
+            <div class="feat-item"><div class="feat-icon">🔔</div><div class="feat-text"><h5>Alert in tempo reale</h5><p>Email istantanea quando arriva un nuovo bando compatibile. Non perdere mai una scadenza.</p></div></div>
+            <div class="feat-item"><div class="feat-icon">📋</div><div class="feat-text"><h5>Scheda tecnica completa</h5><p>Importo, spese ammissibili, % contributo, iter, scadenze — tutto in linguaggio accessibile.</p></div></div>
+            <div class="feat-item"><div class="feat-icon">🔗</div><div class="feat-text"><h5>Link diretto alla fonte ufficiale</h5><p>Nessun intermediario. Vai subito a Invitalia, MIMIT, Regione con un click.</p></div></div>
+          </div>
+        </div>
+        <div class="plans-col reveal reveal-delay-2">
+          <div class="plan">
+            <div class="plan-top"><div class="plan-name-tag">Piano Base</div></div>
+            <div class="plan-price-row"><div class="plan-eur">€29</div><div class="plan-period">/mese</div></div>
+            <div class="plan-note">o €279/anno · risparmia il 20%</div>
+            <ul class="plan-feats">
+              <li>1 profilo azienda</li>
+              <li>Top 3 match AI aggiornati ogni 24h</li>
+              <li>Alert email nuovi bandi</li>
+              <li>Scheda tecnica completa</li>
+              <li>Storico 30 giorni</li>
+            </ul>
+            <button class="btn-plan btn-plan-s">Inizia gratis →</button>
+          </div>
+          <div class="plan pro">
+            <div class="plan-top"><div class="plan-name-tag">Piano Pro</div><div class="plan-best-tag">Più popolare</div></div>
+            <div class="plan-price-row"><div class="plan-eur">€79</div><div class="plan-period">/mese</div></div>
+            <div class="plan-note">o €699/anno · risparmia il 26%</div>
+            <ul class="plan-feats">
+              <li>3 profili azienda</li>
+              <li>Vista completa DB bandi</li>
+              <li>Alert in tempo reale</li>
+              <li>Storico illimitato</li>
+              <li>Download schede PDF</li>
+              <li>API per integrazioni CRM</li>
+            </ul>
+            <button class="btn-plan btn-plan-p">Inizia gratis 14 giorni →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="prod-panel" id="pp-b2b-info">
+      <div class="prod-grid">
+        <div class="prod-info reveal">
+          <div class="eyebrow"><span>B2B SUITE</span> Tool professionale</div>
+          <h3 class="prod-h3">Tutto il portafoglio clienti.<br><em>Un solo strumento.</em></h3>
+          <p class="prod-p">BA.IA B2B è la suite professionale per studi di commercialisti, consulenti di finanza agevolata e centri servizi. Dall'analisi del bando alla gestione completa dei clienti, con matching automatico e email marketing white-label.</p>
+          <div class="feature-items">
+            <div class="feat-item"><div class="feat-icon">📄</div><div class="feat-text"><h5>Analisi bandi PDF + Word</h5><p>Carica qualsiasi bando e ottieni la scheda tecnica completa (30+ campi) in 30 secondi. Gratis, illimitata.</p></div></div>
+            <div class="feat-item"><div class="feat-icon">🏢</div><div class="feat-text"><h5>Database clienti illimitato</h5><p>Carica visura camerale + business plan. L'AI estrae automaticamente tutti i dati rilevanti.</p></div></div>
+            <div class="feat-item"><div class="feat-icon">🤝</div><div class="feat-text"><h5>Matching automatico bandi × clienti</h5><p>Ad ogni nuovo bando inserito, il sistema confronta automaticamente tutti i clienti nel DB.</p></div></div>
+            <div class="feat-item"><div class="feat-icon">✉️</div><div class="feat-text"><h5>Email marketing white-label</h5><p>Le email ai clienti usano il tuo logo e il tuo nome. BA.IA è invisibile. Aumenta il tuo valore percepito.</p></div></div>
+          </div>
+        </div>
+        <div class="plans-col reveal reveal-delay-2">
+          <div class="plan">
+            <div class="plan-top"><div class="plan-name-tag">B2B Base</div></div>
+            <div class="plan-price-row"><div class="plan-eur">€990</div></div>
+            <div class="plan-note">licenza una tantum · supporto 1 anno</div>
+            <ul class="plan-feats">
+              <li>Analisi bandi PDF + Word illimitata</li>
+              <li>Scheda tecnica 30+ campi</li>
+              <li>Export DOCX + PDF brandizzato</li>
+              <li>Archivio bandi ricercabile</li>
+              <li>White-label logo studio</li>
+            </ul>
+            <button class="btn-plan btn-plan-s">Richiedi licenza →</button>
+          </div>
+          <div class="plan pro">
+            <div class="plan-top"><div class="plan-name-tag">B2B Pro</div><div class="plan-best-tag">Consigliato</div></div>
+            <div class="plan-price-row"><div class="plan-eur">€1.990</div></div>
+            <div class="plan-note">licenza una tantum · supporto 1 anno</div>
+            <ul class="plan-feats">
+              <li>Tutto di BASE incluso</li>
+              <li>Database clienti illimitato</li>
+              <li>Parser visura camerale + BP</li>
+              <li>Matching automatico bandi × clienti</li>
+              <li>Email marketing white-label</li>
+              <li>SAL Tracker pratiche (Kanban)</li>
+            </ul>
+            <button class="btn-plan btn-plan-p">Richiedi licenza →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- B2B VERSIONI -->
+<section id="b2b" class="versions-section">
+  <div class="container">
+    <span class="label reveal">BAIA B2B · Tre versioni</span>
+    <h2 class="reveal reveal-delay-1" style="font-family:var(--ff-display);font-size:clamp(44px,5.5vw,64px);font-weight:400;letter-spacing:-0.03em;line-height:1.05;margin-top:16px;margin-bottom:8px">Scegli come<br>distribuirlo.</h2>
+    <p class="reveal reveal-delay-2" style="font-size:17px;color:var(--text2);max-width:480px;line-height:1.7">Stesso codebase. Tre modalità di deployment adatte a ogni tipo di studio — da quello con 2 persone al network nazionale.</p>
+    <div class="versions-grid">
+      <div class="version-card vc-blue vf-blue reveal">
+        <div class="vc-icon-wrap vi-blue">🌐</div>
+        <h3>Online Cloud</h3>
+        <p class="vc-desc">Accesso da browser ovunque, zero installazione. I dati risiedono su infrastruttura GDPR-compliant (Supabase · Frankfurt).</p>
+        <div class="vc-price">
+          <div class="vc-price-val" style="color:var(--blue)">€99<span style="font-size:16px;color:var(--text3);font-family:var(--ff-body);font-weight:400">/mese</span></div>
+          <div class="vc-price-note">Abbonamento mensile · disdici quando vuoi</div>
+        </div>
+        <ul class="vc-feats">
+          <li>Accesso da qualsiasi dispositivo</li>
+          <li>Aggiornamenti automatici</li>
+          <li>Multi-utente illimitato</li>
+          <li>Backup automatico cloud</li>
+        </ul>
+      </div>
+      <div class="version-card vc-gold vf-gold reveal reveal-delay-1">
+        <div class="vc-rec-badge">★ Consigliata</div>
+        <div class="vc-icon-wrap vi-gold">🖧</div>
+        <h3>LAN / NAS</h3>
+        <p class="vc-desc">Gira sul tuo NAS (Synology/QNAP) o PC fisso. Tutti i dispositivi dello studio accedono via browser. Dati al 100% in sede.</p>
+        <div class="vc-price">
+          <div class="vc-price-val" style="color:var(--gold)">€1.990</div>
+          <div class="vc-price-note">Licenza una tantum · + €399/anno manutenzione opzionale</div>
+        </div>
+        <ul class="vc-feats">
+          <li>Dati 100% in sede — massima privacy</li>
+          <li>Multi-utente su rete locale</li>
+          <li>Docker Compose · installazione 20 min</li>
+          <li>Perfetto per studi 2-20 persone</li>
+        </ul>
+      </div>
+      <div class="version-card vc-purple vf-purple reveal reveal-delay-2">
+        <div class="vc-icon-wrap vi-purple">💻</div>
+        <h3>Localhost</h3>
+        <p class="vc-desc">Per il libero professionista singolo. Doppio click su AVVIA.bat e il sistema parte. Funziona anche senza connessione internet.</p>
+        <div class="vc-price">
+          <div class="vc-price-val" style="color:var(--purple)">€990</div>
+          <div class="vc-price-note">Licenza una tantum · + €199/anno manutenzione opzionale</div>
+        </div>
+        <ul class="vc-feats">
+          <li>1-click install Windows/Mac/Linux</li>
+          <li>Funziona offline</li>
+          <li>Zero configurazione server</li>
+          <li>Dati locali — massimo controllo</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PACK BANDI -->
+<section class="pack-section">
+  <div class="container">
+    <span class="label reveal">Pack Bandi Regionali</span>
+    <h2 class="reveal reveal-delay-1" style="font-family:var(--ff-display);font-size:clamp(44px,5.5vw,64px);font-weight:400;letter-spacing:-0.03em;line-height:1.05;margin-top:16px;margin-bottom:8px">Parti già con<br><em class="gradient-text">il serbatoio pieno.</em></h2>
+    <p class="reveal reveal-delay-2" style="font-size:17px;color:var(--text2);max-width:480px;line-height:1.7">Decine di bandi già analizzati dall'AI, categorizzati e pronti nel tuo database. Zero cold-start, massima produttività dal giorno zero.</p>
+  </div>
+  <div class="pack-scroll-wrap reveal">
+    <div class="pack-track" id="pack-track">
+      <div class="pack-card pc-1">
+        <div class="pack-region-label prl-blue">1 Regione</div>
+        <h4>Pack Regionale</h4>
+        <p class="pc-desc">20-30 bandi attivi per la regione scelta. Aggiornato ogni trimestre.</p>
+        <div class="pc-bandi-count"><span class="pc-bandi-num">25+</span><span class="pc-bandi-label"> bandi inclusi</span></div>
+        <div class="pc-price">€299 <small>+ €99/trim agg.</small></div>
+      </div>
+      <div class="pack-card pc-2">
+        <div class="pack-region-label prl-purple">Nazionale</div>
+        <h4>Pack MIMIT + Invitalia</h4>
+        <p class="pc-desc">I principali bandi nazionali sempre aggiornati. MIMIT, Invitalia, SIMEST, CDP.</p>
+        <div class="pc-bandi-count"><span class="pc-bandi-num">50+</span><span class="pc-bandi-label"> bandi inclusi</span></div>
+        <div class="pc-price">€499 <small>+ €149/trim agg.</small></div>
+      </div>
+      <div class="pack-card pc-3 pc-highlight">
+        <div class="pack-region-label prl-gold">★ Più venduto</div>
+        <h4>Pack Combinato</h4>
+        <p class="pc-desc">La tua regione + tutti i bandi nazionali. La scelta più completa per la maggior parte degli studi.</p>
+        <div class="pc-bandi-count"><span class="pc-bandi-num" style="color:var(--gold)">75+</span><span class="pc-bandi-label"> bandi inclusi</span></div>
+        <div class="pc-price" style="color:var(--gold)">€699 <small style="color:var(--text3)">+ €199/trim agg.</small></div>
+      </div>
+      <div class="pack-card pc-4">
+        <div class="pack-region-label prl-green">All Italy</div>
+        <h4>Pack Completo</h4>
+        <p class="pc-desc">Tutte le 20 regioni + bandi nazionali. 100+ bandi pre-analizzati. Per reti di studi.</p>
+        <div class="pc-bandi-count"><span class="pc-bandi-num" style="color:var(--green)">100+</span><span class="pc-bandi-label"> bandi inclusi</span></div>
+        <div class="pc-price" style="color:var(--green)">€1.490 <small style="color:var(--text3)">+ €399/anno agg.</small></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="testi-section">
+  <div class="container">
+    <span class="label reveal">Testimonianze</span>
+    <h2 class="reveal reveal-delay-1" style="font-family:var(--ff-display);font-size:clamp(44px,5.5vw,64px);font-weight:400;letter-spacing:-0.03em;line-height:1.05;margin-top:16px;margin-bottom:56px">Risultati reali.</h2>
+    <div class="testi-grid">
+      <div class="testi-card testi-card-featured reveal">
+        <div class="testi-stars">★★★★★</div>
+        <span class="testi-quote">"</span>
+        <p class="testi-text">"Prima passavo <strong>3 ore a settimana</strong> a scorrere siti istituzionali. Adesso apro BA.IA e in 30 secondi so se c'è qualcosa di nuovo per i miei clienti. Ha trasformato completamente il mio flusso di lavoro — e i miei clienti pensano che io abbia una rete di contatti in tutti gli enti."</p>
+        <div class="testi-meta">
+          <div class="testi-avatar">MR</div>
+          <div>
+            <div class="testi-name">Marco Rossi</div>
+            <div class="testi-role">Dottore Commercialista · Milano</div>
+          </div>
+        </div>
+      </div>
+      <div class="testi-card reveal reveal-delay-1">
+        <div class="testi-stars">★★★★★</div>
+        <span class="testi-quote">"</span>
+        <p class="testi-text">"Il Pack Sardegna ci ha dato <strong>25 bandi già analizzati</strong> il giorno stesso dell'acquisto. Siamo partiti operativi in un'ora. Il ROI è stato immediato."</p>
+        <div class="testi-meta">
+          <div class="testi-avatar">AG</div>
+          <div>
+            <div class="testi-name">Anna Giovannetti</div>
+            <div class="testi-role">Consulente Finanza Agevolata · Cagliari</div>
+          </div>
+        </div>
+      </div>
+      <div class="testi-card reveal reveal-delay-2">
+        <div class="testi-stars">★★★★★</div>
+        <span class="testi-quote">"</span>
+        <p class="testi-text">"Il matching AI è su un altro livello rispetto agli altri tool. <strong>Capisce davvero il profilo</strong> dell'azienda — non filtra solo per codice ATECO. I miei clienti sono stupiti dei risultati."</p>
+        <div class="testi-meta">
+          <div class="testi-avatar">LF</div>
+          <div>
+            <div class="testi-name">Luca Ferrari</div>
+            <div class="testi-role">CEO · NextGrant Consulting · Roma</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="prezzi" class="pricing-section">
+  <div class="container">
+    <span class="label reveal">Prezzi</span>
+    <h2 class="reveal reveal-delay-1" style="font-family:var(--ff-display);font-size:clamp(44px,5.5vw,64px);font-weight:400;letter-spacing:-0.03em;line-height:1.05;margin-top:16px">Semplici.<br>Trasparenti.</h2>
+    <div class="pricing-toggle-wrap reveal reveal-delay-2">
+      <div class="toggle-opts">
+        <button class="toggle-opt on" id="to-m" onclick="setBilling(false)">Mensile</button>
+        <button class="toggle-opt" id="to-y" onclick="setBilling(true)">Annuale</button>
+      </div>
+      <span class="save-pill" id="save-pill" style="opacity:0;transition:opacity 0.3s">Risparmia fino al 26%</span>
+    </div>
+    <div class="pricing-cards reveal">
+      <div class="pricing-card2">
+        <div class="pc2-plan-name">B2C · Piano Base</div>
+        <div class="pc2-price"><span id="p-base">€29</span></div>
+        <div class="pc2-period" id="pp-base">al mese · fatturato mensilmente</div>
+        <div class="pc2-divider"></div>
+        <ul class="pc2-feats">
+          <li><span class="ck">✓</span> 1 profilo azienda</li>
+          <li><span class="ck">✓</span> Top 3 match AI giornalieri</li>
+          <li><span class="ck">✓</span> Alert email nuovi bandi</li>
+          <li><span class="ck">✓</span> Scheda tecnica completa</li>
+          <li><span class="ck">✓</span> Trial 14 giorni gratis</li>
+          <li><span class="xk">✗</span> <span class="nk">Vista completa DB bandi</span></li>
+          <li><span class="xk">✗</span> <span class="nk">Download PDF schede</span></li>
+        </ul>
+        <a href="#" class="btn-pc btn-pc-outline">Inizia gratis</a>
+      </div>
+      <div class="pricing-card2 pc2-featured">
+        <div class="pc2-top-glow"></div>
+        <div class="pc2-plan-name">B2C · Piano Pro</div>
+        <div class="pc2-price"><span id="p-pro">€79</span></div>
+        <div class="pc2-period" id="pp-pro">al mese · fatturato mensilmente</div>
+        <div class="pc2-divider"></div>
+        <ul class="pc2-feats">
+          <li><span class="ck">✓</span> 3 profili azienda</li>
+          <li><span class="ck">✓</span> Vista completa DB bandi</li>
+          <li><span class="ck">✓</span> Alert in tempo reale</li>
+          <li><span class="ck">✓</span> Storico illimitato</li>
+          <li><span class="ck">✓</span> Download PDF schede</li>
+          <li><span class="ck">✓</span> API per CRM</li>
+          <li><span class="ck">✓</span> Trial 14 giorni gratis</li>
+        </ul>
+        <a href="#" class="btn-pc btn-pc-primary">Inizia gratis 14 giorni →</a>
+      </div>
+      <div class="pricing-card2">
+        <div class="pc2-plan-name">B2B · PRO LAN/NAS</div>
+        <div class="pc2-price">€1.990</div>
+        <div class="pc2-period">licenza una tantum · supporto 1 anno</div>
+        <div class="pc2-divider"></div>
+        <ul class="pc2-feats">
+          <li><span class="ck">✓</span> Analisi bandi PDF + Word</li>
+          <li><span class="ck">✓</span> Export DOCX/PDF brandizzato</li>
+          <li><span class="ck">✓</span> Database clienti illimitato</li>
+          <li><span class="ck">✓</span> Matching bandi × clienti AI</li>
+          <li><span class="ck">✓</span> Email white-label automatiche</li>
+          <li><span class="ck">✓</span> Dati al 100% in sede</li>
+          <li><span class="ck">✓</span> Licenza perpetua</li>
+        </ul>
+        <a href="#" class="btn-pc btn-pc-outline">Richiedi demo →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA FINALE -->
+<section class="cta-section">
+  <div class="cta-bg"></div>
+  <div class="cta-grid-bg"></div>
+  <div class="container">
+    <div class="orb orb-1" style="opacity:0.5"></div>
+    <div class="orb orb-2" style="opacity:0.3"></div>
+    <h2 class="cta-headline reveal">
+      Smetti di perdere<br>
+      <em><span class="gradient-text">fondi che meriti.</span></em>
+    </h2>
+    <p class="cta-sub reveal reveal-delay-1">14 giorni gratis. Nessuna carta di credito. Setup in 3 minuti.</p>
+    <div class="cta-btns reveal reveal-delay-2">
+      <a href="#prezzi" class="btn-primary" style="font-size:16px;padding:18px 40px"><span>Inizia gratis ora</span> <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="position:relative;z-index:1"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      <a href="#" class="btn-outline" style="font-size:16px;padding:18px 40px">Parla con il team</a>
+    </div>
+    <p class="cta-note reveal reveal-delay-3">Hai uno studio di consulenza? <a href="#b2b">Scopri BA.IA B2B Suite →</a></p>
+    <div class="cta-trust reveal reveal-delay-4">
+      <div class="trust-item"><span class="trust-icon">🔒</span> GDPR Compliant</div>
+      <div class="trust-item"><span class="trust-icon">🤖</span> Powered by Claude AI</div>
+      <div class="trust-item"><span class="trust-icon">🇮🇹</span> Made in Italy</div>
+      <div class="trust-item"><span class="trust-icon">⚡</span> 99.9% Uptime SLA</div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="footer-main">
+      <div>
+        <div class="footer-logo-wrap">
+          <svg width="28" height="28" viewBox="0 0 36 36" fill="none"><rect width="36" height="36" rx="10" fill="#0A1428"/><rect x="0.5" y="0.5" width="35" height="35" rx="9.5" stroke="rgba(74,142,255,0.3)"/><path d="M10 9h8.5c2.8 0 4.5 1.5 4.5 3.8 0 1.4-.7 2.5-1.8 3.2 1.6.6 2.8 1.9 2.8 3.8 0 2.7-2 4.2-5.2 4.2H10V9z" fill="#4A8EFF" opacity="0.9"/><path d="M13 12h5c1 0 1.8.7 1.8 1.8s-.8 1.8-1.8 1.8h-5v-3.6z" fill="#04080F"/><path d="M13 17h5.5c1.2 0 2 .8 2 2s-.8 2-2 2H13v-4z" fill="#04080F"/><circle cx="27" cy="13" r="1.5" fill="#00D4FF" opacity="0.9"/><circle cx="27" cy="19" r="1.5" fill="#7B5CF0" opacity="0.7"/><circle cx="27" cy="25" r="1.5" fill="#4A8EFF" opacity="0.5"/></svg>
+          <span style="font-family:var(--ff-display);font-size:22px;font-weight:400;letter-spacing:-0.01em">BA<span style="color:var(--blue)">.</span>IA</span>
+        </div>
+        <p class="footer-tagline">L'intelligenza artificiale al servizio della finanza agevolata italiana. Trovare i fondi giusti non dovrebbe essere difficile.</p>
+        <div class="footer-badge"><span style="width:6px;height:6px;background:var(--green);border-radius:50%;flex-shrink:0"></span> Sistema operativo · 2.418 bandi attivi</div>
+      </div>
+      <div class="footer-col">
+        <h5 class="footer-col-title">Prodotto</h5>
+        <ul>
+          <li><a href="#">Come funziona</a></li>
+          <li><a href="#">BAIA B2C</a></li>
+          <li><a href="#">BAIA B2B Suite</a></li>
+          <li><a href="#">Pack Bandi</a></li>
+          <li><a href="#">Prezzi</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5 class="footer-col-title">Risorse</h5>
+        <ul>
+          <li><a href="#">Blog</a></li>
+          <li><a href="#">Guida ai bandi</a></li>
+          <li><a href="#">Changelog</a></li>
+          <li><a href="#">API Docs</a></li>
+          <li><a href="#">Stato sistema</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5 class="footer-col-title">Azienda</h5>
+        <ul>
+          <li><a href="#">Chi siamo</a></li>
+          <li><a href="#">Contatti</a></li>
+          <li><a href="#">Privacy Policy</a></li>
+          <li><a href="#">Termini</a></li>
+          <li><a href="#">GDPR</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2025 BA.IA S.r.l. — P.IVA IT00000000000</span>
+      <span>Fatto con ♥ in Italia · Powered by Anthropic Claude</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ─── CURSOR ──────────────────────────────────────
+const cur=document.getElementById('cur'),curR=document.getElementById('cur-ring');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cur.style.left=mx+'px';cur.style.top=my+'px'});
+function animRing(){rx+=(mx-rx)*0.12;ry+=(my-ry)*0.12;curR.style.left=rx+'px';curR.style.top=ry+'px';requestAnimationFrame(animRing)}
+animRing();
+document.querySelectorAll('a,button,.bento-card,.version-card,.plan,.pack-card,.match-item').forEach(el=>{
+  el.addEventListener('mouseenter',()=>{cur.style.width='14px';cur.style.height='14px';curR.style.width='50px';curR.style.height='50px'});
+  el.addEventListener('mouseleave',()=>{cur.style.width='8px';cur.style.height='8px';curR.style.width='36px';curR.style.height='36px'});
+});
+
+// ─── NAV SCROLL ──────────────────────────────────
+window.addEventListener('scroll',()=>{
+  document.getElementById('main-nav').classList.toggle('scrolled',window.scrollY>30);
+});
+
+// ─── SCROLL REVEAL ───────────────────────────────
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach((e,i)=>{if(e.isIntersecting)setTimeout(()=>e.target.classList.add('in'),i*60)});
+},{threshold:0.1});
+document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+
+// ─── STEP HOW ────────────────────────────────────
+let stepTimer,stepIndex=0;
+function setStep(idx,el){
+  clearTimeout(stepTimer);
+  document.querySelectorAll('.step-item').forEach(s=>s.classList.remove('active'));
+  if(el)el.classList.add('active');
+  else document.querySelectorAll('.step-item')[idx].classList.add('active');
+  stepIndex=idx;
+  stepTimer=setTimeout(()=>{setStep((idx+1)%4,null)},3500);
+}
+setStep(0,null);
+
+// ─── PRODUCT TABS ────────────────────────────────
+function switchProd(id,btn){
+  document.querySelectorAll('.prod-tab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.prod-panel').forEach(p=>p.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('pp-'+id).classList.add('on');
+}
+
+// ─── BILLING TOGGLE ──────────────────────────────
+let isY=false;
+const DATA={base:{m:'€29',y:'€23',pm:'al mese · fatturato mensilmente',py:'al mese · fatturato €279/anno (−20%)'},pro:{m:'€79',y:'€59',pm:'al mese · fatturato mensilmente',py:'al mese · fatturato €699/anno (−26%)'}};
+function setBilling(yearly){
+  isY=yearly;
+  document.getElementById('to-m').classList.toggle('on',!yearly);
+  document.getElementById('to-y').classList.toggle('on',yearly);
+  document.getElementById('save-pill').style.opacity=yearly?'1':'0';
+  const k=yearly?'y':'m';
+  document.getElementById('p-base').textContent=DATA.base[k];
+  document.getElementById('p-pro').textContent=DATA.pro[k];
+  document.getElementById('pp-base').textContent=DATA.base[(yearly?'py':'pm')];
+  document.getElementById('pp-pro').textContent=DATA.pro[(yearly?'py':'pm')];
+}
+
+// ─── COUNTER ANIMATION ───────────────────────────
+const counterObs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting&&!e.target.dataset.counted){
+      e.target.dataset.counted='1';
+      const target=parseFloat(e.target.dataset.target);
+      let start=0,dur=1200,startTime=null;
+      function step(t){
+        if(!startTime)startTime=t;
+        const progress=Math.min((t-startTime)/dur,1);
+        const ease=1-Math.pow(1-progress,3);
+        start=Math.round(ease*target);
+        e.target.textContent=start+'%';
+        if(progress<1)requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }
+  });
+},{threshold:0.5});
+document.querySelectorAll('[data-target]').forEach(el=>counterObs.observe(el));
+
+// ─── TILT CARDS ──────────────────────────────────
+document.querySelectorAll('.bento-card,.version-card').forEach(card=>{
+  card.addEventListener('mousemove',e=>{
+    const rect=card.getBoundingClientRect();
+    const x=(e.clientX-rect.left)/rect.width-0.5;
+    const y=(e.clientY-rect.top)/rect.height-0.5;
+    card.style.transform=`translateY(-4px) rotateX(${-y*6}deg) rotateY(${x*6}deg)`;
+    card.style.transition='transform 0.1s';
+  });
+  card.addEventListener('mouseleave',()=>{
+    card.style.transform='';
+    card.style.transition='transform 0.6s cubic-bezier(.215,.61,.355,1)';
+  });
+});
+
+// ─── PACK DRAG SCROLL ────────────────────────────
+const pt=document.getElementById('pack-track');
+let isDown=false,startX,sl;
+pt.addEventListener('mousedown',e=>{isDown=true;startX=e.pageX-pt.offsetLeft;sl=pt.scrollLeft});
+pt.addEventListener('mouseleave',()=>isDown=false);
+pt.addEventListener('mouseup',()=>isDown=false);
+pt.addEventListener('mousemove',e=>{if(!isDown)return;e.preventDefault();const x=e.pageX-pt.offsetLeft;pt.scrollLeft=sl-(x-startX)*1.5});
+</script>
+</body>
+</html>

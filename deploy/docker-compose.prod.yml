@@ -1,0 +1,66 @@
+version: "3.9"
+
+# ══════════════════════════════════════════════════════════
+# BA.IA — Stack di produzione con HTTPS automatico (Caddy)
+# ══════════════════════════════════════════════════════════
+# Deploy:
+#   1. Imposta DOMAIN e GROQ_API_KEY nel file .env
+#   2. Punta il DNS del tuo dominio a questo server (record A → IP VPS)
+#   3. Esegui: docker compose -f deploy/docker-compose.prod.yml up -d
+#   4. Caddy ottiene il certificato HTTPS automaticamente
+# ══════════════════════════════════════════════════════════
+
+services:
+  baia:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: baia-app
+    restart: unless-stopped
+    environment:
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - GROQ_MODEL=${GROQ_MODEL:-meta-llama/llama-4-scout-17b-16e-instruct}
+      - LICENSE_KEY=${LICENSE_KEY:-TEST-MODE}
+      - APP_NAME=${APP_NAME:-BA.IA}
+      - DB_PATH=/app/data/ai-bandi.db
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
+      - SMTP_FROM=${SMTP_FROM:-noreply@baia.it}
+      - AI_PROVIDER=${AI_PROVIDER:-groq}
+      - AI_API_KEY=${AI_API_KEY:-}
+      - AI_MODEL=${AI_MODEL:-}
+    volumes:
+      - baia-data:/app/data
+    expose:
+      - "8000"
+    networks:
+      - baia-net
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: baia-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    environment:
+      - DOMAIN=${DOMAIN:-localhost}
+    depends_on:
+      - baia
+    networks:
+      - baia-net
+
+volumes:
+  baia-data:
+  caddy-data:
+  caddy-config:
+
+networks:
+  baia-net:
+    name: baia-net

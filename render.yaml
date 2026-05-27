@@ -1,0 +1,38 @@
+services:
+  - type: web
+    name: baia-backend
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    region: frankfurt
+    healthCheckPath: /
+    envVars:
+      # Supabase PostgreSQL — copia da Supabase Settings → Database → Connection string
+      - key: DATABASE_URL
+        sync: false
+      # AI provider — Groq gratis su console.groq.com
+      - key: GROQ_API_KEY
+        sync: false
+      - key: AI_PROVIDER
+        value: groq
+      - key: AI_API_KEY
+        sync: false
+      # Config app
+      - key: APP_NAME
+        value: BA.IA
+      - key: LICENSE_KEY
+        value: TEST-MODE
+      - key: GROQ_MODEL
+        value: meta-llama/llama-4-scout-17b-16e-instruct
+      # CORS — Vercel frontend URL
+      - key: ALLOWED_ORIGINS
+        sync: false
+      # SMTP opzionale
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
+        sync: false

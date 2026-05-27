@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: baia
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    region: frankfurt
+    healthCheckPath: /
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
+      - key: APP_NAME
+        value: BA.IA
+      - key: LICENSE_KEY
+        value: TEST-MODE
+      - key: GROQ_MODEL
+        value: meta-llama/llama-4-scout-17b-16e-instruct
+      - key: DB_PATH
+        value: /app/data/ai-bandi.db
+    disk:
+      name: baia-data
+      mountPath: /app/data
+      sizeGB: 1
