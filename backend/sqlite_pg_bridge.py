@@ -60,22 +60,12 @@ _pool_lock = asyncio.Lock()
 
 
 def _parse_pg_url(url: str) -> dict:
-    """Parse postgresql:// URL into asyncpg keyword args, resolving host to IPv4."""
-    import socket
+    """Parse postgresql:// URL into asyncpg keyword args."""
     import urllib.parse as _up
     p = _up.urlparse(url)
-    host = p.hostname or "localhost"
-    port = p.port or 5432
-    # Force IPv4 — avoids ENETUNREACH on containers without IPv6 routing
-    try:
-        infos = socket.getaddrinfo(host, port, socket.AF_INET, socket.SOCK_STREAM)
-        if infos:
-            host = infos[0][4][0]
-            print(f"[DB] Resolved to IPv4: {host}:{port}")
-    except Exception as e:
-        print(f"[DB] IPv4 resolution warning: {e}")
     return dict(
-        host=host, port=port,
+        host=p.hostname or "localhost",
+        port=p.port or 5432,
         user=p.username,
         password=_up.unquote(p.password or ""),
         database=(p.path or "/postgres").lstrip("/"),
@@ -95,8 +85,7 @@ async def _get_pool():
                 min_size=1, max_size=10,
                 command_timeout=30,
                 statement_cache_size=0,
-                ssl=True,            # Supabase requires SSL
-                connect_timeout=30,
+                ssl=True,
             )
             print("[DB] Pool PostgreSQL inizializzato")
     return _pool
