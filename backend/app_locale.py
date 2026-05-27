@@ -343,23 +343,23 @@ async def auth_reset_password(request: Request):
 # SETUP ENDPOINTS
 # ═══════════════════════════════════════════════════════
 
-PLACEHOLDER = "gsk_INSERISCI_LA_TUA_CHIAVE_QUI"
-
 @app.get("/setup/status")
 def setup_status():
-    key = os.environ.get("GROQ_API_KEY", "")
-    configured = bool(key) and key != PLACEHOLDER and len(key) > 10
+    key = os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("AI_API_KEY", "")
+    configured = bool(key) and len(key) > 10
     return {"configured": configured, "app_name": os.environ.get("APP_NAME", "BA.IA"), "version": "2.0.0"}
 
 @app.post("/setup/apikey")
 async def setup_apikey(request: Request):
     body = await request.json()
     key = (body.get("api_key") or "").strip()
-    if not key.startswith("gsk_") or len(key) < 20:
-        return JSONResponse({"ok": False, "error": "Chiave non valida (deve iniziare con gsk_)"}, 400)
-    _write_env_key("GROQ_API_KEY", key)
-    os.environ["GROQ_API_KEY"] = key
-    print(f"[SETUP] API key configurata via UI")
+    if not key.startswith("sk-ant-") or len(key) < 20:
+        return JSONResponse({"ok": False, "error": "Chiave non valida (deve iniziare con sk-ant-)"}, 400)
+    _write_env_key("ANTHROPIC_API_KEY", key)
+    _write_env_key("AI_PROVIDER", "anthropic")
+    os.environ["ANTHROPIC_API_KEY"] = key
+    os.environ["AI_PROVIDER"] = "anthropic"
+    print(f"[SETUP] Anthropic API key configurata via UI")
     return {"ok": True}
 
 @app.post("/setup/appname")
@@ -553,10 +553,6 @@ async def import_company_doc(file: UploadFile = File(...)):
     if not file.filename.lower().endswith(".pdf"):
         return JSONResponse({"ok": False, "error": "Solo file PDF supportati"}, 400)
 
-    GROQ_KEY = os.environ.get("GROQ_API_KEY", "")
-    if not GROQ_KEY or GROQ_KEY == "gsk_INSERISCI_LA_TUA_CHIAVE_QUI":
-        return JSONResponse({"ok": False, "error": "GROQ_API_KEY non configurata"}, 400)
-
     tmp_path = None
     try:
         data = await file.read()
@@ -582,18 +578,7 @@ async def import_company_doc(file: UploadFile = File(...)):
             f"DOCUMENTO:\n{text}"
         )
 
-        headers = {"Authorization": f"Bearer {GROQ_KEY}", "Content-Type": "application/json"}
-        body_req = {
-            "model": os.environ.get("GROQ_MODEL", "meta-llama/llama-4-scout-17b-16e-instruct"),
-            "messages": [{"role": "user", "content": prompt}],
-            "max_tokens": 800, "temperature": 0.1,
-            "response_format": {"type": "json_object"}
-        }
-        async with httpx.AsyncClient(timeout=60) as client:
-            r = await client.post("https://api.groq.com/openai/v1/chat/completions",
-                                  headers=headers, json=body_req)
-        r.raise_for_status()
-        result_text = r.json()["choices"][0]["message"]["content"]
+        result_text, _ = await ai_call_multi(prompt, json_mode=True, timeout=60)
         clean = result_text.strip().lstrip("```json").lstrip("```").rstrip("```").strip()
         parsed = json.loads(clean)
         return {"ok": True, "data": parsed, "chars": len(text)}
@@ -612,9 +597,9 @@ AI_PROVIDERS_AVAILABLE = ["anthropic", "openai", "groq", "gemini", "mistral"]
 
 def _get_ai_config() -> dict:
     return {
-        "provider": os.environ.get("AI_PROVIDER", "groq"),
-        "api_key": os.environ.get("AI_API_KEY") or os.environ.get("GROQ_API_KEY", ""),
-        "model": os.environ.get("AI_MODEL") or os.environ.get("GROQ_MODEL", "meta-llama/llama-4-scout-17b-16e-instruct"),
+        "provider": os.environ.get("AI_PROVIDER", "anthropic"),
+        "api_key": os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("AI_API_KEY", ""),
+        "model": os.environ.get("AI_MODEL", "claude-haiku-4-5-20251001"),
     }
 
 PROVIDER_DEFAULTS = {

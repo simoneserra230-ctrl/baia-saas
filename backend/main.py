@@ -1,6 +1,6 @@
 """
 AI Analisi Bandi — Backend v1.2
-FastAPI + Groq API (llama-4-scout)
+FastAPI + Anthropic Claude API
 v1.2: sicurezza — auth su /db/*, CORS whitelist, file validation, email validation.
 """
 
@@ -19,11 +19,11 @@ from typing import Optional
 from security import validate_email, is_valid_pdf_bytes, MAX_UPLOAD_BYTES
 
 # ─── CONFIG ───────────────────────────────────────────────
-GROQ_API_KEY   = os.environ.get("GROQ_API_KEY", "")
-GROQ_URL       = "https://api.groq.com/openai/v1/chat/completions"
-MODEL          = os.environ.get("GROQ_MODEL", "meta-llama/llama-4-scout-17b-16e-instruct")
-CHUNK_SIZE     = int(os.environ.get("CHUNK_SIZE", "30000"))
-SIMPLE_LIMIT   = int(os.environ.get("SIMPLE_LIMIT", "80000"))
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("AI_API_KEY", "")
+ANTHROPIC_URL     = "https://api.anthropic.com/v1/messages"
+MODEL             = os.environ.get("AI_MODEL", "claude-haiku-4-5-20251001")
+CHUNK_SIZE        = int(os.environ.get("CHUNK_SIZE", "30000"))
+SIMPLE_LIMIT      = int(os.environ.get("SIMPLE_LIMIT", "80000"))
 LICENSE_KEY    = os.environ.get("LICENSE_KEY", "")
 LICENSE_SERVER = os.environ.get("LICENSE_SERVER", "https://licenses.tuodominio.it")
 APP_NAME       = os.environ.get("APP_NAME", "AI Analisi Bandi")
@@ -145,32 +145,32 @@ def extract_text(pdf_path: str) -> str:
     reader = PdfReader(pdf_path)
     return "".join(page.extract_text() or "" for page in reader.pages)
 
-async def groq_call(prompt: str, json_mode: bool = False, timeout: int = 120, _retry: int = 0) -> tuple[str, float]:
-    if not GROQ_API_KEY:
-        raise RuntimeError("GROQ_API_KEY non configurata")
-    headers = {"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"}
-    body: dict = {"model": MODEL, "messages": [{"role": "user", "content": prompt}],
-                  "max_tokens": 4096, "temperature": 0.1}
-    if json_mode: body["response_format"] = {"type": "json_object"}
-    print(f"[GROQ] {len(prompt)} char | json={json_mode}", end=" → ", flush=True)
+async def anthropic_call(prompt: str, json_mode: bool = False, timeout: int = 120) -> tuple[str, float]:
+    if not ANTHROPIC_API_KEY:
+        raise RuntimeError("ANTHROPIC_API_KEY non configurata")
+    headers = {
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+        "Content-Type": "application/json",
+    }
+    body: dict = {
+        "model": MODEL,
+        "max_tokens": 4096,
+        "messages": [{"role": "user", "content": prompt}],
+    }
+    if json_mode:
+        body["system"] = "Rispondi SEMPRE con JSON valido e nient'altro. Nessun backtick, nessun testo aggiuntivo."
+    print(f"[ANTHROPIC] {len(prompt)} char | json={json_mode}", end=" → ", flush=True)
     async with httpx.AsyncClient(timeout=timeout) as client:
-        r = await client.post(GROQ_URL, headers=headers, json=body)
-        if r.status_code == 429 and _retry < 3:
-            err_msg = r.json().get("error", {}).get("message", "")
-            m = re.search(r"try again in ([\d.]+)s", err_msg)
-            wait = float(m.group(1)) + 1.0 if m else float(r.headers.get("retry-after", 20))
-            print(f"rate limit → {wait:.1f}s")
-            await asyncio.sleep(wait)
-            result, pw = await groq_call(prompt, json_mode, timeout, _retry + 1)
-            return result, wait + pw
+        r = await client.post(ANTHROPIC_URL, headers=headers, json=body)
         if r.status_code != 200:
-            raise RuntimeError(f"Groq {r.status_code}: errore API")
-        result = r.json()["choices"][0]["message"]["content"]
+            raise RuntimeError(f"Anthropic {r.status_code}: {r.text[:200]}")
+        result = r.json()["content"][0]["text"]
         print(f"{len(result)} char OK")
         return result, 0.0
 
 async def analyze_simple(text: str) -> str:
-    result, _ = await groq_call(
+    result, _ = await anthropic_call(
         "Sei un esperto di finanza agevolata italiana. Analizza questo bando e restituisci:\n"
         "- Obiettivo principale\n- Beneficiari ammessi\n- Requisiti chiave\n"
         "- Scadenze importanti\n- Opportunità strategiche\n\n"
@@ -181,12 +181,12 @@ async def analyze_in_chunks(text: str) -> str:
     chunks = [text[i:i+CHUNK_SIZE] for i in range(0, len(text), CHUNK_SIZE)]
     parts = []
     for i, chunk in enumerate(chunks):
-        result, _ = await groq_call(
+        result, _ = await anthropic_call(
             f"Parte {i+1}/{len(chunks)} di un bando. "
             f"Estrai Obiettivo, Beneficiari, Requisiti, Scadenze, Opportunità.\n\n{chunk}")
         parts.append(result)
         if i < len(chunks) - 1: await asyncio.sleep(3)
-    result, _ = await groq_call(
+    result, _ = await anthropic_call(
         "Crea un'analisi finale completa da questi estratti:\n\n" +
         "".join(f"--- Parte {i+1} ---\n{r}\n" for i, r in enumerate(parts)), timeout=180)
     return result
@@ -212,7 +212,7 @@ def home(request: Request = None):
             if frontend.exists():
                 return FileResponse(str(frontend))
     return {"status": "ok", "app": APP_NAME, "version": APP_VERSION,
-            "provider": "groq", "model": MODEL, "licensed": _license_ok,
+            "provider": "anthropic", "model": MODEL, "licensed": _license_ok,
             "mode": "test" if is_test else "production"}
 
 @app.get("/model")
@@ -286,7 +286,7 @@ async def enrich_fields_endpoint(req: EnrichRequest, _user: dict = Depends(requi
         '"confidenza":"alta|media|bassa","nota":"breve nota metodologica"}]}'
     )
     try:
-        result, _ = await groq_call(prompt, json_mode=True, timeout=150)
+        result, _ = await anthropic_call(prompt, json_mode=True, timeout=150)
         if isinstance(result, str):
             clean = result.strip()
             if clean.startswith("```"):
@@ -308,7 +308,7 @@ async def prompt_endpoint(req: PromptRequest, _user: dict = Depends(require_auth
             "sezione" in req.prompt.lower() or
             "compila ESATTAMENTE" in req.prompt or
             "schema JSON" in req.prompt)
-        result, wait_secs = await groq_call(req.prompt, json_mode=json_mode)
+        result, wait_secs = await anthropic_call(req.prompt, json_mode=json_mode)
         response = {"result": result}
         if wait_secs > 0: response["waitSecs"] = round(wait_secs, 1)
         return response
