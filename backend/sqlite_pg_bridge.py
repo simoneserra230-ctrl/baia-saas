@@ -100,6 +100,19 @@ class _Cursor:
         self.lastrowid = None
         self._rows = None
 
+    # Support: await db.execute("CREATE TABLE ...") / await db.execute("INSERT ...")
+    def __await__(self):
+        return self._run_dml().__await__()
+
+    async def _run_dml(self):
+        try:
+            await self.conn.execute(self.sql, *self.params)
+        except Exception as e:
+            # Ignore "already exists" from CREATE TABLE IF NOT EXISTS edge cases
+            if "already exists" not in str(e).lower():
+                raise
+        return self
+
     async def _fetch(self):
         if self._rows is None:
             try:
