@@ -20,8 +20,11 @@ if DATABASE_URL.startswith("postgres://"):
 
 USE_PG = bool(DATABASE_URL) and DATABASE_URL.startswith("postgresql://")
 
+# Full URL (with query params like sslmode=require) — passed directly to asyncpg
+_DATABASE_URL_FULL = DATABASE_URL
+
 if USE_PG:
-    # Strip query params che asyncpg non gestisce
+    # Strip query params from the version used for SQL translation only
     if "?" in DATABASE_URL:
         DATABASE_URL = DATABASE_URL.split("?")[0]
 
@@ -59,19 +62,6 @@ _pool = None
 _pool_lock = asyncio.Lock()
 
 
-def _parse_pg_url(url: str) -> dict:
-    """Parse postgresql:// URL into asyncpg keyword args."""
-    import urllib.parse as _up
-    p = _up.urlparse(url)
-    return dict(
-        host=p.hostname or "localhost",
-        port=p.port or 5432,
-        user=p.username,
-        password=_up.unquote(p.password or ""),
-        database=(p.path or "/postgres").lstrip("/"),
-    )
-
-
 async def _get_pool():
     global _pool
     if _pool is not None:
@@ -79,13 +69,11 @@ async def _get_pool():
     async with _pool_lock:
         if _pool is None:
             import asyncpg
-            params = _parse_pg_url(DATABASE_URL)
             _pool = await asyncpg.create_pool(
-                **params,
+                _DATABASE_URL_FULL,
                 min_size=1, max_size=10,
                 command_timeout=30,
                 statement_cache_size=0,
-                ssl=True,
             )
             print("[DB] Pool PostgreSQL inizializzato")
     return _pool
