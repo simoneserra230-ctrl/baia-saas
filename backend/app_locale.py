@@ -3,8 +3,12 @@ BA.IA — Backend Locale v2.0
 Estende main.py con: Auth, Setup, Export Word, Import documenti aziendali.
 """
 
-import os, re, sys, json, uuid, hashlib, datetime, io, tempfile
+import sys, os
 from pathlib import Path
+# Must be before any local module imports so Docker/uvicorn can find security, audit, etc.
+sys.path.insert(0, str(Path(__file__).parent))
+
+import re, json, uuid, hashlib, datetime, io, tempfile
 from security import hash_password, verify_password, validate_email, login_limiter, register_limiter, is_valid_pdf_bytes, MAX_UPLOAD_BYTES, RateLimiter
 
 reset_limiter = RateLimiter(max_calls=3, window_seconds=3600)  # 3 reset req / ora per IP

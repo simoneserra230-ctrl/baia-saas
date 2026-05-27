@@ -7,32 +7,37 @@ services:
     region: frankfurt
     healthCheckPath: /
     envVars:
-      # Supabase PostgreSQL — copia da Supabase Settings → Database → Connection string
+      # Supabase PostgreSQL
       - key: DATABASE_URL
         sync: false
-      # AI provider — Groq gratis su console.groq.com
-      - key: GROQ_API_KEY
+      # Anthropic AI
+      - key: ANTHROPIC_API_KEY
         sync: false
       - key: AI_PROVIDER
-        value: groq
-      - key: AI_API_KEY
-        sync: false
-      # Config app
+        value: anthropic
+      - key: AI_MODEL
+        value: claude-haiku-4-5-20251001
+      # App config
       - key: APP_NAME
         value: BA.IA
       - key: LICENSE_KEY
         value: TEST-MODE
-      - key: GROQ_MODEL
-        value: meta-llama/llama-4-scout-17b-16e-instruct
-      # CORS — Vercel frontend URL
+      # CORS
       - key: ALLOWED_ORIGINS
         sync: false
-      # SMTP opzionale
+      - key: APP_URL
+        sync: false
+      # SMTP
       - key: SMTP_HOST
         sync: false
+      - key: SMTP_PORT
+        value: "587"
       - key: SMTP_USER
         sync: false
       - key: SMTP_PASS
         sync: false
       - key: SMTP_FROM
         sync: false
+      # Python
+      - key: PYTHONUTF8
+        value: "1"

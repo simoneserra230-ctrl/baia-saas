@@ -23,8 +23,7 @@ ENV PORT=8000 \
     DB_PATH=/app/data/ai-bandi.db \
     APP_NAME="BA.IA" \
     LICENSE_KEY=TEST-MODE \
-    GROQ_MODEL=meta-llama/llama-4-scout-17b-16e-instruct \
-    PYTHONPATH=/app
+    PYTHONPATH=/app:/app/backend
 
 EXPOSE 8000
 
