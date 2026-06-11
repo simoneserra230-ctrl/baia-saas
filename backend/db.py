@@ -22,7 +22,9 @@ if USE_POSTGRES and DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = "postgresql://" + DATABASE_URL[len("postgres://"):]
     os.environ["DATABASE_URL"] = DATABASE_URL
 
-# Supabase pooler URL fix per asyncpg
+# Full URL preservata con sslmode — passata direttamente ad asyncpg
+_DATABASE_URL_FULL = DATABASE_URL
+# Supabase pooler URL fix per asyncpgh
 if USE_POSTGRES and "?" in DATABASE_URL:
     DATABASE_URL = DATABASE_URL.split("?")[0]
 
@@ -38,7 +40,7 @@ async def init_pool():
         return
     import asyncpg
     _pool = await asyncpg.create_pool(
-        DATABASE_URL,
+                _DATABASE_URL_FULL,
         min_size=1,
         max_size=10,
         command_timeout=30,
