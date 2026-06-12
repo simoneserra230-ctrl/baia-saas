@@ -614,6 +614,21 @@ button{cursor:pointer;font-family:'Inter',sans-serif}
       </div>
 
       <div class="sb-bottom">
+        <!-- Ecosistema Skills Solutions -->
+        <div style="padding:8px 10px 4px;border-top:1px solid var(--border);margin-bottom:6px;">
+          <div style="font-size:9px;font-weight:700;color:var(--subtle);text-transform:uppercase;letter-spacing:.9px;margin-bottom:6px;">Ecosistema</div>
+          <div style="display:flex;flex-direction:column;gap:3px;">
+            <a href="../../../SKILLSOLUTIONS.COM/simone-serra.html" style="display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:6px;text-decoration:none;color:var(--muted);font-size:11px;transition:all .15s;border:1px solid transparent;" onmouseover="this.style.background='rgba(201,168,76,.08)';this.style.color='#C9A84C';this.style.borderColor='rgba(201,168,76,.2)'" onmouseout="this.style.background='transparent';this.style.color='var(--muted)';this.style.borderColor='transparent'">
+              <span style="font-size:11px;">✦</span> Skills Solutions
+            </a>
+            <a href="../../../BAD360.SKILLSOLUTIONS.COM/BAD360_SPLIT/hub.html" style="display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:6px;text-decoration:none;color:var(--muted);font-size:11px;transition:all .15s;border:1px solid transparent;" onmouseover="this.style.background='rgba(201,168,76,.06)';this.style.color='#C9A84C'" onmouseout="this.style.background='transparent';this.style.color='var(--muted)'">
+              <span style="font-size:11px;">🔄</span> BAD360
+            </a>
+            <a href="../../../BAD.SKILLSOLUTIONS.COM/bads_v7_2026.html" style="display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:6px;text-decoration:none;color:var(--muted);font-size:11px;transition:all .15s;border:1px solid transparent;" onmouseover="this.style.background='rgba(0,229,180,.06)';this.style.color='#00E5B4'" onmouseout="this.style.background='transparent';this.style.color='var(--muted)'">
+              <span style="font-size:11px;">🥂</span> BAD.S Events
+            </a>
+          </div>
+        </div>
         <div id="demoSbBadge" style="display:none;padding:6px 10px;margin-bottom:8px">
           <span class="badge badge-amber" style="font-size:10px">⚡ DEMO</span>
         </div>
@@ -838,6 +853,7 @@ button{cursor:pointer;font-family:'Inter',sans-serif}
           </div>
           <div class="flex gap-2" style="margin-top:16px">
             <button class="btn btn-primary" onclick="runMatching()">⚡ Avvia matching AI</button>
+            <button class="btn btn-secondary" onclick="runAIAdvisor()">🤖 AI Advisor</button>
             <button class="btn btn-secondary" onclick="clearMatchResults()">Azzera</button>
           </div>
           <div id="matchResults" style="margin-top:24px"></div>
@@ -852,21 +868,21 @@ button{cursor:pointer;font-family:'Inter',sans-serif}
         </div>
         <div class="p-content">
           <div class="card" style="max-width:540px">
-            <div class="section-title">Configurazione API</div>
+            <div class="section-title">Configurazione API — Claude (Anthropic)</div>
             <div class="form-group" style="margin-bottom:14px">
-              <label class="form-label">GROQ API Key</label>
+              <label class="form-label">Anthropic API Key</label>
               <div style="display:flex;gap:8px">
-                <input class="form-input" id="settingsApiKey" type="password" placeholder="gsk_...">
+                <input class="form-input" id="settingsApiKey" type="password" placeholder="sk-ant-api03-...">
                 <button class="btn btn-secondary" onclick="saveApiKey()">Salva</button>
               </div>
-              <div class="text-sm text-muted" style="margin-top:5px">Chiave gratuita su <a href="https://console.groq.com" target="_blank">console.groq.com</a></div>
+              <div class="text-sm text-muted" style="margin-top:5px">Chiave su <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → API Keys</div>
             </div>
             <div class="form-group">
-              <label class="form-label">Modello AI</label>
+              <label class="form-label">Modello Claude</label>
               <select class="form-select" id="settingsModel">
-                <option value="meta-llama/llama-4-scout-17b-16e-instruct">LLaMA 4 Scout (raccomandato)</option>
-                <option value="llama-3.3-70b-versatile">LLaMA 3.3 70B</option>
-                <option value="mixtral-8x7b-32768">Mixtral 8x7B</option>
+                <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (veloce, economico)</option>
+                <option value="claude-sonnet-4-6">Claude Sonnet 4.6 (bilanciato)</option>
+                <option value="claude-opus-4-8">Claude Opus 4.8 (qualità massima)</option>
               </select>
             </div>
           </div>
@@ -1890,12 +1906,54 @@ async function uploadPdfsForBando(bandoId, files) {
     toast(`Analisi in corso: ${file.name}...`,'info');
     try {
       const fd = new FormData(); fd.append('file', file);
-      const r = await fetch(BACKEND_URL+'/analyze', {method:'POST',body:fd});
-      const data = await r.json();
-      if (data.error) throw new Error(data.error);
+      const token = _getAuthToken();
+      let analysisText = '', totalChars = 0, streamOk = false;
+
+      // Prova streaming prima (SSE progressivo)
+      if (token) {
+        try {
+          const sr = await fetch(BACKEND_URL+'/analyze/stream', {
+            method:'POST', headers:{'X-Auth-Token':token}, body:fd
+          });
+          if (sr.ok && sr.headers.get('content-type')?.includes('event-stream')) {
+            const reader = sr.body.getReader(), dec = new TextDecoder();
+            let buf = '';
+            while (true) {
+              const {done, value} = await reader.read();
+              if (done) break;
+              buf += dec.decode(value, {stream:true});
+              const lines = buf.split('\n'); buf = lines.pop()||'';
+              for (const line of lines) {
+                if (!line.startsWith('data: ')) continue;
+                try {
+                  const chunk = JSON.parse(line.slice(6));
+                  if (chunk.delta) {
+                    analysisText += chunk.delta;
+                    pdfEntry.analysis = analysisText;
+                    if (state.activeBandoId === bandoId) renderAnalysis(b);
+                  }
+                  if (chunk.done) { totalChars = chunk.chars||0; streamOk = true; }
+                  if (chunk.error) throw new Error(chunk.error);
+                } catch {}
+              }
+            }
+            if (analysisText) streamOk = true;
+          }
+        } catch {}
+      }
+
+      // Fallback al call bloccante se streaming non disponibile
+      if (!streamOk) {
+        const r2 = await fetch(BACKEND_URL+'/analyze', {method:'POST',body:fd});
+        const data = await r2.json();
+        if (data.error) throw new Error(data.error);
+        analysisText = data.result || '';
+        totalChars   = data.chars || 0;
+      }
+
       pdfEntry.analyzed = true;
-      pdfEntry.textLength = data.chars || 0;
-      pdfEntry.analysis = data.result || '';
+      pdfEntry.textLength = totalChars;
+      pdfEntry.analysis = analysisText;
       // Genera checklist da analisi
       pdfEntry.checklist = await generateChecklist(data.result, b.name);
       // Aggiorna campi estratti
@@ -2457,43 +2515,221 @@ function renderMatchSelections() {
 }
 
 async function runMatching() {
-  const selBandi = [...document.querySelectorAll('#matchBandiSelect input:checked')].map(i=>i.value);
+  const selBandi   = [...document.querySelectorAll('#matchBandiSelect input:checked')].map(i=>i.value);
   const selAziende = [...document.querySelectorAll('#matchAziendeSelect input:checked')].map(i=>i.value);
   if (!selBandi.length || !selAziende.length) { toast('Seleziona almeno un bando e un\'azienda','warn'); return; }
   const db = getDB();
-  const bandi = db.bandi.filter(b=>selBandi.includes(b.id));
+  const bandi   = db.bandi.filter(b=>selBandi.includes(b.id));
   const aziende = db.aziende.filter(a=>selAziende.includes(a.id));
-  const el = document.getElementById('matchResults');
-  el.innerHTML = '<div class="loading-wrap"><div class="spinner"></div>Calcolo matching in corso...</div>';
-  const matrix = {};
+  const el    = document.getElementById('matchResults');
+  const token = _getAuthToken();
+
+  let html = '<div class="section-title" style="margin-bottom:16px">Risultati matching AI</div>';
+
   for (const a of aziende) {
-    matrix[a.id] = {};
-    for (const b of bandi) {
-      try {
-        const r = await fetch(BACKEND_URL+'/prompt',{method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({prompt:`Valuta compatibilità. Rispondi SOLO con numero 0-100.\n\nAZIENDA: ${a.name}, ATECO:${a.ateco||'n/d'}, Dip:${a.dipendenti||'n/d'}, Fatt:${a.fatturato||'n/d'}\nBANDO: ${b.name}, ${(b.fields||[]).slice(0,5).map(f=>f.label+':'+f.value).join(', ')}`})});
-        const d = await r.json();
-        matrix[a.id][b.id] = parseInt((d.result||'50').replace(/\D/g,'').slice(0,3))||50;
-        state.matchResults.push({aziendaId:a.id,bandoId:b.id,score:matrix[a.id][b.id]});
-      } catch { matrix[a.id][b.id] = 50; }
+    el.innerHTML = `<div class="loading-wrap"><div class="spinner"></div>Analisi AI — <strong>${esc(a.name)}</strong>...</div>`;
+    try {
+      const r = await fetch(BACKEND_URL+'/match-ai/rank', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json','X-Auth-Token':token},
+        body: JSON.stringify({azienda:a, bandi, top_n:10})
+      });
+      const data = await r.json();
+      if (data.error) throw new Error(data.error);
+      const results = data.results || [];
+      results.forEach(res => state.matchResults.push({aziendaId:a.id, bandoId:res.id, score:res.score_ai}));
+
+      html += `<div style="margin-bottom:24px">
+        <div class="card" style="padding:10px 16px;margin-bottom:8px;background:rgba(212,175,55,.06)">
+          <strong style="font-size:.85rem">${esc(a.name)}</strong>
+          <span style="font-size:.7rem;color:var(--text-muted);margin-left:8px">ATECO: ${esc(a.ateco||'N/D')}</span>
+        </div>`;
+
+      if (!results.length) {
+        html += `<div class="text-sm" style="color:var(--text-muted);padding:8px 4px">Nessun bando compatibile trovato.</div>`;
+      } else {
+        for (const res of results) {
+          const urgBadge = res.urgenza === 'urgente'
+            ? '<span style="background:rgba(239,68,68,.15);color:#ef4444;font-size:.62rem;padding:2px 7px;border-radius:99px;font-weight:600;margin-left:6px">⚡ URGENTE</span>'
+            : res.urgenza === 'non_prioritario'
+            ? '<span style="background:rgba(100,116,139,.12);color:var(--text-muted);font-size:.62rem;padding:2px 7px;border-radius:99px;margin-left:6px">non prioritario</span>'
+            : '';
+          const sc = res.score_ai >= 70 ? 'score-high' : res.score_ai >= 40 ? 'score-med' : 'score-low';
+          html += `<div class="card" style="margin-bottom:8px;padding:12px 16px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+              <div style="flex:1;min-width:0">
+                <div style="font-size:.82rem;font-weight:600;margin-bottom:3px">${esc(res.name)}${urgBadge}</div>
+                <div style="font-size:.7rem;color:var(--text-muted);margin-bottom:6px">${esc(res.ente||'')}${res.scadenza?' · scad. '+esc(res.scadenza):''}</div>
+                <div style="font-size:.73rem;color:var(--text-secondary)">${esc(res.rationale||'')}</div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:6px;min-width:64px">
+                <div class="match-score ${sc}" style="font-size:1rem;padding:6px 10px">${res.score_ai}%</div>
+                <button class="btn btn-secondary" style="font-size:.62rem;padding:3px 8px;white-space:nowrap"
+                  onclick="runDeepAnalysis('${a.id}','${res.id}')">Analisi</button>
+              </div>
+            </div>
+          </div>`;
+        }
+      }
+      html += '</div>';
+    } catch(e) {
+      html += `<div style="margin-bottom:16px">
+        <div class="card" style="padding:10px 14px;margin-bottom:6px"><strong style="font-size:.82rem">${esc(a.name)}</strong></div>
+        <div class="text-sm" style="color:var(--red);padding:4px 0">Errore AI (${esc(e.message)}) — controlla che il backend sia attivo e l'API Key configurata.</div>
+      </div>`;
     }
   }
-  // Render matrix
-  let html = `<div class="section-title">Matrice di compatibilità</div><div class="match-matrix"><table class="match-table"><thead><tr><th>Azienda</th>`;
-  bandi.forEach(b=>{ html+=`<th style="max-width:120px;font-size:10px">${esc(b.name.slice(0,30))}${b.name.length>30?'…':''}</th>`; });
-  html += '</tr></thead><tbody>';
-  aziende.forEach(a=>{
-    html += `<tr><td class="row-header">${esc(a.name.slice(0,20))}${a.name.length>20?'…':''}</td>`;
-    bandi.forEach(b=>{
-      const score = matrix[a.id][b.id]||0;
-      html += `<td><div class="match-score ${score>=70?'score-high':score>=40?'score-med':'score-low'}">${score}%</div></td>`;
-    });
-    html += '</tr>';
-  });
-  html += '</tbody></table></div>';
+
   el.innerHTML = html;
   renderDashboard();
-  toast('Matching completato','success');
+  toast('Matching AI completato','success');
+}
+
+async function runDeepAnalysis(aziendaId, bandoId) {
+  const db = getDB();
+  const a  = db.aziende.find(x=>x.id===aziendaId);
+  const b  = db.bandi.find(x=>x.id===bandoId);
+  if (!a || !b) { toast('Dati non trovati','error'); return; }
+
+  let modal = document.getElementById('deepAnalysisModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'deepAnalysisModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9000;display:flex;align-items:center;justify-content:center;padding:16px';
+    modal.addEventListener('click', e => { if (e.target===modal) modal.remove(); });
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML = `<div class="card" style="max-width:560px;width:100%;max-height:82vh;overflow-y:auto;padding:24px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <strong>Analisi profonda AI</strong>
+      <button onclick="document.getElementById('deepAnalysisModal').remove()" style="background:none;border:none;color:var(--text-muted);font-size:1.2rem;cursor:pointer;line-height:1">✕</button>
+    </div>
+    <div style="font-size:.73rem;color:var(--text-muted);margin-bottom:16px"><strong>${esc(a.name)}</strong> × <strong>${esc(b.name)}</strong></div>
+    <div id="deepAnalysisContent"><div class="loading-wrap"><div class="spinner"></div>Claude sta analizzando in profondità...</div></div>
+  </div>`;
+
+  try {
+    const r = await fetch(BACKEND_URL+'/match-ai', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','X-Auth-Token':_getAuthToken()},
+      body: JSON.stringify({azienda:a, bando:b})
+    });
+    const data = await r.json();
+    if (data.error) throw new Error(data.error);
+
+    const sc = data.score>=70?'score-high':data.score>=40?'score-med':'score-low';
+    const probColor = data.probabilita_successo==='alta'?'#22c55e':data.probabilita_successo==='media'?'#f59e0b':'#ef4444';
+
+    let html = `<div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
+      <div class="match-score ${sc}" style="font-size:1.4rem;padding:10px 16px">${data.score}%</div>
+      <div>
+        <div style="font-size:.78rem;margin-bottom:5px">${esc(data.rationale||'')}</div>
+        <div style="font-size:.68rem">Prob. successo: <strong style="color:${probColor}">${esc(data.probabilita_successo||'N/D')}</strong>
+          ${data.importo_stimato?` · Importo: <strong>${esc(data.importo_stimato)}</strong>`:''}
+        </div>
+      </div>
+    </div>`;
+
+    if ((data.requisiti_soddisfatti||[]).length) {
+      html += `<div style="margin-bottom:14px"><div style="font-size:.7rem;font-weight:600;color:#22c55e;margin-bottom:6px">✓ Requisiti soddisfatti</div>
+        ${data.requisiti_soddisfatti.map(r=>`<div style="font-size:.72rem;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.04)">• ${esc(r)}</div>`).join('')}</div>`;
+    }
+    if ((data.requisiti_mancanti||[]).length) {
+      html += `<div style="margin-bottom:14px"><div style="font-size:.7rem;font-weight:600;color:#ef4444;margin-bottom:6px">⚠ Requisiti mancanti</div>
+        ${data.requisiti_mancanti.map(r=>`<div style="font-size:.72rem;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.04)">• ${esc(r)}</div>`).join('')}</div>`;
+    }
+    if ((data.azioni_consigliate||[]).length) {
+      html += `<div style="margin-bottom:14px"><div style="font-size:.7rem;font-weight:600;color:var(--gold);margin-bottom:6px">→ Azioni consigliate</div>
+        ${data.azioni_consigliate.map((ac,i)=>`<div style="font-size:.72rem;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.04)">${i+1}. ${esc(ac)}</div>`).join('')}</div>`;
+    }
+    if (data.note_normative) {
+      html += `<div style="background:rgba(100,116,139,.1);border-radius:6px;padding:10px;font-size:.68rem;color:var(--text-muted);margin-top:6px"><strong>Note normative:</strong> ${esc(data.note_normative)}</div>`;
+    }
+    document.getElementById('deepAnalysisContent').innerHTML = html;
+  } catch(e) {
+    document.getElementById('deepAnalysisContent').innerHTML = `<div style="color:var(--red);font-size:.75rem">Errore: ${esc(e.message)}</div>`;
+  }
+}
+
+async function runAIAdvisor() {
+  const selAziende = [...document.querySelectorAll('#matchAziendeSelect input:checked')].map(i=>i.value);
+  if (!selAziende.length) { toast('Seleziona almeno un\'azienda per l\'AI Advisor','warn'); return; }
+  const db = getDB();
+  const a  = db.aziende.find(x=>x.id===selAziende[0]);
+  if (!a) { toast('Azienda non trovata','error'); return; }
+
+  const el = document.getElementById('matchResults');
+  el.innerHTML = `<div class="loading-wrap"><div class="spinner"></div>AI Advisor — Claude sta generando il report strategico per <strong>${esc(a.name)}</strong>...</div>`;
+
+  try {
+    const r = await fetch(BACKEND_URL+'/advisor', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','X-Auth-Token':_getAuthToken()},
+      body: JSON.stringify({azienda:a})
+    });
+    const data = await r.json();
+    if (data.error) throw new Error(data.error);
+
+    const profColor = data.profilo_finanziabilita==='eccellente'?'#22c55e':data.profilo_finanziabilita==='buono'?'#84cc16':data.profilo_finanziabilita==='discreto'?'#f59e0b':'#ef4444';
+
+    let html = `<div class="section-title" style="margin-bottom:16px">🤖 AI Advisor — ${esc(a.name)}</div>
+    <div class="card" style="border-left:3px solid var(--gold);margin-bottom:16px;padding:16px 20px">
+      <div style="font-size:.68rem;color:var(--text-muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em">Sommario</div>
+      <div style="font-size:.82rem;line-height:1.5">${esc(data.sommario||'')}</div>
+      <div style="margin-top:10px;font-size:.72rem">Profilo finanziabilità: <strong style="color:${profColor}">${esc(data.profilo_finanziabilita||'N/D')}</strong></div>
+    </div>`;
+
+    if ((data.opportunita_principali||[]).length) {
+      html += `<div style="margin-bottom:16px"><div class="section-title" style="font-size:.72rem;margin-bottom:10px">Opportunità principali</div>`;
+      for (const op of data.opportunita_principali) {
+        const uc = op.urgenza==='alta'?'#ef4444':op.urgenza==='media'?'#f59e0b':'var(--text-muted)';
+        html += `<div class="card" style="margin-bottom:8px;padding:12px 16px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+            <div style="flex:1;min-width:0">
+              <div style="font-size:.8rem;font-weight:600;margin-bottom:4px">${esc(op.titolo||'')}</div>
+              <div style="font-size:.71rem;color:var(--text-muted);margin-bottom:5px">${esc(op.descrizione||'')}</div>
+              <div style="font-size:.67rem;color:var(--text-muted)">${esc(op.fonte||'')}</div>
+            </div>
+            <div style="text-align:right;min-width:76px;padding-left:12px;flex-shrink:0">
+              <div style="font-size:.72rem;font-weight:600;color:var(--gold)">${esc(op.importo||'N/D')}</div>
+              <div style="font-size:.62rem;color:${uc};margin-top:3px">${esc(op.urgenza||'')}</div>
+            </div>
+          </div>
+        </div>`;
+      }
+      html += '</div>';
+    }
+
+    if ((data.azioni_immediate||[]).length) {
+      html += `<div class="card" style="margin-bottom:8px;padding:14px 16px">
+        <div style="font-size:.7rem;font-weight:600;color:#22c55e;margin-bottom:8px">⚡ Azioni immediate (questa settimana)</div>
+        ${data.azioni_immediate.map((ai,i)=>`<div style="font-size:.73rem;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)">${i+1}. ${esc(ai)}</div>`).join('')}
+      </div>`;
+    }
+    if ((data.azioni_medio_termine||[]).length) {
+      html += `<div class="card" style="margin-bottom:8px;padding:14px 16px">
+        <div style="font-size:.7rem;font-weight:600;color:var(--gold);margin-bottom:8px">→ Piano medio termine (3 mesi)</div>
+        ${data.azioni_medio_termine.map((am,i)=>`<div style="font-size:.73rem;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)">${i+1}. ${esc(am)}</div>`).join('')}
+      </div>`;
+    }
+
+    const pf=data.punti_di_forza||[], pd=data.punti_di_debolezza||[];
+    if (pf.length||pd.length) {
+      html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">`;
+      if (pf.length) html += `<div class="card" style="padding:12px 14px"><div style="font-size:.68rem;font-weight:600;color:#22c55e;margin-bottom:6px">Punti di forza</div>${pf.map(p=>`<div style="font-size:.7rem;padding:2px 0">+ ${esc(p)}</div>`).join('')}</div>`;
+      if (pd.length) html += `<div class="card" style="padding:12px 14px"><div style="font-size:.68rem;font-weight:600;color:#ef4444;margin-bottom:6px">Da migliorare</div>${pd.map(p=>`<div style="font-size:.7rem;padding:2px 0">- ${esc(p)}</div>`).join('')}</div>`;
+      html += '</div>';
+    }
+    if (data.note_normative) {
+      html += `<div class="card" style="padding:12px 16px;background:rgba(100,116,139,.06)"><div style="font-size:.68rem;color:var(--text-muted)"><strong>Note normative:</strong> ${esc(data.note_normative)}</div></div>`;
+    }
+
+    el.innerHTML = html;
+    toast('Report AI Advisor generato','success');
+  } catch(e) {
+    el.innerHTML = `<div class="card" style="padding:16px"><div style="color:var(--red);font-size:.75rem">Errore AI Advisor: ${esc(e.message)}</div></div>`;
+    toast('Errore AI Advisor','error');
+  }
 }
 
 function clearMatchResults() {
@@ -2551,12 +2787,12 @@ setupWiz.style.cssText = 'display:none;position:fixed;inset:0;z-index:99999;back
 setupWiz.innerHTML = `<div style="background:#0F0F1C;border:1px solid rgba(200,168,75,.25);border-radius:20px;padding:44px 48px;width:100%;max-width:500px;animation:swIn .3s ease">
   <style>@keyframes swIn{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:none}}</style>
   <div style="font-family:Syne,sans-serif;font-weight:800;font-size:28px;margin-bottom:6px">BA<span style="color:#C8A84B">.</span>IA</div>
-  <div style="font-size:13px;color:#7070A0;margin-bottom:28px">Prima configurazione — Chiave API Groq</div>
+  <div style="font-size:13px;color:#7070A0;margin-bottom:28px">Prima configurazione — Chiave API Anthropic (Claude)</div>
   <div style="background:rgba(200,168,75,.06);border:1px solid rgba(200,168,75,.14);border-radius:10px;padding:16px;margin-bottom:20px;font-size:13px;color:#9090B0;line-height:1.6">
-    La chiave è <strong style="color:#C8A84B">gratuita</strong> su <a href="https://console.groq.com" target="_blank" style="color:#C8A84B">console.groq.com</a>.<br>
-    Registrati → API Keys → Create API Key → copia e incolla qui sotto.
+    Ottieni la chiave su <a href="https://console.anthropic.com" target="_blank" style="color:#C8A84B">console.anthropic.com</a>.<br>
+    Registrati → API Keys → Create Key → copia e incolla qui sotto.
   </div>
-  <input id="swKey" style="width:100%;background:rgba(255,255,255,.04);border:1.5px solid rgba(200,168,75,.2);border-radius:8px;padding:12px 14px;color:#F0F0F8;font-family:JetBrains Mono,monospace;font-size:13px;outline:none;margin-bottom:8px" type="password" placeholder="gsk_...">
+  <input id="swKey" style="width:100%;background:rgba(255,255,255,.04);border:1.5px solid rgba(200,168,75,.2);border-radius:8px;padding:12px 14px;color:#F0F0F8;font-family:JetBrains Mono,monospace;font-size:13px;outline:none;margin-bottom:8px" type="password" placeholder="sk-ant-api03-...">
   <div id="swErr" style="font-size:12px;color:#EF4444;min-height:16px;margin-bottom:12px"></div>
   <button onclick="swSave()" style="width:100%;background:#C8A84B;color:#08080F;border:none;border-radius:8px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif">Salva e inizia →</button>
 </div>`;
@@ -2565,7 +2801,7 @@ document.body.appendChild(setupWiz);
 async function swSave() {
   const key = (document.getElementById('swKey').value||'').trim();
   const err = document.getElementById('swErr');
-  if (!key || !key.startsWith('gsk_') || key.length<20) { err.textContent = '⚠ Chiave non valida (deve iniziare con gsk_)'; return; }
+  if (!key || !key.startsWith('sk-ant-') || key.length<30) { err.textContent = '⚠ Chiave non valida (deve iniziare con sk-ant-)'; return; }
   try {
     const r = await fetch(BACKEND_URL+'/setup/apikey',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({api_key:key})});
     const d = await r.json();
@@ -2837,25 +3073,19 @@ function renderSettingsPage(ai, wl, smtp, status) {
 
   <div id="stab-ai-pane">
     <div class="card" style="max-width:540px">
-      <div class="section-title">Provider AI</div>
-      <div class="text-sm text-muted" style="margin-bottom:14px">Scegli il motore AI preferito. Ogni provider richiede la propria chiave API.</div>
+      <div class="section-title">Motore AI — Claude (Anthropic)</div>
+      <div class="text-sm text-muted" style="margin-bottom:16px">BA.IA usa esclusivamente Claude di Anthropic per tutte le analisi AI.</div>
       <div class="form-group" style="margin-bottom:12px">
-        <label class="form-label">Provider</label>
-        <select class="form-select" id="aiProviderSel" onchange="onAiProviderChange(this.value)">
-          <option value="groq" ${ai?.provider==='groq'?'selected':''}>Groq — LLaMA 4 (veloce, economico)</option>
-          <option value="anthropic" ${ai?.provider==='anthropic'?'selected':''}>Claude (Anthropic) — qualità massima</option>
-          <option value="openai" ${ai?.provider==='openai'?'selected':''}>OpenAI — GPT-4o</option>
-          <option value="gemini" ${ai?.provider==='gemini'?'selected':''}>Google Gemini</option>
-          <option value="mistral" ${ai?.provider==='mistral'?'selected':''}>Mistral (privacy EU)</option>
-        </select>
-      </div>
-      <div class="form-group" style="margin-bottom:12px">
-        <label class="form-label">API Key</label>
-        <input class="form-input" id="aiApiKey" type="password" value="${ai?.configured?'••••••••••••':''}">
+        <label class="form-label">Anthropic API Key</label>
+        <input class="form-input" id="aiApiKey" type="password" value="${ai?.configured?'••••••••••••':''}" placeholder="sk-ant-api03-...">
       </div>
       <div class="form-group" style="margin-bottom:14px">
-        <label class="form-label">Modello (opzionale)</label>
-        <input class="form-input" id="aiModel" placeholder="Lascia vuoto per default" value="${ai?.model||''}">
+        <label class="form-label">Modello Claude</label>
+        <select class="form-select" id="aiModel">
+          <option value="claude-haiku-4-5-20251001" ${(ai?.model||'').includes('haiku')||!ai?.model?'selected':''}>Claude Haiku 4.5 — veloce, economico (default)</option>
+          <option value="claude-sonnet-4-6" ${(ai?.model||'').includes('sonnet')?'selected':''}>Claude Sonnet 4.6 — bilanciato</option>
+          <option value="claude-opus-4-8" ${(ai?.model||'').includes('opus')?'selected':''}>Claude Opus 4.8 — qualità massima</option>
+        </select>
       </div>
       <div style="display:flex;gap:8px">
         <button class="btn btn-primary" onclick="saveAiProvider()">Salva</button>
@@ -2863,12 +3093,7 @@ function renderSettingsPage(ai, wl, smtp, status) {
       </div>
       <div id="aiTestResult" class="text-sm" style="margin-top:10px;min-height:16px"></div>
       <div class="text-sm text-muted" style="margin-top:10px">
-        Link per ottenere chiavi API:
-        <a href="https://console.groq.com" target="_blank" style="color:var(--gold)">Groq</a> ·
-        <a href="https://console.anthropic.com" target="_blank" style="color:var(--gold)">Claude</a> ·
-        <a href="https://platform.openai.com/api-keys" target="_blank" style="color:var(--gold)">OpenAI</a> ·
-        <a href="https://makersuite.google.com" target="_blank" style="color:var(--gold)">Gemini</a> ·
-        <a href="https://console.mistral.ai" target="_blank" style="color:var(--gold)">Mistral</a>
+        Ottieni la chiave su <a href="https://console.anthropic.com" target="_blank" style="color:var(--gold)">console.anthropic.com</a> → API Keys
       </div>
     </div>
   </div>
@@ -2966,20 +3191,20 @@ function settingsTab(t) {
   });
 }
 
-function onAiProviderChange(v) {
-  const defaults = {anthropic:'claude-haiku-4-5-20251001',openai:'gpt-4o-mini',groq:'meta-llama/llama-4-scout-17b-16e-instruct',gemini:'gemini-1.5-flash',mistral:'mistral-large-latest'};
-  document.getElementById('aiModel').placeholder = defaults[v] || '';
-}
+function onAiProviderChange() {}  // Claude-only, nessun cambio provider
 
 async function saveAiProvider() {
-  const provider = document.getElementById('aiProviderSel').value;
   const api_key = document.getElementById('aiApiKey').value.trim();
-  const model = document.getElementById('aiModel').value.trim();
-  if (!api_key || api_key === '••••••••••••') { toast('Inserisci la chiave API','error'); return; }
+  const model   = document.getElementById('aiModel').value.trim();
+  if (!api_key || api_key === '••••••••••••') { toast('Inserisci la chiave Anthropic','error'); return; }
+  if (!api_key.startsWith('sk-ant-')) { toast('Chiave non valida (deve iniziare con sk-ant-)','error'); return; }
   try {
-    const r = await fetch(BACKEND_URL+'/settings/ai-provider', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({provider,api_key,model})});
+    const r = await fetch(BACKEND_URL+'/settings/ai-provider', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({provider:'anthropic', api_key, model: model || 'claude-haiku-4-5-20251001'})
+    });
     const d = await r.json();
-    if (d.ok) toast(`Provider ${provider} configurato`,'success');
+    if (d.ok) toast('Chiave Claude salvata','success');
     else toast('Errore: '+d.error,'error');
   } catch { toast('Backend non raggiungibile','error'); }
 }

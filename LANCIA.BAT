@@ -62,9 +62,10 @@ if not exist ".venv\Scripts\uvicorn.exe" (
 )
 
 if not exist ".env" (
-  echo GROQ_API_KEY=gsk_INSERISCI_LA_TUA_CHIAVE_QUI> ".env"
+  echo ANTHROPIC_API_KEY=sk-ant-INSERISCI_LA_TUA_CHIAVE_QUI> ".env"
+  echo AI_PROVIDER=anthropic>> ".env"
+  echo AI_MODEL=claude-haiku-4-5-20251001>> ".env"
   echo LICENSE_KEY=TEST-MODE>> ".env"
-  echo GROQ_MODEL=meta-llama/llama-4-scout-17b-16e-instruct>> ".env"
   echo APP_NAME=BA.IA>> ".env"
   echo DB_PATH=./data/ai-bandi.db>> ".env"
   echo PORT=8000>> ".env"

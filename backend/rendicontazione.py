@@ -682,3 +682,141 @@ def register_rendicontazione_endpoints(app):
         return StreamingResponse(buf,
             media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             headers={"Content-Disposition": f'attachment; filename="Rendicontazione_{safe_name}.docx"'})
+
+    # ── A3.1 INVOICE PROCESSOR OCR ─────────────────────────
+    @app.post("/rendicontazione/ocr-fattura")
+    async def ocr_fattura(request: Request, file: UploadFile = File(...)):
+        """Estrai dati strutturati da fattura PDF tramite text-layer + AI."""
+        user = await _resolve_user(request)
+        if not user:
+            return JSONResponse({"ok": False, "error": "Non autenticato"}, status_code=401)
+
+        content = await file.read()
+        if len(content) > MAX_UPLOAD_BYTES:
+            return JSONResponse({"ok": False, "error": "File troppo grande (max 10MB)"}, status_code=413)
+        if not is_valid_pdf_bytes(content):
+            return JSONResponse({"ok": False, "error": "File non è un PDF valido"}, status_code=400)
+
+        # Estrai testo dal PDF
+        try:
+            from pypdf import PdfReader
+            reader = PdfReader(io.BytesIO(content))
+            text = "\n".join(page.extract_text() or "" for page in reader.pages)
+        except Exception as e:
+            return JSONResponse({"ok": False, "error": f"Errore lettura PDF: {e}"}, status_code=422)
+
+        if len(text.strip()) < 20:
+            return JSONResponse({"ok": False, "error": "PDF senza testo estraibile (PDF immagine — OCR non disponibile in questa versione)"}, status_code=422)
+
+        # Regex patterns per fatture italiane
+        def _find(patterns, text):
+            for p in patterns:
+                m = re.search(p, text, re.IGNORECASE | re.MULTILINE)
+                if m:
+                    return m.group(1).strip()
+            return None
+
+        numero = _find([
+            r"(?:fattura|ft\.?|n\.?)\s*(?:nr\.?|n\.?|numero)?\s*[:\s]?\s*([A-Z0-9/\-_]+)",
+            r"(?:documento|doc\.?)\s*n\.?\s*[:\s]?\s*([A-Z0-9/\-_]+)",
+        ], text)
+
+        data_fattura = _find([
+            r"(?:data\s*(?:fattura|emissione|documento)?)\s*[:\s]?\s*(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})",
+            r"(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{4})",
+        ], text)
+
+        importo_totale = _find([
+            r"(?:totale\s*(?:fattura|documento|da\s*pagare|imponibile\s*\+\s*iva)?)\s*[:\€\s]?\s*([\d\.,]+)",
+            r"(?:totale)\s*[€\s]+\s*([\d\.,]+)",
+            r"(?:importo\s*totale)\s*[:\€\s]+\s*([\d\.,]+)",
+        ], text)
+
+        imponibile = _find([
+            r"(?:imponibile|base\s*imponibile)\s*[:\€\s]+\s*([\d\.,]+)",
+        ], text)
+
+        iva_percent = _find([
+            r"(?:iva|i\.v\.a\.)\s*(\d{1,2})\s*%",
+            r"(\d{1,2})\s*%\s*iva",
+        ], text)
+
+        iva_importo = _find([
+            r"(?:iva|imposta)\s*[:\€\s]+\s*([\d\.,]+)",
+        ], text)
+
+        piva_fornitore = _find([
+            r"(?:p\.?\s*iva|partita\s*iva)\s*[:\s]+\s*([IT]?\d{11})",
+            r"\bIT(\d{11})\b",
+        ], text)
+
+        cf_fornitore = _find([
+            r"(?:cod\.?\s*fisc\.?|codice\s*fiscale)\s*[:\s]+\s*([A-Z0-9]{11,16})",
+        ], text)
+
+        fornitore = _find([
+            r"^([A-Z][A-Z\s\.\,]{5,60}(?:SRL|SPA|SNC|SAS|SRLS|SOC\.|LTD|S\.R\.L\.|S\.P\.A\.))",
+            r"(?:fornitore|emittente|cedente)\s*[:\s]+\s*(.{5,60})",
+        ], text)
+
+        descrizione = _find([
+            r"(?:descrizione|oggetto|prestazione)\s*[:\s]+\s*(.{10,120})",
+        ], text)
+
+        # Normalizza importi: 1.234,56 → 1234.56
+        def _norm_amount(s):
+            if not s: return None
+            s = s.replace(".", "").replace(",", ".")
+            try: return round(float(s), 2)
+            except: return None
+
+        result = {
+            "numero_fattura": numero,
+            "data_fattura": data_fattura,
+            "fornitore": fornitore,
+            "piva_fornitore": piva_fornitore,
+            "cf_fornitore": cf_fornitore,
+            "imponibile": _norm_amount(imponibile),
+            "iva_percent": iva_percent,
+            "iva_importo": _norm_amount(iva_importo),
+            "importo_totale": _norm_amount(importo_totale),
+            "descrizione": descrizione,
+            "testo_estratto_chars": len(text),
+            "metodo": "regex",
+            "confidence": "alta" if (numero and importo_totale) else "media" if importo_totale else "bassa",
+        }
+
+        # Se ANTHROPIC disponibile, arricchisci con AI
+        import os
+        api_key = os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("AI_API_KEY", "")
+        if api_key and len(text) < 8000:
+            try:
+                import httpx
+                ai_prompt = (
+                    "Estrai i seguenti campi da questa fattura italiana e rispondimi SOLO con JSON valido:\n"
+                    "numero_fattura, data_fattura (YYYY-MM-DD), fornitore (ragione sociale), "
+                    "piva_fornitore, imponibile (float), iva_percent (int), iva_importo (float), "
+                    "importo_totale (float), descrizione (breve descrizione servizi/beni).\n"
+                    "Se un campo non è presente metti null.\n\n"
+                    f"FATTURA:\n{text[:4000]}"
+                )
+                async with httpx.AsyncClient(timeout=30) as client:
+                    r = await client.post(
+                        "https://api.anthropic.com/v1/messages",
+                        headers={"x-api-key": api_key, "anthropic-version": "2023-06-01", "Content-Type": "application/json"},
+                        json={"model": "claude-haiku-4-5-20251001", "max_tokens": 512,
+                              "system": "Rispondi SEMPRE con JSON valido e nient'altro.",
+                              "messages": [{"role": "user", "content": ai_prompt}]}
+                    )
+                if r.status_code == 200:
+                    ai_text = r.json()["content"][0]["text"]
+                    ai_json = json.loads(ai_text)
+                    for k, v in ai_json.items():
+                        if v is not None and result.get(k) is None:
+                            result[k] = v
+                    result["metodo"] = "regex+ai"
+                    result["confidence"] = "alta"
+            except Exception:
+                pass  # fallback to regex only
+
+        return {"ok": True, "fattura": result}

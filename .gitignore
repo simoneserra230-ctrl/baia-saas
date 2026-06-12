@@ -24,3 +24,7 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Render env — NEVER commit
+.env.render
+.env.*.local

@@ -1240,6 +1240,31 @@ async def startup_rendicontazione():
     except Exception as e:
         print(f"[RENDICONT] Errore avvio: {e}")
 
+# ══════════════════════════════════════════════════════════
+# REGULATORY MONITOR (D3.5) — monitora cambiamenti normativi
+# ══════════════════════════════════════════════════════════
+@app.on_event("startup")
+async def startup_regulatory_monitor():
+    try:
+        from regulatory_monitor import init_regulatory_db, register_regulatory_endpoints
+        await init_regulatory_db()
+        register_regulatory_endpoints(app)
+        print("[RegMonitor] Avviato — monitoraggio normativo attivo")
+    except Exception as e:
+        print(f"[RegMonitor] Errore avvio: {e}")
+
+# ══════════════════════════════════════════════════════════
+# REPORT GENERATOR (D1.2) + SOP BANDI (B2.8) — report AI
+# ══════════════════════════════════════════════════════════
+@app.on_event("startup")
+async def startup_report_generator():
+    try:
+        from report_generator import register_report_endpoints
+        register_report_endpoints(app)
+        print("[ReportGen] Report generator + SOP Bandi attivi")
+    except Exception as e:
+        print(f"[ReportGen] Errore avvio: {e}")
+
 
 # ══════════════════════════════════════════════════════════
 # STATIC FRONTEND — serve l'interfaccia dallo stesso server

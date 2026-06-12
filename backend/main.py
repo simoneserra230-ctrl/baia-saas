@@ -613,3 +613,148 @@ async def test_smtp():
         return {"configured": False, "message": "SMTP_HOST non impostato nel .env"}
     return {"configured": True, "host": SMTP_HOST, "port": SMTP_PORT,
             "user": SMTP_USER or "(nessuno)", "from": SMTP_FROM}
+
+# ─── AI ADVISOR — MATCHING SEMANTICO CON CLAUDE ───────────────────
+#
+# Questi endpoint usano ai_advisor.py per sostituire / affiancare
+# il matching TF-IDF con analisi Claude profonda.
+#
+# POST /match-ai          — compatibilità profonda bando × azienda
+# POST /match-ai/rank     — ranking batch di tutti i bandi per un'azienda
+# POST /advisor           — report strategico proattivo per un'azienda
+# POST /analyze/stream    — analisi PDF in streaming (SSE)
+#
+# Tutti richiedono ANTHROPIC_API_KEY nel .env.
+# ──────────────────────────────────────────────────────────────────
+
+try:
+    from ai_advisor import (
+        ai_analyze_compatibility,
+        ai_rank_bandi,
+        ai_advisor_report,
+        stream_analysis,
+    )
+    _AI_ADVISOR_OK = True
+except ImportError as _e:
+    print(f"[AI ADVISOR] Import non disponibile: {_e}")
+    _AI_ADVISOR_OK = False
+
+
+class MatchAIRequest(BaseModel):
+    azienda: dict
+    bando: dict
+
+
+class RankAIRequest(BaseModel):
+    azienda: dict
+    bandi: list[dict]
+    top_n: int = 10
+
+
+class AdvisorRequest(BaseModel):
+    azienda: dict
+
+
+@app.post("/match-ai")
+async def match_ai_endpoint(req: MatchAIRequest, _user: dict = Depends(require_auth)):
+    """
+    Analisi AI profonda compatibilità singolo bando × azienda.
+    Ritorna score 0-100, rationale, requisiti soddisfatti/mancanti, azioni.
+    """
+    if not _AI_ADVISOR_OK:
+        return JSONResponse({"error": "Modulo AI Advisor non disponibile"}, status_code=503)
+    if not ANTHROPIC_API_KEY:
+        return JSONResponse({"error": "ANTHROPIC_API_KEY non configurata nel .env"}, status_code=400)
+    try:
+        result = await ai_analyze_compatibility(
+            req.azienda, req.bando, ANTHROPIC_API_KEY, MODEL
+        )
+        return result
+    except Exception as e:
+        return JSONResponse({"error": f"Errore analisi AI: {e}"}, status_code=500)
+
+
+@app.post("/match-ai/rank")
+async def rank_ai_endpoint(req: RankAIRequest, _user: dict = Depends(require_auth)):
+    """
+    Ranking AI batch: pre-filtra con TF-IDF, poi Claude analizza i top candidati.
+    Efficiente: max 2 chiamate Claude indipendentemente dal numero di bandi.
+    """
+    if not _AI_ADVISOR_OK:
+        return JSONResponse({"error": "Modulo AI Advisor non disponibile"}, status_code=503)
+    if not ANTHROPIC_API_KEY:
+        return JSONResponse({"error": "ANTHROPIC_API_KEY non configurata nel .env"}, status_code=400)
+    if not req.bandi:
+        return {"results": [], "total": 0}
+    try:
+        results = await ai_rank_bandi(
+            req.azienda, req.bandi, ANTHROPIC_API_KEY, MODEL, req.top_n
+        )
+        return {"results": results, "total": len(results)}
+    except Exception as e:
+        return JSONResponse({"error": f"Errore ranking AI: {e}"}, status_code=500)
+
+
+@app.post("/advisor")
+async def advisor_endpoint(req: AdvisorRequest, _user: dict = Depends(require_auth)):
+    """
+    Report strategico proattivo: analizza il profilo dell'azienda e
+    suggerisce opportunità, azioni immediate e piano a medio termine.
+    """
+    if not _AI_ADVISOR_OK:
+        return JSONResponse({"error": "Modulo AI Advisor non disponibile"}, status_code=503)
+    if not ANTHROPIC_API_KEY:
+        return JSONResponse({"error": "ANTHROPIC_API_KEY non configurata nel .env"}, status_code=400)
+    try:
+        result = await ai_advisor_report(req.azienda, ANTHROPIC_API_KEY, MODEL)
+        return result
+    except Exception as e:
+        return JSONResponse({"error": f"Errore advisor AI: {e}"}, status_code=500)
+
+
+@app.post("/analyze/stream")
+async def analyze_stream_endpoint(
+    file: UploadFile = File(...),
+    _user: dict = Depends(require_auth),
+):
+    """
+    Versione streaming di /analyze.
+    Ritorna Server-Sent Events: ogni chunk è {"delta":"..."}, il finale è {"done":true}.
+    """
+    if not file.filename.lower().endswith(".pdf"):
+        return JSONResponse({"error": "Solo file PDF"}, status_code=400)
+    data = await file.read()
+    if len(data) > MAX_UPLOAD_BYTES:
+        return JSONResponse({"error": "File troppo grande"}, status_code=400)
+    if not is_valid_pdf_bytes(data):
+        return JSONResponse({"error": "File PDF non valido"}, status_code=400)
+    if not ANTHROPIC_API_KEY:
+        return JSONResponse({"error": "ANTHROPIC_API_KEY non configurata"}, status_code=400)
+    if not _AI_ADVISOR_OK:
+        return JSONResponse({"error": "Modulo streaming non disponibile"}, status_code=503)
+
+    tmp_path = None
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+            tmp.write(data); tmp_path = tmp.name
+        text = extract_text(tmp_path)
+    except Exception:
+        return JSONResponse({"error": "Errore lettura PDF"}, status_code=500)
+    finally:
+        if tmp_path and os.path.exists(tmp_path): os.unlink(tmp_path)
+
+    chars = len(text)
+
+    async def generate():
+        try:
+            async for chunk in stream_analysis(text, ANTHROPIC_API_KEY, MODEL, SIMPLE_LIMIT):
+                yield f"data: {json.dumps({'delta': chunk})}\n\n"
+            yield f"data: {json.dumps({'done': True, 'chars': chars})}\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )

@@ -52,9 +52,10 @@ fi
 
 if [ ! -f ".env" ]; then
   cat > .env << 'ENVEOF'
-GROQ_API_KEY=gsk_INSERISCI_LA_TUA_CHIAVE_QUI
+ANTHROPIC_API_KEY=sk-ant-INSERISCI_LA_TUA_CHIAVE_QUI
+AI_PROVIDER=anthropic
+AI_MODEL=claude-haiku-4-5-20251001
 LICENSE_KEY=TEST-MODE
-GROQ_MODEL=meta-llama/llama-4-scout-17b-16e-instruct
 APP_NAME=BA.IA
 DB_PATH=./data/ai-bandi.db
 PORT=8000

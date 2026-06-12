@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BA.IA — Report Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#06060F;--bg2:#0B0B18;--bg3:#10101F;--bg4:#171728;
+  --border:rgba(255,255,255,0.055);--border2:rgba(255,255,255,0.10);
+  --gold:#818CF8;--accent:#6366F1;--accent2:#8B5CF6;
+  --grad:linear-gradient(135deg,#6366F1 0%,#8B5CF6 100%);
+  --text:#EEEEFF;--muted:#6B7280;--subtle:#252540;
+  --green:#34D399;--red:#F87171;--amber:#FBBF24;--blue:#60A5FA;
+  --font:'Inter',sans-serif;--head:'Syne',sans-serif;--mono:'JetBrains Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;-webkit-font-smoothing:antialiased}
+button{cursor:pointer;font-family:var(--font);border:none;outline:none;transition:all .18s}
+input,select,textarea{font-family:var(--font);outline:none}
+a{color:var(--gold);text-decoration:none}
+
+.topbar{height:52px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:16px;position:sticky;top:0;z-index:100}
+.topbar-logo{font-family:var(--head);font-weight:800;font-size:15px;color:var(--gold)}
+.topbar-nav{display:flex;gap:6px;margin-left:auto}
+.topbar-nav a{font-size:12px;font-weight:500;padding:5px 12px;border-radius:6px;color:var(--muted);background:transparent;transition:all .15s}
+.topbar-nav a:hover,.topbar-nav a.active{background:rgba(99,102,241,.1);color:var(--gold)}
+
+.wrap{max-width:1200px;margin:0 auto;padding:28px 24px 80px}
+.page-hdr{margin-bottom:28px}
+.page-hdr h1{font-family:var(--head);font-size:clamp(1.5rem,3vw,2rem);font-weight:800;margin-bottom:6px}
+.page-hdr h1 em{font-style:italic;color:var(--gold);font-family:'Georgia',serif}
+.page-hdr p{font-size:13px;color:var(--muted);max-width:520px;line-height:1.65}
+
+.grid2{display:grid;grid-template-columns:320px 1fr;gap:20px;align-items:start}
+@media(max-width:900px){.grid2{grid-template-columns:1fr}}
+
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px}
+.card-title{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:14px;font-family:var(--mono)}
+
+.tipo-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.tipo-btn{background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;text-align:left;cursor:pointer;transition:all .15s}
+.tipo-btn:hover,.tipo-btn.active{border-color:var(--accent);background:rgba(99,102,241,.08)}
+.tipo-btn.active .tipo-ico{color:var(--gold)}
+.tipo-ico{font-size:18px;display:block;margin-bottom:4px}
+.tipo-label{font-size:11.5px;font-weight:600;color:var(--text);display:block}
+.tipo-sub{font-size:10px;color:var(--muted);display:block;margin-top:2px}
+
+.field-group{margin-bottom:12px}
+.field-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);display:block;margin-bottom:5px;font-family:var(--mono)}
+.field-input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:8px 10px;font-size:12.5px;color:var(--text)}
+.field-input:focus{border-color:rgba(99,102,241,.5)}
+
+.btn-generate{width:100%;padding:11px;border-radius:8px;font-size:13px;font-weight:700;background:var(--grad);border:none;color:white;cursor:pointer;transition:all .18s;margin-top:6px}
+.btn-generate:hover{opacity:.9;transform:translateY(-1px)}
+.btn-generate:disabled{opacity:.45;cursor:not-allowed;transform:none}
+
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
+.stat{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+.stat-v{font-family:var(--head);font-size:20px;font-weight:800;color:var(--gold);line-height:1}
+.stat-l{font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);margin-top:3px;font-family:var(--mono)}
+
+.report-output{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:22px;min-height:300px;font-size:13px;line-height:1.75;color:var(--text);white-space:pre-wrap;font-family:var(--font)}
+.report-idle{text-align:center;padding:60px 20px}
+.report-idle .idle-icon{font-size:40px;margin-bottom:12px}
+.report-idle .idle-text{font-size:12.5px;color:var(--muted)}
+
+.actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.btn-sm{padding:6px 14px;border-radius:7px;font-size:11.5px;font-weight:600;cursor:pointer;transition:all .15s}
+.btn-outline{background:transparent;border:1px solid var(--border2);color:var(--text)}
+.btn-outline:hover{border-color:var(--accent);color:var(--gold)}
+.btn-accent{background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.3);color:var(--gold)}
+
+.alert-panel{background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.2);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--amber)}
+
+/* ── Regulatory monitor strip ── */
+.reg-strip{display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto;margin-top:10px}
+.reg-item{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;cursor:pointer;transition:all .15s}
+.reg-item:hover{border-color:rgba(99,102,241,.3)}
+.reg-item.importante{border-color:rgba(251,191,36,.25);background:rgba(251,191,36,.04)}
+.reg-item-title{font-weight:600;margin-bottom:3px}
+.reg-item-meta{font-size:10px;color:var(--muted);font-family:var(--mono)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.fadeUp{animation:fadeUp .35s ease both}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-logo">BA.IA</div>
+  <span style="font-size:11px;color:var(--muted)">Finanza Agevolata AI</span>
+  <nav class="topbar-nav">
+    <a href="index.html">Dashboard</a>
+    <a href="report.html" class="active">Report</a>
+  </nav>
+</div>
+
+<div class="wrap">
+  <div class="page-hdr">
+    <div style="font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:8px;font-family:var(--mono)">D1.2 — D3.5</div>
+    <h1>Report <em>AI</em> & Monitor</h1>
+    <p>Genera report in linguaggio naturale sul tuo portafoglio bandi e monitora variazioni normative in tempo reale.</p>
+  </div>
+
+  <div class="grid2">
+    <!-- LEFT: Config -->
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="card">
+        <div class="card-title">Tipo Report</div>
+        <div class="tipo-grid" id="tipo-grid">
+          <button class="tipo-btn active" data-tipo="portfolio" onclick="selectTipo(this)">
+            <span class="tipo-ico">📊</span>
+            <span class="tipo-label">Portfolio</span>
+            <span class="tipo-sub">Tutti i bandi attivi</span>
+          </button>
+          <button class="tipo-btn" data-tipo="sal" onclick="selectTipo(this)">
+            <span class="tipo-ico">📋</span>
+            <span class="tipo-label">Stato SAL</span>
+            <span class="tipo-sub">Rendicontazioni</span>
+          </button>
+          <button class="tipo-btn" data-tipo="forecast" onclick="selectTipo(this)">
+            <span class="tipo-ico">📅</span>
+            <span class="tipo-label">Forecast</span>
+            <span class="tipo-sub">Scadenze 90gg</span>
+          </button>
+          <button class="tipo-btn" data-tipo="executive" onclick="selectTipo(this)">
+            <span class="tipo-ico">🏆</span>
+            <span class="tipo-label">Executive</span>
+            <span class="tipo-sub">Per la direzione</span>
+          </button>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Azienda / Cliente</label>
+          <input id="r-azienda" class="field-input" placeholder="Es. Hotel Baia Sardinia Srl">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Periodo</label>
+          <select id="r-periodo" class="field-input">
+            <option value="">Tutto</option>
+            <option value="2026">Anno 2026</option>
+            <option value="ultimi-30">Ultimi 30 giorni</option>
+            <option value="ultimi-90">Ultimi 90 giorni</option>
+            <option value="2026-Q2">Q2 2026</option>
+          </select>
+        </div>
+        <button class="btn-generate" onclick="generateReport()">🚀 Genera Report AI</button>
+      </div>
+
+      <!-- Monitor Normativo -->
+      <div class="card">
+        <div class="card-title">Monitor Normativo (D3.5)</div>
+        <div id="reg-unread" style="margin-bottom:8px"></div>
+        <button class="btn-sm btn-accent" style="margin-bottom:10px" onclick="scanChanges()">🔍 Scansiona ora</button>
+        <div class="reg-strip" id="reg-strip">
+          <div style="text-align:center;padding:20px 0;font-size:12px;color:var(--muted)">Carico aggiornamenti…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Output -->
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div class="card-title" style="margin-bottom:0">Report Output</div>
+        <div id="report-meta" style="font-size:10px;color:var(--muted);font-family:var(--mono)"></div>
+      </div>
+
+      <div id="stats-row" class="stat-row" style="display:none">
+        <div class="stat"><div class="stat-v" id="s-bandi">0</div><div class="stat-l">Bandi</div></div>
+        <div class="stat"><div class="stat-v" id="s-aziende">0</div><div class="stat-l">Aziende</div></div>
+        <div class="stat"><div class="stat-v" id="s-match">0</div><div class="stat-l">Match</div></div>
+        <div class="stat"><div class="stat-v" id="s-sal">0</div><div class="stat-l">SAL</div></div>
+      </div>
+
+      <div id="report-idle" class="report-idle">
+        <div class="idle-icon">📄</div>
+        <div class="idle-text">Seleziona il tipo di report e clicca <strong style="color:var(--gold)">Genera Report AI</strong><br>per ottenere un'analisi in linguaggio naturale del tuo portafoglio bandi.</div>
+      </div>
+      <div id="report-content" class="report-output fadeUp" style="display:none"></div>
+      <div class="actions" id="report-actions" style="display:none">
+        <button class="btn-sm btn-outline" onclick="copyReport()">📋 Copia</button>
+        <button class="btn-sm btn-outline" onclick="downloadReport()">⬇ Scarica .txt</button>
+        <button class="btn-sm btn-accent" onclick="generateReport()">🔄 Rigenera</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = location.origin;
+const TOKEN = localStorage.getItem('baia_token') || '';
+let currentTipo = 'portfolio';
+let lastReport = null;
+
+function selectTipo(btn){
+  document.querySelectorAll('.tipo-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  currentTipo = btn.dataset.tipo;
+}
+
+async function generateReport(){
+  const btn = document.querySelector('.btn-generate');
+  btn.disabled = true; btn.textContent = '⏳ Generazione in corso…';
+
+  document.getElementById('report-idle').style.display='none';
+  document.getElementById('report-content').style.display='block';
+  document.getElementById('report-content').textContent='Elaborazione AI in corso…';
+  document.getElementById('report-actions').style.display='none';
+  document.getElementById('stats-row').style.display='none';
+
+  const payload = {
+    tipo: currentTipo,
+    azienda_nome: document.getElementById('r-azienda').value || null,
+    periodo: document.getElementById('r-periodo').value || null,
+    lingua: 'it',
+  };
+
+  try {
+    const r = await fetch(`${API}/api/report/generate`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','X-Auth-Token':TOKEN},
+      body: JSON.stringify(payload),
+    });
+    if(r.status === 401){ showAlert('Sessione scaduta — effettua il login'); return; }
+    const data = await r.json();
+    if(!data.ok) throw new Error(data.error || 'Errore server');
+
+    lastReport = data;
+    document.getElementById('report-content').textContent = data.report_text;
+    document.getElementById('report-meta').textContent = `${new Date(data.generato_il).toLocaleString('it-IT')}`;
+
+    const s = data.stats || {};
+    document.getElementById('s-bandi').textContent = s.bandi ?? '—';
+    document.getElementById('s-aziende').textContent = s.aziende ?? '—';
+    document.getElementById('s-match').textContent = s.match ?? '—';
+    document.getElementById('s-sal').textContent = s.sal ?? '—';
+    document.getElementById('stats-row').style.display = 'grid';
+    document.getElementById('report-actions').style.display = 'flex';
+  } catch(e) {
+    document.getElementById('report-content').textContent = `Errore: ${e.message}\n\nVerifica che il server BA.IA sia avviato.`;
+  } finally {
+    btn.disabled = false; btn.textContent = '🚀 Genera Report AI';
+  }
+}
+
+async function loadRegulatoryChanges(){
+  try {
+    const r = await fetch(`${API}/api/regulatory/changes?limit=10`, {
+      headers: {'X-Auth-Token': TOKEN}
+    });
+    if(!r.ok) throw new Error();
+    const data = await r.json();
+    renderRegChanges(data.changes || [], data.unread || 0);
+  } catch {
+    document.getElementById('reg-strip').innerHTML='<div style="font-size:11px;color:var(--muted);padding:8px 0">Server non disponibile — avvia BA.IA per monitoraggio normativo</div>';
+  }
+}
+
+function renderRegChanges(changes, unread){
+  const unreadEl = document.getElementById('reg-unread');
+  if(unread > 0){
+    unreadEl.innerHTML = `<div style="background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.2);border-radius:6px;padding:6px 10px;font-size:11px;color:var(--amber)">${unread} aggiornamento${unread>1?'i':''} non letto${unread>1?'i':''}</div>`;
+  }
+  const el = document.getElementById('reg-strip');
+  if(!changes.length){
+    el.innerHTML='<div style="text-align:center;padding:16px 0;font-size:11.5px;color:var(--muted)">Nessun cambiamento rilevato. Clicca "Scansiona ora" per verificare.</div>';
+    return;
+  }
+  el.innerHTML = changes.map(c=>`
+    <div class="reg-item ${c.importante?'importante':''}" onclick="markRead('${c.id}',this)">
+      <div class="reg-item-title">${c.titolo}</div>
+      <div class="reg-item-meta">${c.source_nome || ''} · ${new Date(c.rilevato_at).toLocaleDateString('it-IT')}</div>
+      ${c.url ? `<a href="${c.url}" target="_blank" style="font-size:10px;color:var(--gold);margin-top:4px;display:inline-block">→ Fonte ufficiale</a>` : ''}
+    </div>`).join('');
+}
+
+async function scanChanges(){
+  const btn = event.target;
+  btn.disabled = true; btn.textContent = '⏳ Scansione…';
+  try {
+    const r = await fetch(`${API}/api/regulatory/scan`, {
+      method: 'POST',
+      headers: {'X-Auth-Token': TOKEN}
+    });
+    const data = await r.json();
+    if(data.ok){
+      alert(`Scansione completata: ${data.scanned} fonti controllate, ${data.changes_found} cambiamenti rilevati.`);
+      loadRegulatoryChanges();
+    }
+  } catch {
+    alert('Server non disponibile.');
+  } finally {
+    btn.disabled = false; btn.textContent = '🔍 Scansiona ora';
+  }
+}
+
+async function markRead(id, el){
+  try {
+    await fetch(`${API}/api/regulatory/mark-read/${id}`, {
+      method:'POST', headers:{'X-Auth-Token':TOKEN}
+    });
+    el.style.opacity = '0.5';
+  } catch {}
+}
+
+function copyReport(){
+  if(!lastReport) return;
+  navigator.clipboard?.writeText(lastReport.report_text).then(()=>alert('Report copiato negli appunti'));
+}
+
+function downloadReport(){
+  if(!lastReport) return;
+  const blob = new Blob([lastReport.report_text], {type:'text/plain;charset=utf-8'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `BAIA_Report_${lastReport.tipo}_${new Date().toISOString().slice(0,10)}.txt`;
+  a.click();
+}
+
+function showAlert(msg){
+  const el = document.createElement('div');
+  el.className='alert-panel';el.textContent=msg;
+  document.querySelector('.wrap').prepend(el);
+  setTimeout(()=>el.remove(), 4000);
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  loadRegulatoryChanges();
+});
+</script>
+</body>
+</html>
