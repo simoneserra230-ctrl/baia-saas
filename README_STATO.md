@@ -17,12 +17,15 @@ FastAPI + frontend JS + Anthropic API. Auth X-Auth-Token. Chiave API propria (fi
 ⬜ Zero clienti
 
 ## Percorso al "livello finale" (lancio)
-1. Deploy backend su Render (render.yaml pronto; env da .env.render — NON è nel repo)
-2. Deploy frontend/landing su Vercel (vercel.json pronto)
-3. Smoke test produzione: registrazione → ricerca bando → report
-4. Listino (proposta: €29-49/mese B2C) + Stripe Payment Link come MVP pagamenti
-5. Primi 10 clienti via: suite AGENTI_FINANZA come servizio (pratica bando completa),
-   content marketing scadenze bandi, network HoReCa Sardegna
+➡️ **Runbook completo passo-passo: `LANCIO_BAIA.md`** (deploy Render+Vercel+Stripe, smoke test).
+
+Stato 12/6/2026 — deploy-ready:
+- ✅ Bug porta Dockerfile risolto (bind su $PORT di Render)
+- ✅ Funnel: `frontend/index.html` = landing marketing con prezzi; `frontend/app.html` = app
+- ✅ Pricing definito: Base €29 · Pro €79 · B2B €1.990 (già nel landing)
+- ✅ CTA collegate (Inizia gratis → app; demo/team → WhatsApp)
+- ⬜ Restano i passi sugli account (Supabase, Render, Vercel, Stripe) → vedi LANCIO_BAIA.md
+- ⬜ Primi 10 clienti: suite AGENTI_FINANZA come servizio, content marketing scadenze bandi
 
 ## Collegamenti ecosistema
 - AGENTI_FINANZA/AGENTE_PRATICA_BANDO.md = il servizio premium sopra il SaaS
