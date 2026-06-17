@@ -87,7 +87,7 @@ button{cursor:pointer;font-family:'Inter',sans-serif}
 .auth-logo span{background:var(--grad);-webkit-background-clip:text;background-clip:text}
 .auth-tagline{font-size:13px;color:var(--muted);margin-bottom:36px;font-weight:400}
 .auth-card{
-  background:rgba(11,11,24,.85);
+  background:rgba(255,255,255,.85);
   border:1px solid rgba(99,102,241,.2);
   border-radius:16px;
   padding:32px;
@@ -225,18 +225,18 @@ button{cursor:pointer;font-family:'Inter',sans-serif}
 
 /* ── CARDS ───────────────────────────────────────── */
 .card{
-  background:rgba(11,11,24,.7);
+  background:rgba(255,255,255,.7);
   border:1px solid var(--border);
   border-radius:var(--r2);padding:20px;
   transition:var(--t);
 }
 .card-sm{padding:14px 16px}
-.card:hover{border-color:rgba(99,102,241,.2);background:rgba(11,11,24,.9)}
+.card:hover{border-color:rgba(99,102,241,.2);background:rgba(255,255,255,.9)}
 
 /* ── STAT CARDS ──────────────────────────────────── */
 .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:20px 32px}
 .stat-card{
-  background:rgba(11,11,24,.7);
+  background:rgba(255,255,255,.7);
   border:1px solid var(--border);
   border-radius:var(--r2);padding:18px 20px;
   transition:var(--t);position:relative;overflow:hidden;
@@ -374,7 +374,7 @@ button{cursor:pointer;font-family:'Inter',sans-serif}
 .modal-overlay{display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);align-items:center;justify-content:center}
 .modal-overlay.active{display:flex}
 .modal{
-  background:rgba(11,11,24,.95);
+  background:rgba(255,255,255,.95);
   border:1px solid rgba(99,102,241,.2);
   border-radius:16px;padding:28px;
   width:100%;max-width:520px;max-height:90vh;overflow-y:auto;
@@ -396,7 +396,7 @@ button{cursor:pointer;font-family:'Inter',sans-serif}
 /* ── TOASTS ──────────────────────────────────────── */
 .toast-wrap{position:fixed;bottom:24px;right:24px;z-index:9998;display:flex;flex-direction:column;gap:8px;pointer-events:none}
 .toast{
-  background:rgba(11,11,24,.95);
+  background:rgba(255,255,255,.95);
   border:1px solid var(--border2);
   border-radius:10px;padding:12px 16px;
   font-size:13px;color:var(--text);
@@ -459,7 +459,7 @@ button{cursor:pointer;font-family:'Inter',sans-serif}
         <input class="auth-input" id="loginPwd" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
         <div class="auth-err" id="loginErr"></div>
         <div style="text-align:right;margin:-6px 0 10px">
-          <a style="font-size:12px;color:rgba(26,28,56,.45);cursor:pointer;text-decoration:underline" onclick="authTab('forgot')">Password dimenticata?</a>
+          <a style="font-size:13px;color:var(--accent);font-weight:600;cursor:pointer;text-decoration:underline" onclick="authTab('forgot')">Password dimenticata?</a>
         </div>
         <button class="btn-gold" onclick="doLogin()">Accedi alla piattaforma</button>
         <div class="auth-divider">oppure</div>
@@ -2785,7 +2785,7 @@ document.querySelectorAll('.modal-overlay').forEach(m => m.addEventListener('cli
 // ── SETUP WIZARD (primo avvio) ────────────────────────────
 const setupWiz = document.createElement('div');
 setupWiz.id = 'setupWizard';
-setupWiz.style.cssText = 'display:none;position:fixed;inset:0;z-index:99999;background:rgba(8,8,18,.96);backdrop-filter:blur(12px);align-items:center;justify-content:center;font-family:DM Sans,sans-serif';
+setupWiz.style.cssText = 'display:none;position:fixed;inset:0;z-index:99999;background:rgba(250,251,253,.96);backdrop-filter:blur(12px);align-items:center;justify-content:center;font-family:DM Sans,sans-serif';
 setupWiz.innerHTML = `<div style="background:#0F0F1C;border:1px solid rgba(200,168,75,.25);border-radius:20px;padding:44px 48px;width:100%;max-width:500px;animation:swIn .3s ease">
   <style>@keyframes swIn{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:none}}</style>
   <div style="font-family:Syne,sans-serif;font-weight:800;font-size:28px;margin-bottom:6px">BA<span style="color:#C8A84B">.</span>IA</div>
@@ -4842,7 +4842,7 @@ function copyDraft() {
   var API=(location.protocol==='file:'||location.hostname==='localhost'||location.hostname==='127.0.0.1')?'http://localhost:8000':location.origin+'/api';
   function tok(){return localStorage.getItem('baia_auth_token')||'';}
   function api(p,o){o=o||{};o.headers=Object.assign({'X-Auth-Token':tok(),'Content-Type':'application/json'},o.headers||{});return fetch(API+p,o);}
-  function daysLeft(iso){if(!iso)return null;var end=new Date(String(iso).replace(' ','T'));return Math.ceil((end-new Date())/86400000);}
+  function daysLeft(iso){if(!iso)return null;var s=String(iso).trim().replace(' ','T').replace(/([+-]\d{2})$/,'$1:00');var end=new Date(s);if(isNaN(end)){var m=String(iso).match(/(\d{4})-(\d{2})-(\d{2})/);if(m)end=new Date(+m[1],+m[2]-1,+m[3]);}if(isNaN(end))return null;return Math.max(0,Math.ceil((end-new Date())/86400000));}
   function goPricing(){location.href='index.html#prezzi';}
   window.pwRefresh=async function(){
     if(!tok())return;
@@ -4852,7 +4852,7 @@ function copyDraft() {
     if(u.access===false){wall.style.display='flex';banner.style.display='none';}
     else{
       wall.style.display='none';
-      if(u.plan==='trial'){var dl=daysLeft(u.trial_ends_at);banner.innerHTML='⏳ Prova gratuita: <b>'+(dl!=null?dl:'—')+' giorni</b> rimanenti <a id="pwBCta">Abbonati ora</a>';banner.style.display='block';var c=document.getElementById('pwBCta');if(c)c.onclick=goPricing;document.body.style.paddingTop='32px';}
+      if(u.plan==='trial' && !u.is_admin){var dl=daysLeft(u.trial_ends_at);banner.innerHTML='⏳ Prova gratuita: <b>'+(dl!=null?dl:'—')+' giorni</b> rimanenti <a id="pwBCta">Abbonati ora</a>';banner.style.display='block';var c=document.getElementById('pwBCta');if(c)c.onclick=goPricing;document.body.style.paddingTop='32px';}
       else{banner.style.display='none';document.body.style.paddingTop='';}
     }
   };
