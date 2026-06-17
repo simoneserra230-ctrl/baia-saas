@@ -195,9 +195,11 @@ async def auth_register(request: Request):
                              (token, user_id, _expires()))
             await db.commit()
     except Exception as e:
+        code = getattr(e, "sqlstate", "") or ""
         msg = str(e).lower()
-        if "unique" in msg or "duplicate" in msg or "already exists" in msg:
-            return JSONResponse({"ok": False, "error": "Email già registrata"}, 409)
+        if (code == "23505" or "unique" in msg or "duplicate" in msg
+                or "already exists" in msg or "uniqueviolation" in type(e).__name__.lower()):
+            return JSONResponse({"ok": False, "error": "Questa email è già registrata. Prova ad accedere."}, 409)
         print(f"[AUTH] Errore registrazione: {type(e).__name__}: {e}")
         return JSONResponse({"ok": False, "error": f"Errore DB: {type(e).__name__}: {e}"}, 500)
     try:
