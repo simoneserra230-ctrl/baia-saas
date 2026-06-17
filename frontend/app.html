@@ -477,7 +477,9 @@ button{cursor:pointer;font-family:'Inter',sans-serif}
         <label class="auth-label">Email</label>
         <input class="auth-input" id="regEmail" type="email" placeholder="nome@studio.it" autocomplete="email">
         <label class="auth-label">Password (min. 8 caratteri)</label>
-        <input class="auth-input" id="regPwd" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doRegister()">
+        <input class="auth-input" id="regPwd" type="password" placeholder="••••••••">
+        <label class="auth-label">Conferma password</label>
+        <input class="auth-input" id="regPwd2" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doRegister()">
         <div class="auth-err" id="regErr"></div>
         <button class="btn-gold" onclick="doRegister()">Crea account</button>
         <div class="auth-divider">oppure</div>
@@ -3685,8 +3687,10 @@ window.doRegister = async function() {
   const email = document.getElementById('regEmail').value.trim();
   const pwd = document.getElementById('regPwd').value;
   const err = document.getElementById('regErr');
+  const pwd2 = (document.getElementById('regPwd2')||{}).value || '';
   if (!name||!email||!pwd) { err.textContent='Compila tutti i campi'; return; }
   if (pwd.length<8) { err.textContent='Password troppo corta (min. 8 caratteri)'; return; }
+  if (pwd !== pwd2) { err.textContent='Le password non coincidono'; return; }
   try {
     const r = await fetch(BACKEND_URL+'/auth/register', {
       method:'POST', headers:{'Content-Type':'application/json'},
