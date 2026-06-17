@@ -11,8 +11,8 @@
 CREATE TABLE IF NOT EXISTS bandi (
     id TEXT PRIMARY KEY,
     data JSONB NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TEXT DEFAULT (CURRENT_TIMESTAMP::text),
+    updated_at TEXT DEFAULT (CURRENT_TIMESTAMP::text)
 );
 CREATE INDEX IF NOT EXISTS idx_bandi_updated ON bandi(updated_at DESC);
 CREATE INDEX IF NOT EXISTS idx_bandi_data_gin ON bandi USING GIN(data);
@@ -20,21 +20,21 @@ CREATE INDEX IF NOT EXISTS idx_bandi_data_gin ON bandi USING GIN(data);
 CREATE TABLE IF NOT EXISTS aziende (
     id TEXT PRIMARY KEY,
     data JSONB NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TEXT DEFAULT (CURRENT_TIMESTAMP::text),
+    updated_at TEXT DEFAULT (CURRENT_TIMESTAMP::text)
 );
 
 CREATE TABLE IF NOT EXISTS sal (
     id TEXT PRIMARY KEY,
     bando_id TEXT,
     data JSONB NOT NULL,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TEXT DEFAULT (CURRENT_TIMESTAMP::text)
 );
 
 CREATE TABLE IF NOT EXISTS history (
     id TEXT PRIMARY KEY,
     data JSONB NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TEXT DEFAULT (CURRENT_TIMESTAMP::text)
 );
 
 -- ── AUTH TABLES ──────────────────────────────────────────
@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS users (
     company TEXT,
     phone TEXT,
     notes TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TEXT DEFAULT (CURRENT_TIMESTAMP::text)
 );
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_invited ON users(invited_by);
@@ -58,8 +58,8 @@ CREATE INDEX IF NOT EXISTS idx_users_invited ON users(invited_by);
 CREATE TABLE IF NOT EXISTS sessions (
     token TEXT PRIMARY KEY,
     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    expires_at TIMESTAMP NOT NULL
+    created_at TEXT DEFAULT (CURRENT_TIMESTAMP::text),
+    expires_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at);
@@ -75,8 +75,8 @@ CREATE TABLE IF NOT EXISTS portal_shares (
     label TEXT,
     note TEXT,
     visible INTEGER DEFAULT 1,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TEXT DEFAULT (CURRENT_TIMESTAMP::text),
+    updated_at TEXT DEFAULT (CURRENT_TIMESTAMP::text)
 );
 CREATE INDEX IF NOT EXISTS idx_shares_consulente ON portal_shares(consulente_id);
 CREATE INDEX IF NOT EXISTS idx_shares_cliente ON portal_shares(cliente_id);
@@ -90,7 +90,7 @@ CREATE TABLE IF NOT EXISTS portal_messages (
     text TEXT NOT NULL,
     read_by_cliente INTEGER DEFAULT 0,
     read_by_consulente INTEGER DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TEXT DEFAULT (CURRENT_TIMESTAMP::text)
 );
 CREATE INDEX IF NOT EXISTS idx_messages_share ON portal_messages(share_id);
 
@@ -102,7 +102,7 @@ CREATE TABLE IF NOT EXISTS portal_docs (
     size_bytes INTEGER DEFAULT 0,
     description TEXT,
     storage_url TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TEXT DEFAULT (CURRENT_TIMESTAMP::text)
 );
 
 -- ── RENDICONTAZIONE TABLES ───────────────────────────────
@@ -123,8 +123,8 @@ CREATE TABLE IF NOT EXISTS rendicontazioni (
     portale_ente TEXT,
     note TEXT,
     config TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TEXT DEFAULT (CURRENT_TIMESTAMP::text),
+    updated_at TEXT DEFAULT (CURRENT_TIMESTAMP::text)
 );
 CREATE INDEX IF NOT EXISTS idx_rendicont_user ON rendicontazioni(user_id);
 
@@ -139,7 +139,7 @@ CREATE TABLE IF NOT EXISTS rendicontazione_milestones (
     importo_atteso REAL DEFAULT 0,
     importo_rendicontato REAL DEFAULT 0,
     completata_il TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TEXT DEFAULT (CURRENT_TIMESTAMP::text)
 );
 
 CREATE TABLE IF NOT EXISTS rendicontazione_documenti (
@@ -165,7 +165,7 @@ CREATE TABLE IF NOT EXISTS rendicontazione_documenti (
     ai_extracted INTEGER DEFAULT 0,
     ai_confidence TEXT,
     storage_url TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TEXT DEFAULT (CURRENT_TIMESTAMP::text)
 );
 
 CREATE TABLE IF NOT EXISTS rendicontazione_checklist (
@@ -176,14 +176,14 @@ CREATE TABLE IF NOT EXISTS rendicontazione_checklist (
     completato INTEGER DEFAULT 0,
     ordine INTEGER DEFAULT 0,
     note TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TEXT DEFAULT (CURRENT_TIMESTAMP::text)
 );
 
 -- ── SCRAPER TABLE ────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS scraper_log (
     source_id TEXT PRIMARY KEY,
     last_hash TEXT,
-    last_run TIMESTAMP,
+    last_run TEXT,
     total_new INTEGER DEFAULT 0
 );
 
