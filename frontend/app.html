@@ -3441,7 +3441,7 @@ const _origRunMatching = window.runMatching;
 window.runMatching = async function() {
   const selBandi = [...document.querySelectorAll('#matchBandiSelect input:checked')].map(i=>i.value);
   const selAziende = [...document.querySelectorAll('#matchAziendeSelect input:checked')].map(i=>i.value);
-  if (!selBandi.length || !selAziende.length) { toast('Seleziona almeno un bando e un'azienda','warn'); return; }
+  if (!selBandi.length || !selAziende.length) { toast('Seleziona almeno un bando e un\'azienda','warn'); return; }
 
   const db = getDB();
   const bandi = db.bandi.filter(b=>selBandi.includes(b.id));
