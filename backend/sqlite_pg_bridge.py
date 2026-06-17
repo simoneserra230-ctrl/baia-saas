@@ -96,8 +96,8 @@ class FakeRow(dict):
 
 class _Cursor:
     """Cursore compatibile aiosqlite."""
-    def __init__(self, conn, sql, params):
-        self.conn = conn
+    def __init__(self, cw, sql, params):
+        self.cw = cw            # _ConnWrapper (per garantire la transazione)
         self.sql = _q(sql)
         self.params = params
         self.lastrowid = None
@@ -108,8 +108,9 @@ class _Cursor:
         return self._run_dml().__await__()
 
     async def _run_dml(self):
+        await self.cw._ensure_tx()
         try:
-            await self.conn.execute(self.sql, *self.params)
+            await self.cw._conn.execute(self.sql, *self.params)
         except Exception as e:
             # Ignore "already exists" from CREATE TABLE IF NOT EXISTS edge cases
             if "already exists" not in str(e).lower():
@@ -118,13 +119,14 @@ class _Cursor:
 
     async def _fetch(self):
         if self._rows is None:
+            await self.cw._ensure_tx()
             try:
-                rows = await self.conn.fetch(self.sql, *self.params)
+                rows = await self.cw._conn.fetch(self.sql, *self.params)
                 self._rows = [FakeRow(dict(r)) for r in rows]
             except Exception as e:
                 msg = str(e).lower()
                 if "no results to fetch" in msg or "does not return" in msg:
-                    await self.conn.execute(self.sql, *self.params)
+                    await self.cw._conn.execute(self.sql, *self.params)
                     self._rows = []
                 else:
                     raise
@@ -145,17 +147,25 @@ class _Cursor:
 
 
 class _ConnWrapper:
-    """Wrapper che fa sembrare asyncpg come aiosqlite."""
+    """Wrapper che fa sembrare asyncpg come aiosqlite (con transazioni esplicite)."""
     def __init__(self, conn, pool):
         self._conn = conn
         self._pool = pool
+        self._tx = None          # transazione asyncpg attiva (lazy)
         self.row_factory = None  # ignorato — sempre dict-like
 
+    async def _ensure_tx(self):
+        """Apre una transazione alla prima query, così commit() ha senso."""
+        if self._tx is None:
+            self._tx = self._conn.transaction()
+            await self._tx.start()
+
     def execute(self, sql, params=None):
-        return _Cursor(self._conn, sql, params or ())
+        return _Cursor(self, sql, params or ())
 
     async def executescript(self, sql):
         # Esegue script multi-statement
+        await self._ensure_tx()
         for stmt in sql.split(";"):
             stmt = stmt.strip()
             if stmt:
@@ -165,15 +175,38 @@ class _ConnWrapper:
                     print(f"[DB] script warn: {e}")
 
     async def commit(self):
-        pass  # asyncpg autocommit
+        if self._tx is not None:
+            await self._tx.commit()
+            self._tx = None
+
+    async def rollback(self):
+        if self._tx is not None:
+            try:
+                await self._tx.rollback()
+            finally:
+                self._tx = None
 
     async def close(self):
+        # Persisti eventuale transazione pendente (semantica difensiva per i blocchi
+        # che scrivono e si affidano all'uscita del context manager).
+        if self._tx is not None:
+            try:
+                await self._tx.commit()
+            except Exception:
+                try:
+                    await self._tx.rollback()
+                except Exception:
+                    pass
+            self._tx = None
         await self._pool.release(self._conn)
 
     async def __aenter__(self):
         return self
 
-    async def __aexit__(self, *args):
+    async def __aexit__(self, exc_type, *args):
+        # In caso di eccezione, rollback; altrimenti commit pendente in close()
+        if exc_type is not None and self._tx is not None:
+            await self.rollback()
         await self.close()
 
 
@@ -185,6 +218,10 @@ async def _pg_connect(db_path=None):
     wrapper = _ConnWrapper(conn, pool)
     try:
         yield wrapper
+        await wrapper.commit()       # persisti la transazione pendente su uscita pulita
+    except Exception:
+        await wrapper.rollback()
+        raise
     finally:
         await pool.release(conn)
 
