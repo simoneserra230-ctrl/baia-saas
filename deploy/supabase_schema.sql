@@ -44,6 +44,8 @@ CREATE TABLE IF NOT EXISTS users (
     email TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     role TEXT DEFAULT 'consulente',
+    plan TEXT DEFAULT 'trial',
+    trial_ends_at TEXT,
     invited_by TEXT,
     invite_token TEXT,
     invite_used INTEGER DEFAULT 0,

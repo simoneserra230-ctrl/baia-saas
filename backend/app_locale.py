@@ -146,6 +146,34 @@ def _send_email(to: str, subject: str, html: str) -> None:
         if user: s.login(user, pwd)
         s.sendmail(frm, to, msg.as_string())
 
+# ── Paywall / Trial / Admin ──────────────────────────
+ADMIN_EMAILS = {e.strip().lower() for e in os.environ.get("ADMIN_EMAILS", "").split(",") if e.strip()}
+TRIAL_DAYS = 14
+PAID_PLANS = ("free", "active", "paid", "pro", "base", "business")
+
+def _rget(row, key, default=None):
+    try:
+        v = row[key]
+        return v if v is not None else default
+    except (KeyError, IndexError, TypeError):
+        return default
+
+def _is_admin(email, role=None):
+    return (email or "").lower() in ADMIN_EMAILS or role in ("admin", "developer")
+
+def _has_access(plan, trial_ends_at, email=None, role=None):
+    """True se l'utente può usare l'app: admin, piano attivo/free, o trial ancora valido."""
+    if _is_admin(email, role):
+        return True
+    if (plan or "trial") in PAID_PLANS:
+        return True
+    if trial_ends_at:
+        try:
+            return datetime.datetime.utcnow().isoformat() < str(trial_ends_at)
+        except Exception:
+            return True
+    return True  # retrocompat: nessuna scadenza = non bloccare
+
 # ── Auth middleware helper ───────────────────────────
 async def _get_user(request: Request):
     token = request.headers.get("X-Auth-Token") or request.cookies.get("baia_token")
@@ -159,7 +187,14 @@ async def _get_user(request: Request):
         ) as c:
             row = await c.fetchone()
     if row:
-        return {"id": row["id"], "name": row["name"], "email": row["email"]}
+        email = row["email"]
+        plan = _rget(row, "plan", "trial")
+        trial_ends_at = _rget(row, "trial_ends_at")
+        role = _rget(row, "role", "consulente")
+        return {"id": row["id"], "name": row["name"], "email": email,
+                "plan": plan, "trial_ends_at": trial_ends_at, "role": role,
+                "is_admin": _is_admin(email, role),
+                "access": _has_access(plan, trial_ends_at, email, role)}
     return None
 
 # ═══════════════════════════════════════════════════════
@@ -185,12 +220,15 @@ async def auth_register(request: Request):
     pw_hash = hash_password(password)
     user_id = "u-" + _make_token()[:16]
     token = _make_token()
+    trial_ends = (datetime.datetime.utcnow() + datetime.timedelta(days=TRIAL_DAYS)).isoformat()
+    plan = "free" if _is_admin(email) else "trial"   # admin = licenza gratuita immediata
     # Utente + sessione nella STESSA transazione: la FK è soddisfatta e si
     # salvano atomicamente (se fallisce uno, rollback di entrambi).
     try:
         async with aiosqlite.connect(DB) as db:
-            await db.execute("INSERT INTO users (id,name,email,password_hash) VALUES (?,?,?,?)",
-                             (user_id, name, email, pw_hash))
+            await db.execute(
+                "INSERT INTO users (id,name,email,password_hash,plan,trial_ends_at) VALUES (?,?,?,?,?,?)",
+                (user_id, name, email, pw_hash, plan, trial_ends))
             await db.execute("INSERT INTO sessions (token,user_id,expires_at) VALUES (?,?,?)",
                              (token, user_id, _expires()))
             await db.commit()
@@ -207,8 +245,11 @@ async def auth_register(request: Request):
                          resource_type="user", resource_id=user_id, ip=client_ip)
     except Exception:
         pass
-    print(f"[AUTH] Nuovo utente: {email}")
-    return {"ok": True, "token": token, "user": {"id": user_id, "name": name, "email": email}}
+    print(f"[AUTH] Nuovo utente: {email} (plan={plan})")
+    return {"ok": True, "token": token,
+            "user": {"id": user_id, "name": name, "email": email,
+                     "plan": plan, "trial_ends_at": trial_ends,
+                     "is_admin": _is_admin(email), "access": True}}
 
 @app.post("/auth/login")
 async def auth_login(request: Request):
@@ -237,8 +278,14 @@ async def auth_login(request: Request):
                          (token, user["id"], _expires()))
         await db.commit()
     await log_action("user.login", user_id=user["id"], user_email=user["email"], ip=client_ip)
+    u_plan = _rget(user, "plan", "trial")
+    u_trial = _rget(user, "trial_ends_at")
+    u_role = _rget(user, "role", "consulente")
     return {"ok": True, "token": token,
-            "user": {"id": user["id"], "name": user["name"], "email": user["email"]}}
+            "user": {"id": user["id"], "name": user["name"], "email": user["email"],
+                     "plan": u_plan, "trial_ends_at": u_trial, "role": u_role,
+                     "is_admin": _is_admin(user["email"], u_role),
+                     "access": _has_access(u_plan, u_trial, user["email"], u_role)}}
 
 @app.post("/auth/logout")
 async def auth_logout(request: Request):
@@ -254,6 +301,52 @@ async def auth_logout(request: Request):
         if user_id:
             await log_action("user.logout", user_id=user_id, ip=get_client_ip(request))
     return {"ok": True}
+
+# ── Account & Admin (paywall / licenze) ──────────────
+@app.get("/auth/me")
+async def auth_me(request: Request):
+    user = await _get_user(request)
+    if not user:
+        return JSONResponse({"ok": False, "error": "Non autenticato"}, 401)
+    return {"ok": True, "user": user}
+
+@app.post("/admin/grant-license")
+async def admin_grant_license(request: Request):
+    """Concede/cambia il piano di un account. Solo admin."""
+    me = await _get_user(request)
+    if not me or not me.get("is_admin"):
+        return JSONResponse({"ok": False, "error": "Non autorizzato"}, 403)
+    body = await request.json()
+    target = (body.get("email") or "").strip().lower()
+    plan = (body.get("plan") or "free").strip().lower()
+    if not target:
+        return JSONResponse({"ok": False, "error": "Email mancante"}, 400)
+    if plan not in ("free", "active", "trial", "expired"):
+        return JSONResponse({"ok": False, "error": "Piano non valido"}, 400)
+    async with aiosqlite.connect(DB) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT id FROM users WHERE email=?", (target,)) as c:
+            row = await c.fetchone()
+        if not row:
+            return JSONResponse({"ok": False, "error": "Utente non trovato"}, 404)
+        await db.execute("UPDATE users SET plan=? WHERE email=?", (plan, target))
+        await db.commit()
+    await log_action("admin.grant_license", user_id=me["id"], user_email=me["email"],
+                     resource_type="user", resource_id=target, details={"plan": plan})
+    return {"ok": True, "email": target, "plan": plan}
+
+@app.get("/admin/users")
+async def admin_users(request: Request):
+    """Lista account (per gestione licenze). Solo admin."""
+    me = await _get_user(request)
+    if not me or not me.get("is_admin"):
+        return JSONResponse({"ok": False, "error": "Non autorizzato"}, 403)
+    async with aiosqlite.connect(DB) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute(
+            "SELECT email,name,plan,role,trial_ends_at,created_at FROM users ORDER BY created_at DESC") as c:
+            rows = await c.fetchall()
+    return {"ok": True, "users": [dict(r) for r in rows]}
 
 @app.get("/auth/me")
 async def auth_me(request: Request):
