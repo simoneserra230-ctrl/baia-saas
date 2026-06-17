@@ -318,22 +318,33 @@ async def admin_grant_license(request: Request):
         return JSONResponse({"ok": False, "error": "Non autorizzato"}, 403)
     body = await request.json()
     target = (body.get("email") or "").strip().lower()
-    plan = (body.get("plan") or "free").strip().lower()
+    plan = (body.get("plan") or "").strip().lower()
+    role = (body.get("role") or "").strip().lower()
     if not target:
         return JSONResponse({"ok": False, "error": "Email mancante"}, 400)
-    if plan not in ("free", "active", "trial", "expired"):
-        return JSONResponse({"ok": False, "error": "Piano non valido"}, 400)
+    sets, params = [], []
+    if plan:
+        if plan not in ("free", "active", "trial", "expired"):
+            return JSONResponse({"ok": False, "error": "Piano non valido"}, 400)
+        sets.append("plan=?"); params.append(plan)
+    if role:
+        if role not in ("admin", "consulente", "developer"):
+            return JSONResponse({"ok": False, "error": "Ruolo non valido"}, 400)
+        sets.append("role=?"); params.append(role)
+    if not sets:
+        return JSONResponse({"ok": False, "error": "Niente da aggiornare"}, 400)
     async with aiosqlite.connect(DB) as db:
         db.row_factory = aiosqlite.Row
         async with db.execute("SELECT id FROM users WHERE email=?", (target,)) as c:
             row = await c.fetchone()
         if not row:
             return JSONResponse({"ok": False, "error": "Utente non trovato"}, 404)
-        await db.execute("UPDATE users SET plan=? WHERE email=?", (plan, target))
+        params.append(target)
+        await db.execute(f"UPDATE users SET {', '.join(sets)} WHERE email=?", tuple(params))
         await db.commit()
     await log_action("admin.grant_license", user_id=me["id"], user_email=me["email"],
-                     resource_type="user", resource_id=target, details={"plan": plan})
-    return {"ok": True, "email": target, "plan": plan}
+                     resource_type="user", resource_id=target, details={"plan": plan, "role": role})
+    return {"ok": True, "email": target, "plan": plan, "role": role}
 
 @app.get("/admin/users")
 async def admin_users(request: Request):

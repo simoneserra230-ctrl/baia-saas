@@ -4836,7 +4836,7 @@ function copyDraft() {
 <div id="pwBanner"></div>
 <div id="pwWall"><div class="box"><h2>La tua prova è terminata</h2><p>Abbonati per continuare a usare BA.IA e non perdere i bandi giusti per la tua azienda.</p><a class="cta" id="pwWallCta">Vedi i piani e abbonati →</a><span class="sec" id="pwWallLogout">Esci</span></div></div>
 <button id="pwAdminBtn">⚙ Licenze</button>
-<div id="pwAdmin"><div class="box"><span id="pwAdminClose">✕</span><h2 style="color:#EEEEFF;font:700 18px Inter;margin:0 0 4px">Gestione licenze</h2><div style="color:#889;font-size:12px;margin-bottom:14px">Concedi accesso gratuito o cambia il piano di un account.</div><input id="pwGEmail" type="email" placeholder="email@account.it"><select id="pwGPlan"><option value="free">free — illimitato gratis</option><option value="active">active — pagante</option><option value="trial">trial — 14 giorni</option><option value="expired">expired — blocca</option></select><button class="gbtn" id="pwGBtn">Applica</button><div id="pwGMsg" style="font-size:12px;margin-top:8px;color:#8B9"></div><div id="pwUsers"></div></div></div>
+<div id="pwAdmin"><div class="box"><span id="pwAdminClose">✕</span><h2 style="color:#EEEEFF;font:700 18px Inter;margin:0 0 4px">Gestione licenze</h2><div style="color:#889;font-size:12px;margin-bottom:14px">Concedi accesso gratuito o cambia il piano di un account.</div><input id="pwGEmail" type="email" placeholder="email@account.it"><select id="pwGPlan"><option value="">— piano invariato —</option><option value="free">free — illimitato gratis</option><option value="active">active — pagante</option><option value="trial">trial — 14 giorni</option><option value="expired">expired — blocca</option></select><select id="pwGRole"><option value="">— ruolo invariato —</option><option value="consulente">consulente (utente)</option><option value="admin">admin (gestione completa)</option></select><button class="gbtn" id="pwGBtn">Applica</button><div id="pwGMsg" style="font-size:12px;margin-top:8px;color:#8B9"></div><div id="pwUsers"></div></div></div>
 <script>
 (function(){
   var API=(location.protocol==='file:'||location.hostname==='localhost'||location.hostname==='127.0.0.1')?'http://localhost:8000':location.origin+'/api';
@@ -4860,12 +4860,12 @@ function copyDraft() {
   document.getElementById('pwWallLogout').onclick=function(){try{localStorage.removeItem('baia_auth_token');}catch(e){}location.href='index.html';};
   document.getElementById('pwAdminBtn').onclick=async function(){
     document.getElementById('pwAdmin').style.display='flex';
-    try{var r=await api('/admin/users');var d=await r.json();var rows=(d.users||[]).map(function(x){return '<tr><td>'+x.email+'</td><td>'+(x.plan||'')+'</td><td>'+(x.trial_ends_at?String(x.trial_ends_at).slice(0,10):'')+'</td></tr>';}).join('');document.getElementById('pwUsers').innerHTML='<table><tr><th>Email</th><th>Piano</th><th>Trial fino</th></tr>'+rows+'</table>';}catch(e){}
+    try{var r=await api('/admin/users');var d=await r.json();var rows=(d.users||[]).map(function(x){return '<tr><td>'+x.email+'</td><td>'+(x.plan||'')+'</td><td>'+(x.role||'')+'</td><td>'+(x.trial_ends_at?String(x.trial_ends_at).slice(0,10):'')+'</td></tr>';}).join('');document.getElementById('pwUsers').innerHTML='<table><tr><th>Email</th><th>Piano</th><th>Ruolo</th><th>Trial fino</th></tr>'+rows+'</table>';}catch(e){}
   };
   document.getElementById('pwAdminClose').onclick=function(){document.getElementById('pwAdmin').style.display='none';};
   document.getElementById('pwGBtn').onclick=async function(){
-    var email=document.getElementById('pwGEmail').value.trim(),plan=document.getElementById('pwGPlan').value,m=document.getElementById('pwGMsg');m.textContent='...';
-    try{var r=await api('/admin/grant-license',{method:'POST',body:JSON.stringify({email:email,plan:plan})});var d=await r.json();m.textContent=d.ok?('✓ '+email+' → '+plan):('✗ '+(d.error||'errore'));if(d.ok)document.getElementById('pwAdminBtn').click();}catch(e){m.textContent='✗ errore';}
+    var email=document.getElementById('pwGEmail').value.trim(),plan=document.getElementById('pwGPlan').value,role=document.getElementById('pwGRole').value,m=document.getElementById('pwGMsg');m.textContent='...';
+    try{var r=await api('/admin/grant-license',{method:'POST',body:JSON.stringify({email:email,plan:plan,role:role})});var d=await r.json();m.textContent=d.ok?('✓ '+email+' aggiornato'):('✗ '+(d.error||'errore'));if(d.ok)document.getElementById('pwAdminBtn').click();}catch(e){m.textContent='✗ errore';}
   };
   setTimeout(window.pwRefresh,800);
   if(window.showApp){var _s=window.showApp;window.showApp=function(){var x=_s.apply(this,arguments);setTimeout(window.pwRefresh,300);return x;};}
