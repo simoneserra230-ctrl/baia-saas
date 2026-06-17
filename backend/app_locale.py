@@ -189,15 +189,26 @@ async def auth_register(request: Request):
             await db.execute("INSERT INTO users (id,name,email,password_hash) VALUES (?,?,?,?)",
                              (user_id, name, email, pw_hash))
             await db.commit()
-    except Exception:
-        return JSONResponse({"ok": False, "error": "Email già registrata"}, 409)
+    except Exception as e:
+        msg = str(e).lower()
+        if "unique" in msg or "duplicate" in msg or "already exists" in msg:
+            return JSONResponse({"ok": False, "error": "Email già registrata"}, 409)
+        print(f"[AUTH] Errore INSERT users: {type(e).__name__}: {e}")
+        return JSONResponse({"ok": False, "error": f"Errore DB (users): {type(e).__name__}: {e}"}, 500)
     token = _make_token()
-    async with aiosqlite.connect(DB) as db:
-        await db.execute("INSERT INTO sessions (token,user_id,expires_at) VALUES (?,?,?)",
-                         (token, user_id, _expires()))
-        await db.commit()
-    await log_action("user.register", user_id=user_id, user_email=email,
-                     resource_type="user", resource_id=user_id, ip=client_ip)
+    try:
+        async with aiosqlite.connect(DB) as db:
+            await db.execute("INSERT INTO sessions (token,user_id,expires_at) VALUES (?,?,?)",
+                             (token, user_id, _expires()))
+            await db.commit()
+    except Exception as e:
+        print(f"[AUTH] Errore INSERT sessions: {type(e).__name__}: {e}")
+        return JSONResponse({"ok": False, "error": f"Errore DB (sessions): {type(e).__name__}: {e}"}, 500)
+    try:
+        await log_action("user.register", user_id=user_id, user_email=email,
+                         resource_type="user", resource_id=user_id, ip=client_ip)
+    except Exception:
+        pass
     print(f"[AUTH] Nuovo utente: {email}")
     return {"ok": True, "token": token, "user": {"id": user_id, "name": name, "email": email}}
 
