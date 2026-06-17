@@ -16,7 +16,8 @@ NON serve più caricare zip o fare drag&drop: Render e Vercel leggono direttamen
 ```
 Sei il mio assistente di deploy. Dobbiamo mettere online BA.IA, una SaaS di analisi
 bandi (FastAPI + frontend statico). Il codice è già su GitHub: simoneserra230-ctrl/baia-saas.
-Root del progetto dentro il repo: "BA.IA.SKILLSOLUTIONS.COM/BAIA_SAAS_B2C (OPEX)".
+Dockerfile, render.yaml, vercel.json, backend/ e frontend/ sono nella RADICE del repo
+(Root Directory su Render/Vercel va lasciato VUOTO).
 
 REGOLE:
 - Procedi UN passo alla volta. Dopo ogni passo dimmi cosa hai fatto e l'esito.
@@ -35,8 +36,8 @@ REGOLE:
 
 ═══ STEP 2 — RENDER (backend) ═══
 1. dashboard.render.com → New → Web Service → connetti il repo baia-saas.
-2. Root Directory: BA.IA.SKILLSOLUTIONS.COM/BAIA_SAAS_B2C (OPEX)
-   (Render rileva render.yaml + Dockerfile). Runtime: Docker. Plan: Starter. Region: Frankfurt.
+2. Root Directory: LASCIA VUOTO (il repo baia-saas ha Dockerfile/render.yaml nella radice).
+   Render rileva il Dockerfile. Runtime: Docker. Plan: Starter. Region: Frankfurt.
 3. Environment → aggiungi queste variabili (i valori segreti li incollo io):
    - DATABASE_URL      = (Supabase pooler, porta 6543)
    - ANTHROPIC_API_KEY = (chiave BA.IA — NON quella del progetto Formazione)
@@ -50,8 +51,8 @@ REGOLE:
 
 ═══ STEP 3 — VERCEL (frontend) ═══
 1. vercel.com → Add New → Project → importa baia-saas.
-2. Root Directory: BA.IA.SKILLSOLUTIONS.COM/BAIA_SAAS_B2C (OPEX)
-   (Vercel legge vercel.json: serve la cartella frontend/, riscrive /api/* verso Render).
+2. Root Directory: LASCIA VUOTO (il repo baia-saas ha vercel.json nella radice).
+   Vercel legge vercel.json: serve la cartella frontend/, riscrive /api/* verso Render.
    Framework Preset: Other. Build: vuoto. Deploy.
 3. Apri l'URL Vercel ottenuto (tipo https://baia-xxxx.vercel.app): DEVE mostrare il
    LANDING marketing con i prezzi (Base €29, Pro €79, B2B €1.990), non l'app.

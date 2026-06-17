@@ -42,8 +42,8 @@ usa `/api` (riscritto da `vercel.json` verso Render). Su dominio custom: vedi §
 ## 2. DEPLOY BACKEND — Render (10 min)
 
 1. [ ] dashboard.render.com → **New → Web Service** → connetti GitHub `baia-saas`
-2. [ ] Root Directory: `BA.IA.SKILLSOLUTIONS.COM/BAIA_SAAS_B2C (OPEX)`
-       (Render rileva `render.yaml` e il `Dockerfile`)
+2. [ ] Root Directory: **VUOTO** (il repo `baia-saas` ha già `Dockerfile`/`render.yaml`
+       nella sua radice — NON mettere sottocartelle). Render rileva il `Dockerfile`.
 3. [ ] Runtime: **Docker** · Plan: **Starter** (evita il cold start del free) · Region: **Frankfurt**
 4. [ ] **Environment Variables** (le `sync:false` vanno inserite qui):
        | Chiave | Valore |
@@ -62,8 +62,8 @@ usa `/api` (riscritto da `vercel.json` verso Render). Su dominio custom: vedi §
 ## 3. DEPLOY FRONTEND — Vercel (5 min)
 
 1. [ ] vercel.com → **Add New → Project** → importa `baia-saas`
-2. [ ] Root Directory: `BA.IA.SKILLSOLUTIONS.COM/BAIA_SAAS_B2C (OPEX)`
-       (Vercel legge `vercel.json`: serve `frontend/`, riscrive `/api/*` → Render)
+2. [ ] Root Directory: **VUOTO** (il repo `baia-saas` ha `vercel.json` nella radice).
+       Vercel legge `vercel.json`: serve `frontend/`, riscrive `/api/*` → Render.
 3. [ ] Nessun build necessario (sito statico). Deploy.
 4. [ ] Ottieni l'URL `https://<progetto>.vercel.app`. Aprilo: deve mostrare il **landing**.
 5. [ ] Torna su Render → aggiorna `ALLOWED_ORIGINS` e `APP_URL` con l'URL Vercel reale → redeploy.
