@@ -143,6 +143,47 @@ SOURCES = [
     },
 ]
 
+# ── FONTI ESTESE (da "monitoraggio siti bandi/siti da monitorare.xlsx") ──
+# Generate in backend/scraper_sources.json. Si fondono con le fonti curate
+# sopra (che hanno selettori ottimizzati); le nuove usano selettori generici.
+def _load_extra_sources() -> list:
+    path = os.path.join(os.path.dirname(__file__), "scraper_sources.json")
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"[SCRAPER] scraper_sources.json non caricato: {e}")
+        return []
+
+def _merge_sources(curated: list, extra: list) -> list:
+    from urllib.parse import urlparse
+    def _key(u):
+        try:
+            p = urlparse(u)
+            return (p.netloc.lower().lstrip("www."), p.path.rstrip("/").lower())
+        except Exception:
+            return (u, "")
+    seen = {_key(s["url"]) for s in curated}
+    merged = list(curated)
+    for s in extra:
+        u = s.get("url", "")
+        k = _key(u)
+        if not u or k in seen:
+            continue
+        seen.add(k)
+        s.setdefault("tipo", "html")
+        s.setdefault("regioni", [])
+        s.setdefault("pdf_selector", "a[href$='.pdf']")
+        s.setdefault("link_selector", "a")   # generico: i link sono filtrati per keyword
+        merged.append(s)
+    return merged
+
+SOURCES = _merge_sources(SOURCES, _load_extra_sources())
+print(f"[SCRAPER] {len(SOURCES)} fonti monitorate")
+
+# Limite di nuovi bandi analizzati per run (controllo costi AI; override via env).
+MAX_NEW_PER_RUN = int(os.getenv("SCRAPER_MAX_NEW_PER_RUN", "60") or 60)
+
 # ── SCRAPER STATE ─────────────────────────────────────────
 _state = {
     "running": False,
@@ -319,6 +360,8 @@ async def scrape_source(source: dict, db_path: str) -> dict:
 
         # Analizza PDF trovati
         for pdf_url in pdf_links[:5]:  # max 5 PDF per fonte per run
+            if _state.get("run_new", 0) >= MAX_NEW_PER_RUN:
+                break  # cap costi AI raggiunto
             try:
                 pdf_bytes = await _fetch_pdf_bytes(pdf_url)
                 if not pdf_bytes:
@@ -384,6 +427,7 @@ async def scrape_source(source: dict, db_path: str) -> dict:
                     await db.commit()
                 result["new"] += 1
                 _state["total_new"] += 1
+                _state["run_new"] = _state.get("run_new", 0) + 1
                 print(f"[SCRAPER] ✅ Nuovo bando: {nome}")
                 await asyncio.sleep(3)  # Rate limiting cortese
 
@@ -451,11 +495,15 @@ async def run_all_sources(db_path: str, max_sources: int = None) -> list[dict]:
 
     _state["running"] = True
     _state["last_run"] = datetime.datetime.utcnow().isoformat()
+    _state["run_new"] = 0
     sources = SOURCES if max_sources is None else SOURCES[:max_sources]
     results = []
 
     print(f"[SCRAPER] Avvio — {len(sources)} fonti")
     for source in sources:
+        if _state.get("run_new", 0) >= MAX_NEW_PER_RUN:
+            print(f"[SCRAPER] Cap {MAX_NEW_PER_RUN} nuovi bandi/run raggiunto — stop")
+            break
         result = await scrape_source(source, db_path)
         results.append(result)
         _state["last_run_results"].append(result)
