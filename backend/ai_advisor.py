@@ -177,6 +177,54 @@ async def ai_analyze_compatibility(
     return result
 
 
+async def ai_match_companies_to_bando(
+    bando: dict,
+    aziende: list,
+    api_key: str,
+    model: str,
+    top_n: int = 20,
+) -> list:
+    """
+    RICONTROLLO: dato un NUOVO bando, valuta TUTTE le aziende e restituisce
+    quelle compatibili (ALTA/MEDIA) ordinate per punteggio. Una sola chiamata Claude.
+    """
+    if not aziende:
+        return []
+    elenco = "\n\n".join(
+        f"[AZIENDA {i}] id={a.get('id','')}\n" + _fmt_azienda(a)
+        for i, a in enumerate(aziende)
+    )
+    system = (
+        "Sei un esperto di finanza agevolata. Dato un bando e un elenco di aziende, "
+        "valuti la compatibilità di OGNI azienda con i requisiti del bando. "
+        "Rispondi SOLO con JSON valido: un array di oggetti con chiavi "
+        "{azienda_id, score (0-100), compatibilita ('ALTA'|'MEDIA'|'BASSA'|'NON_AMMISSIBILE'), "
+        "requisiti_soddisfatti (lista stringhe), requisiti_mancanti (lista stringhe), "
+        "agevolazione_potenziale (stringa)}. "
+        "Includi SOLO le aziende con compatibilità ALTA o MEDIA, ordinate per score decrescente. "
+        "Un solo requisito soggettivo non soddisfatto = NON_AMMISSIBILE (escludila)."
+    )
+    prompt = f"BANDO:\n{_fmt_bando(bando)}\n\nAZIENDE:\n{elenco}"
+    body = {
+        "model": model,
+        "max_tokens": 2000,
+        "system": system,
+        "messages": [{"role": "user", "content": prompt}],
+    }
+    async with httpx.AsyncClient(timeout=90) as client:
+        r = await client.post(ANTHROPIC_URL, headers=_headers(api_key), json=body)
+        r.raise_for_status()
+    parsed = json.loads(_clean_json(r.json()["content"][0]["text"]))
+    if isinstance(parsed, dict):
+        parsed = parsed.get("results") or parsed.get("aziende") or parsed.get("matches") or []
+    by_id = {a.get("id", ""): a for a in aziende}
+    for item in parsed:
+        a = by_id.get(item.get("azienda_id", ""))
+        if a:
+            item["azienda_name"] = a.get("name", "")
+    return parsed[:top_n]
+
+
 async def ai_rank_bandi(
     azienda: dict,
     bandi: list[dict],

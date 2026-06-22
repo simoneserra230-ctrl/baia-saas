@@ -4984,10 +4984,25 @@ function copyDraft() {
       var r=await fetch(API+'/bando/analisi-tecnica',{method:'POST',headers:{'X-Auth-Token':tok()},body:fd});
       var d=await r.json();
       if(d.error){msg.textContent='✗ '+d.error;return;}
-      var s=d.scheda||{};msg.textContent='✓ Scheda generata ('+(d.chars||0)+' caratteri analizzati)';
+      var s=d.scheda||{};lastScheda=s;msg.textContent='✓ Scheda generata ('+(d.chars||0)+' caratteri analizzati)';
       out.innerHTML=ORD.map(function(k){return s[k]?('<div class="at-row"><div class="k">'+LAB[k]+'</div><div class="v">'+String(s[k]).replace(/</g,'&lt;')+'</div></div>'):'';}).join('')||('<pre style="white-space:pre-wrap">'+JSON.stringify(s,null,2)+'</pre>');
+      out.innerHTML+='<button id="atRic" style="margin-top:14px;background:#0E9F6E;color:#fff;border:none;font-weight:700;padding:11px 20px;border-radius:9px;cursor:pointer">🔎 Trova aziende compatibili con questo bando</button><div id="atMatch" style="margin-top:14px"></div>';
+      document.getElementById('atRic').onclick=ricontrolla;
     }catch(e){msg.textContent='✗ Errore di rete o backend.';}
   };
+  var lastScheda=null;
+  function getAziende(){try{if(window.getDB){var db=window.getDB();if(db&&db.aziende)return db.aziende;}}catch(e){}try{var dm=JSON.parse(localStorage.getItem('demo_db')||'null');if(dm&&dm.aziende)return dm.aziende;}catch(e){}return[];}
+  async function ricontrolla(){
+    var mt=document.getElementById('atMatch'),az=getAziende();
+    if(!az.length){mt.innerHTML='<i>Nessuna azienda in archivio da confrontare.</i>';return;}
+    mt.innerHTML='⏳ Confronto con '+az.length+' aziende...';
+    var bando={name:(lastScheda&&lastScheda.iniziativa_bando)||'Bando',fields:Object.keys(lastScheda||{}).map(function(k){return {label:k,value:lastScheda[k]};})};
+    try{var r=await fetch(API+'/bando/ricontrollo',{method:'POST',headers:{'X-Auth-Token':tok(),'Content-Type':'application/json'},body:JSON.stringify({bando:bando,aziende:az})});var d=await r.json();
+      if(d.error){mt.textContent='✗ '+d.error;return;}
+      var m=d.matches||[];if(!m.length){mt.innerHTML='<i>Nessuna azienda compatibile trovata.</i>';return;}
+      mt.innerHTML='<b>'+m.length+' aziende compatibili:</b>'+m.map(function(x){return '<div class="at-row"><div class="k">'+(x.azienda_name||x.azienda_id||'')+' — '+(x.compatibilita||'')+' ('+(x.score||0)+')</div><div class="v">Soddisfatti: '+((x.requisiti_soddisfatti||[]).join(', ')||'-')+'<br>Mancanti: '+((x.requisiti_mancanti||[]).join(', ')||'-')+'<br>Agevolazione: '+(x.agevolazione_potenziale||'-')+'</div></div>';}).join('');
+    }catch(e){mt.textContent='✗ Errore di rete.';}
+  }
   function atVis(){document.getElementById('atBtn').style.display=tok()?'block':'none';}
   setTimeout(atVis,900);
   if(window.showApp){var _s2=window.showApp;window.showApp=function(){var x=_s2.apply(this,arguments);setTimeout(atVis,350);return x;};}

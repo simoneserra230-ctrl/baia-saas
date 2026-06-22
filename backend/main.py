@@ -694,6 +694,7 @@ try:
     from ai_advisor import (
         ai_analyze_compatibility,
         ai_rank_bandi,
+        ai_match_companies_to_bando,
         ai_advisor_report,
         stream_analysis,
     )
@@ -756,6 +757,30 @@ async def rank_ai_endpoint(req: RankAIRequest, _user: dict = Depends(require_aut
         return {"results": results, "total": len(results)}
     except Exception as e:
         return JSONResponse({"error": f"Errore ranking AI: {e}"}, status_code=500)
+
+
+class RicontrolloRequest(BaseModel):
+    bando: dict
+    aziende: list[dict]
+    top_n: int = 20
+
+
+@app.post("/bando/ricontrollo")
+async def bando_ricontrollo(req: RicontrolloRequest, _user: dict = Depends(require_auth)):
+    """RICONTROLLO: un nuovo bando → ripassa tutte le aziende, ritorna le compatibili."""
+    if not _AI_ADVISOR_OK:
+        return JSONResponse({"error": "Modulo AI Advisor non disponibile"}, status_code=503)
+    if not ANTHROPIC_API_KEY:
+        return JSONResponse({"error": "ANTHROPIC_API_KEY non configurata"}, status_code=400)
+    if not req.aziende:
+        return {"matches": [], "total": 0}
+    try:
+        matches = await ai_match_companies_to_bando(
+            req.bando, req.aziende, ANTHROPIC_API_KEY, MODEL, req.top_n
+        )
+        return {"matches": matches, "total": len(matches)}
+    except Exception as e:
+        return JSONResponse({"error": f"Errore ricontrollo: {e}"}, status_code=500)
 
 
 @app.post("/advisor")
