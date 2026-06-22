@@ -29,8 +29,8 @@
 
   /* ── Semantic colors ─────────────────────── */
   --text:     #1A1B2E;
-  --muted:    #6B7280;
-  --subtle:   #C7CCDC;
+  --muted:    #5A6072;
+  --subtle:   #878EA1;
   --green:    #0E9F6E;
   --red:      #E02424;
   --amber:    #C27803;
@@ -59,7 +59,7 @@ body{
     radial-gradient(ellipse 700px 500px at 90% 90%, rgba(139,92,246,.04) 0%,transparent 70%);
   background-attachment:fixed;
 }
-::selection{background:var(--gold-dim);color:#fff}
+::selection{background:rgba(99,102,241,.18);color:var(--text)}
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--subtle);border-radius:10px}
@@ -80,7 +80,7 @@ button{cursor:pointer;font-family:'Inter',sans-serif}
 .auth-wrap{width:100%;max-width:420px;padding:0 20px}
 .auth-logo{
   font-family:'Syne',sans-serif;font-weight:800;font-size:44px;letter-spacing:-1.5px;
-  background:linear-gradient(135deg,#fff 20%,#818CF8 60%,#A78BFA 100%);
+  background:linear-gradient(135deg,#4338CA 8%,#6366F1 55%,#8B5CF6 100%);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
   margin-bottom:4px
 }
@@ -130,7 +130,7 @@ button{cursor:pointer;font-family:'Inter',sans-serif}
 .auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--border)}
 .auth-demo-link{text-align:center;margin-top:20px;font-size:12px;color:var(--muted)}
 .auth-demo-link a{color:var(--gold);cursor:pointer;transition:var(--t)}
-.auth-demo-link a:hover{color:#fff}
+.auth-demo-link a:hover{color:var(--accent2)}
 .auth-err{font-size:12px;color:var(--red);min-height:16px;margin-bottom:10px}
 
 /* ── DEMO BANNER ─────────────────────────────────── */
@@ -278,7 +278,7 @@ button{cursor:pointer;font-family:'Inter',sans-serif}
 .badge-amber{background:rgba(251,191,36,.1);color:var(--amber);border:1px solid rgba(251,191,36,.2)}
 .badge-gold{background:var(--gold-dim);color:var(--gold);border:1px solid rgba(99,102,241,.3)}
 .badge-gray{background:var(--bg4);color:var(--muted);border:1px solid var(--border)}
-.badge-external{background:rgba(251,191,36,.08);color:#FCD34D;border:1px solid rgba(251,191,36,.2);font-style:italic}
+.badge-external{background:rgba(251,191,36,.12);color:var(--amber);border:1px solid rgba(251,191,36,.3);font-style:italic}
 
 /* ── FORMS ───────────────────────────────────────── */
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
@@ -1615,115 +1615,152 @@ function logout() {
   document.getElementById('authScreen').classList.add('active');
 }
 
+// Dati demo: Scheda Progetto COMPLETA (16 campi) come la produce l'Analisi Tecnica reale.
+const DEMO_DB_VER = 'v3';
+function demoSeed() {
+  return {
+    bandi: [
+    {
+      id:'demo-b1', name:'Nuove Imprese a Tasso Zero (Demo)', ente:'Invitalia',
+      scadenza:'2026-09-30', status:'active',
+      pdfs:[{id:'demo-p1',name:'analisi-tecnica-nito.pdf',uploadedAt:now(),analyzed:true,textLength:38000,
+        analysis:'Finanziamento agevolato a tasso zero + contributo a fondo perduto per nuove imprese giovanili e femminili (costituite da meno di 60 mesi). Copre fino al 90% delle spese ammissibili per l’avvio di una nuova attivita, in regime de minimis.',
+        checklist:[
+          {id:'cl1',text:'Impresa costituita da meno di 60 mesi (o persona fisica che la costituisce)',done:false,urgent:true},
+          {id:'cl2',text:'Compagine a prevalenza giovani 18-35 e/o donne',done:false,urgent:true},
+          {id:'cl3',text:'Presentare domanda su piattaforma Invitalia con SPID e firma digitale',done:false,urgent:true},
+          {id:'cl4',text:'Allegare business plan e piano economico-finanziario',done:false,urgent:false},
+        ]
+      }],
+      fields:[
+        {section:'Iniziativa/Bando',label:'Ente erogatore',value:'Invitalia (Agenzia nazionale per l’attrazione degli investimenti) per conto del MIMIT',source:'pdf'},
+        {section:'Iniziativa/Bando',label:'Denominazione',value:'ON – Nuove Imprese a Tasso Zero',source:'pdf'},
+        {section:'Obiettivo',label:'Finalita',value:'Sostenere la nascita e lo sviluppo di micro e piccole imprese a prevalenza giovanile (18-35) o femminile su tutto il territorio nazionale.',source:'pdf'},
+        {section:'Tempistiche',label:'Apertura / chiusura',value:'Sportello sempre aperto fino a esaurimento risorse; istruttoria in ordine cronologico di arrivo.',source:'pdf'},
+        {section:'Soggetti beneficiari e requisiti',label:'Chi puo partecipare',value:'Imprese costituite da non piu di 60 mesi, micro o piccole, con compagine a maggioranza (numerica e di quote) di giovani 18-35 e/o donne. Ammesse anche persone fisiche che si impegnano a costituire l’impresa entro 60 giorni dall’ammissione.',source:'pdf'},
+        {section:'Soggetti beneficiari e requisiti',label:'Sede',value:'Sede legale e operativa in Italia.',source:'pdf'},
+        {section:'Spese ammissibili',label:'Investimenti finanziabili',value:'Opere murarie e ristrutturazioni (max 30%), macchinari/impianti/attrezzature nuovi, programmi informatici e brevetti, servizi reali e consulenze specialistiche. Programmi di spesa fino a 1,5 mln €.',source:'pdf'},
+        {section:'Vincoli e Requisiti',label:'Condizioni',value:'Avvio investimento solo dopo la domanda; mantenimento requisiti soggettivi e dell’unita produttiva per tutta la durata del piano.',source:'pdf'},
+        {section:'Spese NON ammissibili',label:'Esclusioni',value:'Acquisto di immobili e terreni, beni usati, IVA, spese di gestione ordinaria, beni in leasing senza riscatto.',source:'pdf'},
+        {section:'Agevolazioni concedibili',label:'Forma e intensita',value:'Finanziamento agevolato a tasso zero (fino a 75% delle spese, durata max 10 anni) + contributo a fondo perduto, per una copertura complessiva fino al 90% delle spese ammissibili. Regime de minimis.',source:'pdf'},
+        {section:'Cumulabilita',label:'Cumulo',value:'Cumulabile con altre agevolazioni nei limiti del de minimis (Reg. UE 2023/2831) e dei massimali per spesa.',source:'pdf'},
+        {section:'Erogazione delle agevolazioni',label:'Modalita',value:'Erogazione per SAL (stati di avanzamento) su presentazione di titoli di spesa quietanzati; possibile anticipo con fideiussione.',source:'pdf'},
+        {section:'Budget',label:'Dotazione',value:'Risorse a valere su fondi nazionali e PNRR; sportello fino a esaurimento.',source:'pdf'},
+        {section:'Modalita di presentazione della Domanda',label:'Come si presenta',value:'Esclusivamente online sul portale Invitalia, accesso con SPID/CNS, firma digitale del legale rappresentante e marca da bollo.',source:'pdf'},
+        {section:'Sito di riferimento',label:'URL ufficiale',value:'https://www.invitalia.it/cosa-facciamo/creiamo-nuove-aziende/nuove-imprese-a-tasso-zero',source:'pdf'},
+        {section:'Note per la rendicontazione',label:'Rendicontazione',value:'Spese ammissibili dalla data di presentazione della domanda; fatture quietanzate con bonifico tracciabile riportante il CUP; conclusione investimento entro 24 mesi dalla stipula.',source:'pdf'},
+      ],
+      note:'', createdAt:now(), updatedAt:now()
+    },
+    {
+      id:'demo-b2', name:'IN.DO.M.A.U.S — Domotica e Assistenza (Demo)', ente:'Regione Autonoma della Sardegna',
+      scadenza:'2026-07-31', status:'active',
+      pdfs:[{id:'demo-p2',name:'analisi-tecnica-indomaus.pdf',uploadedAt:now(),analyzed:true,textLength:30000,
+        analysis:'Contributo a fondo perduto per l’ammodernamento della rete dei servizi socio-sanitari residenziali, con soglia minima del 50% di spesa in soluzioni di domotica e telemedicina.',
+        checklist:[
+          {id:'cl1',text:'Soggetto privato con sede operativa in Sardegna nel socio-sanitario',done:false,urgent:true},
+          {id:'cl2',text:'Almeno 50% delle spese in impianti di domotica/telemedicina',done:false,urgent:true},
+          {id:'cl3',text:'Presentazione tramite piattaforma SIPES con marca da bollo',done:false,urgent:false},
+        ]
+      }],
+      fields:[
+        {section:'Iniziativa/Bando',label:'Ente erogatore',value:'Regione Autonoma della Sardegna – Assessorato Igiene e Sanita e Assistenza Sociale',source:'pdf'},
+        {section:'Iniziativa/Bando',label:'Denominazione',value:'IN.DO.M.A.U.S – Innovazione, Domotica e Ammodernamento delle Strutture',source:'pdf'},
+        {section:'Obiettivo',label:'Finalita',value:'Ammodernare la rete dei servizi di assistenza residenziale e semiresidenziale introducendo domotica, telemedicina e tecnologie assistive.',source:'pdf'},
+        {section:'Tempistiche',label:'Finestra',value:'Domande dal giorno di apertura sportello fino alle ore 14:00 del 31/07/2026.',source:'pdf'},
+        {section:'Soggetti beneficiari e requisiti',label:'Chi puo partecipare',value:'Soggetti privati gestori di strutture socio-sanitarie/socio-assistenziali autorizzate con sede operativa in Sardegna.',source:'pdf'},
+        {section:'Spese ammissibili',label:'Investimenti finanziabili',value:'Impianti di domotica e building automation, dispositivi di telemedicina e teleassistenza, sensoristica, arredi tecnici, opere edili strettamente connesse.',source:'pdf'},
+        {section:'Vincoli e Requisiti',label:'Soglia vincolante',value:'Almeno il 50% delle spese ammissibili deve riguardare domotica e telemedicina.',source:'pdf'},
+        {section:'Spese NON ammissibili',label:'Esclusioni',value:'Beni usati, manutenzione ordinaria, IVA recuperabile, spese del personale interno.',source:'pdf'},
+        {section:'Agevolazioni concedibili',label:'Forma e intensita',value:'Contributo a fondo perduto in conto capitale (regime de minimis), percentuale e massimali secondo dimensione d’impresa.',source:'pdf'},
+        {section:'Cumulabilita',label:'Cumulo',value:'Cumulabile con altri aiuti nei limiti del de minimis; non cumulabile su stessi titoli di spesa con altre agevolazioni regionali.',source:'pdf'},
+        {section:'Erogazione delle agevolazioni',label:'Modalita',value:'Anticipo su fideiussione + saldo a rendicontazione finale; possibili SAL intermedi.',source:'pdf'},
+        {section:'Budget',label:'Dotazione',value:'Circa 31 milioni di euro a valere sull’annualita 2026.',source:'pdf'},
+        {section:'Modalita di presentazione della Domanda',label:'Come si presenta',value:'Tramite piattaforma regionale SIPES, accesso SPID, firma digitale e marca da bollo.',source:'pdf'},
+        {section:'Sito di riferimento',label:'URL ufficiale',value:'https://www.regione.sardegna.it (sezione bandi Sanita)',source:'pdf'},
+        {section:'Note per la rendicontazione',label:'Rendicontazione',value:'Spese ammissibili dalla data di presentazione; obbligo di tracciabilita; conclusione interventi entro 18 mesi dal provvedimento di concessione.',source:'pdf'},
+      ],
+      note:'', createdAt:now(), updatedAt:now()
+    },
+    {
+      id:'demo-b3', name:'Alberghi Diffusi e Ospitalita (Demo)', ente:'Regione Sardegna / Enti Locali',
+      scadenza:'2026-10-15', status:'active',
+      pdfs:[{id:'demo-p3',name:'analisi-tecnica-alberghi.pdf',uploadedAt:now(),analyzed:true,textLength:26000,
+        analysis:'Sostegno alla creazione e riqualificazione di alberghi diffusi e strutture ricettive nei borghi, con contributo in conto capitale per recupero immobili e arredi.',
+        checklist:[
+          {id:'cl1',text:'Struttura ricettiva o impresa turistica con sede in Sardegna',done:false,urgent:false},
+          {id:'cl2',text:'Progetto di recupero/riqualificazione immobili nei centri storici',done:false,urgent:true},
+          {id:'cl3',text:'Coerenza con la classificazione di albergo diffuso',done:false,urgent:false},
+        ]
+      }],
+      fields:[
+        {section:'Iniziativa/Bando',label:'Ente erogatore',value:'Regione Autonoma della Sardegna – Assessorato del Turismo, in raccordo con gli Enti Locali',source:'pdf'},
+        {section:'Iniziativa/Bando',label:'Denominazione',value:'Sviluppo dell’ospitalita diffusa e degli alberghi diffusi nei borghi',source:'pdf'},
+        {section:'Obiettivo',label:'Finalita',value:'Favorire la creazione e riqualificazione di alberghi diffusi e strutture extralberghiere per valorizzare i borghi e destagionalizzare i flussi turistici.',source:'pdf'},
+        {section:'Tempistiche',label:'Chiusura',value:'Presentazione domande entro le ore 23:59 del 15/10/2026.',source:'pdf'},
+        {section:'Soggetti beneficiari e requisiti',label:'Chi puo partecipare',value:'Imprese turistico-ricettive (anche di nuova costituzione) con sede o unita operativa in Sardegna, in possesso o in acquisizione degli immobili oggetto di intervento.',source:'pdf'},
+        {section:'Spese ammissibili',label:'Investimenti finanziabili',value:'Recupero e ristrutturazione di immobili nei centri storici, arredi e allestimenti, impianti, accessibilita, dotazioni tecnologiche per l’accoglienza.',source:'pdf'},
+        {section:'Vincoli e Requisiti',label:'Condizioni',value:'Coerenza con i requisiti regionali dell’albergo diffuso (camere diffuse + servizi centralizzati entro un raggio definito); vincolo di destinazione d’uso turistico.',source:'pdf'},
+        {section:'Spese NON ammissibili',label:'Esclusioni',value:'Acquisto del terreno, nuova costruzione ex novo, IVA, spese di gestione.',source:'pdf'},
+        {section:'Agevolazioni concedibili',label:'Forma e intensita',value:'Contributo in conto capitale (fondo perduto) su una percentuale della spesa ammissibile, con massimale per progetto.',source:'pdf'},
+        {section:'Cumulabilita',label:'Cumulo',value:'Cumulabile nei limiti del de minimis e della normativa sugli aiuti di Stato per il settore turismo.',source:'pdf'},
+        {section:'Erogazione delle agevolazioni',label:'Modalita',value:'Erogazione a SAL e saldo finale su rendicontazione delle spese sostenute.',source:'pdf'},
+        {section:'Budget',label:'Dotazione',value:'Dotazione a valere sui fondi regionali per il turismo (annualita 2026).',source:'pdf'},
+        {section:'Modalita di presentazione della Domanda',label:'Come si presenta',value:'Procedura telematica regionale con SPID e firma digitale del legale rappresentante.',source:'pdf'},
+        {section:'Sito di riferimento',label:'URL ufficiale',value:'https://www.sardegnaturismo.it / portale bandi Regione Sardegna',source:'pdf'},
+        {section:'Note per la rendicontazione',label:'Rendicontazione',value:'Spese ammissibili dalla data di presentazione; pagamenti tracciabili; fine lavori e collaudo entro i termini del bando.',source:'pdf'},
+      ],
+      note:'', createdAt:now(), updatedAt:now()
+    }],
+    aziende:[
+      {
+        id:'demo-a1', name:'Costa Verde Hospitality SRL (Demo)', piva:'01234567891',
+        ateco:'55.10.00', forma:'SRL', dipendenti:6, fatturato:'320.000',
+        documents:[], campi:[
+          {label:'Settore',value:'Turismo / ricettivo'},
+          {label:'Anno costituzione',value:'2024 (nuova impresa)'},
+          {label:'Sede operativa',value:'Sardegna'},
+          {label:'Progetto',value:'Apertura nuova struttura ricettiva'},
+        ], note:'Match atteso: Nuove Imprese a Tasso Zero + Alberghi Diffusi', createdAt:now(), updatedAt:now()
+      },
+      {
+        id:'demo-a2', name:'Cooperativa Serena Assistenza (Demo)', piva:'01234567892',
+        ateco:'87.30.00', forma:'Cooperativa sociale', dipendenti:24, fatturato:'1.450.000',
+        documents:[], campi:[
+          {label:'Settore',value:'Assistenza socio-sanitaria residenziale'},
+          {label:'Anno costituzione',value:'2016'},
+          {label:'Sede operativa',value:'Sardegna'},
+          {label:'Progetto',value:'Domotica e telemedicina nella RSA'},
+        ], note:'Match atteso: IN.DO.M.A.U.S', createdAt:now(), updatedAt:now()
+      },
+      {
+        id:'demo-a3', name:'Borgo Antico Srls (Demo)', piva:'01234567893',
+        ateco:'55.20.51', forma:'SRLS', dipendenti:3, fatturato:'140.000',
+        documents:[], campi:[
+          {label:'Settore',value:'Albergo diffuso / extralberghiero'},
+          {label:'Anno costituzione',value:'2023 (nuova impresa)'},
+          {label:'Sede operativa',value:'Sardegna (borgo storico)'},
+          {label:'Progetto',value:'Recupero immobili per ospitalita diffusa'},
+        ], note:'Match atteso: Alberghi Diffusi + Nuove Imprese a Tasso Zero', createdAt:now(), updatedAt:now()
+      }
+    ]
+  };
+}
+
+// Scrive i dati demo sulle chiavi demo_ (richiede state.isDemo===true cosi K()==='demo_').
+function ensureDemoData() {
+  if (localStorage.getItem('demo_db_ver') !== DEMO_DB_VER || !localStorage.getItem('demo_db')) {
+    saveDB(demoSeed());
+    localStorage.setItem('demo_db_ver', DEMO_DB_VER);
+  }
+}
+
 function enterDemo() {
   state.user = {id:'demo', name:'Demo', surname:'', email:'demo@baia.it', role:'Demo'};
   state.isDemo = true;
-  // Carica dati demo (ricarica se versione vecchia)
-  if (localStorage.getItem('demo_db_ver') !== 'v2') {
-    const demoDb = {
-      bandi: [
-      {
-        id:'demo-b1', name:'Nuove Imprese a Tasso Zero (Demo)', ente:'Invitalia',
-        scadenza:'2026-09-30', status:'active',
-        pdfs:[{id:'demo-p1',name:'analisi-tecnica-nito.pdf',uploadedAt:now(),analyzed:true,textLength:38000,
-          analysis:'Finanziamento agevolato a tasso zero per nuove imprese (under 36 / donne / costituite da meno di 60 mesi). Copre fino al 90% delle spese ammissibili per avvio attivita, in regime de minimis.',
-          checklist:[
-            {id:'cl1',text:'Impresa costituita da meno di 60 mesi (o persona fisica che la costituisce)',done:false,urgent:true},
-            {id:'cl2',text:'Presentare domanda sulla piattaforma Invitalia con SPID e firma digitale',done:false,urgent:true},
-            {id:'cl3',text:'Allegare business plan e piano economico-finanziario',done:false,urgent:false},
-          ]
-        }],
-        fields:[
-          {section:'Iniziativa/Bando',label:'Ente',value:'Invitalia',source:'pdf'},
-          {section:'Obiettivo',label:'Finalita',value:'Sostenere la nascita e lo sviluppo di nuove imprese su tutto il territorio nazionale',source:'pdf'},
-          {section:'Soggetti beneficiari',label:'Requisiti',value:'Imprese costituite da meno di 60 mesi, micro e piccole, o persone fisiche che le costituiscono',source:'pdf'},
-          {section:'Spese ammissibili',label:'Spese',value:'Opere murarie, macchinari, attrezzature, programmi informatici, servizi',source:'pdf'},
-          {section:'Agevolazioni',label:'Tipo',value:'Finanziamento agevolato a tasso zero fino al 90% delle spese (de minimis)',source:'pdf'},
-          {section:'Scadenze',label:'Sportello',value:'Aperto a sportello fino a esaurimento risorse',source:'pdf'},
-          {section:'Sito',label:'URL',value:'https://www.invitalia.it',source:'pdf'},
-        ],
-        note:'', createdAt:now(), updatedAt:now()
-      },
-      {
-        id:'demo-b2', name:'IN.DO.M.A.U.S — Domotica e Assistenza (Demo)', ente:'Regione Autonoma della Sardegna',
-        scadenza:'2026-07-31', status:'active',
-        pdfs:[{id:'demo-p2',name:'analisi-tecnica-indomaus.pdf',uploadedAt:now(),analyzed:true,textLength:30000,
-          analysis:'Contributo a fondo perduto per ammodernamento della rete dei servizi socio-sanitari residenziali, con soglia minima del 50% di spesa in soluzioni di domotica e telemedicina.',
-          checklist:[
-            {id:'cl1',text:'Soggetto privato con sede operativa in Sardegna nel socio-sanitario',done:false,urgent:true},
-            {id:'cl2',text:'Almeno 50% delle spese in impianti di domotica/telemedicina',done:false,urgent:true},
-            {id:'cl3',text:'Presentazione tramite piattaforma SIPES con marca da bollo',done:false,urgent:false},
-          ]
-        }],
-        fields:[
-          {section:'Iniziativa/Bando',label:'Ente',value:'Regione Sardegna - Assessorato Igiene e Sanita',source:'pdf'},
-          {section:'Obiettivo',label:'Finalita',value:'Ammodernamento della rete dei servizi di assistenza residenziale tramite domotica',source:'pdf'},
-          {section:'Soggetti beneficiari',label:'Requisiti',value:'Soggetti privati con sede operativa in Sardegna nel settore socio-sanitario',source:'pdf'},
-          {section:'Vincoli',label:'Soglia domotica',value:'Minimo 50% delle spese in domotica e telemedicina',source:'pdf'},
-          {section:'Agevolazioni',label:'Tipo',value:'Contributo a fondo perduto (de minimis)',source:'pdf'},
-          {section:'Budget',label:'Dotazione',value:'Circa 31 milioni di euro annualita 2026',source:'pdf'},
-          {section:'Scadenze',label:'Chiusura',value:'Fino alle 14:00 del 31/07/2026',source:'pdf'},
-        ],
-        note:'', createdAt:now(), updatedAt:now()
-      },
-      {
-        id:'demo-b3', name:'Alberghi Diffusi e Ospitalita (Demo)', ente:'Regione Sardegna / Enti Locali',
-        scadenza:'2026-10-15', status:'active',
-        pdfs:[{id:'demo-p3',name:'analisi-tecnica-alberghi.pdf',uploadedAt:now(),analyzed:true,textLength:26000,
-          analysis:'Sostegno alla creazione e riqualificazione di alberghi diffusi e strutture ricettive nei borghi, con contributo in conto capitale per recupero immobili e arredi.',
-          checklist:[
-            {id:'cl1',text:'Struttura ricettiva o impresa turistica con sede in Sardegna',done:false,urgent:false},
-            {id:'cl2',text:'Progetto di recupero/riqualificazione immobili nei centri storici',done:false,urgent:true},
-            {id:'cl3',text:'Coerenza con la classificazione di albergo diffuso',done:false,urgent:false},
-          ]
-        }],
-        fields:[
-          {section:'Iniziativa/Bando',label:'Ente',value:'Regione Sardegna - Turismo / Enti Locali',source:'pdf'},
-          {section:'Obiettivo',label:'Finalita',value:'Sviluppo dell ospitalita diffusa e valorizzazione dei borghi',source:'pdf'},
-          {section:'Soggetti beneficiari',label:'Requisiti',value:'Imprese turistico-ricettive con sede operativa in Sardegna',source:'pdf'},
-          {section:'Spese ammissibili',label:'Spese',value:'Recupero immobili, arredi, allestimenti, impianti',source:'pdf'},
-          {section:'Agevolazioni',label:'Tipo',value:'Contributo in conto capitale (fondo perduto)',source:'pdf'},
-          {section:'Scadenze',label:'Chiusura',value:'15/10/2026',source:'pdf'},
-        ],
-        note:'', createdAt:now(), updatedAt:now()
-      }],
-      aziende:[
-        {
-          id:'demo-a1', name:'Costa Verde Hospitality SRL (Demo)', piva:'01234567891',
-          ateco:'55.10.00', forma:'SRL', dipendenti:6, fatturato:'320.000',
-          documents:[], campi:[
-            {label:'Settore',value:'Turismo / ricettivo'},
-            {label:'Anno costituzione',value:'2024 (nuova impresa)'},
-            {label:'Sede operativa',value:'Sardegna'},
-            {label:'Progetto',value:'Apertura nuova struttura ricettiva'},
-          ], note:'Match atteso: Nuove Imprese a Tasso Zero + Alberghi Diffusi', createdAt:now(), updatedAt:now()
-        },
-        {
-          id:'demo-a2', name:'Cooperativa Serena Assistenza (Demo)', piva:'01234567892',
-          ateco:'87.30.00', forma:'Cooperativa sociale', dipendenti:24, fatturato:'1.450.000',
-          documents:[], campi:[
-            {label:'Settore',value:'Assistenza socio-sanitaria residenziale'},
-            {label:'Anno costituzione',value:'2016'},
-            {label:'Sede operativa',value:'Sardegna'},
-            {label:'Progetto',value:'Domotica e telemedicina nella RSA'},
-          ], note:'Match atteso: IN.DO.M.A.U.S', createdAt:now(), updatedAt:now()
-        },
-        {
-          id:'demo-a3', name:'Borgo Antico Srls (Demo)', piva:'01234567893',
-          ateco:'55.20.51', forma:'SRLS', dipendenti:3, fatturato:'140.000',
-          documents:[], campi:[
-            {label:'Settore',value:'Albergo diffuso / extralberghiero'},
-            {label:'Anno costituzione',value:'2023 (nuova impresa)'},
-            {label:'Sede operativa',value:'Sardegna (borgo storico)'},
-            {label:'Progetto',value:'Recupero immobili per ospitalita diffusa'},
-          ], note:'Match atteso: Alberghi Diffusi + Nuove Imprese a Tasso Zero', createdAt:now(), updatedAt:now()
-        }
-      ]
-    };
-    saveDB(demoDb);
-    localStorage.setItem('demo_db_ver','v2');
-  }
+  ensureDemoData();
   showApp();
+  nav('bandi');
 }
 
 function exitDemo() {
@@ -1732,23 +1769,25 @@ function exitDemo() {
   if (!state.user) { logout(); return; }
   document.getElementById('demoBanner').classList.remove('active');
   document.getElementById('demoSbBadge').style.display = 'none';
-  document.getElementById('demoToggleBtn').textContent = 'Attiva demo';
-  document.getElementById('demoStatusInfo').textContent = 'Demo non attiva. I dati reali sono visualizzati.';
+  ['demoToggleBtn','demoToggleBtn2'].forEach(id=>{var b=document.getElementById(id);if(b)b.textContent='Attiva demo';});
+  var si=document.getElementById('demoStatusInfo'); if(si) si.textContent='Demo non attiva. I dati reali sono visualizzati.';
   renderAll();
+  nav('dashboard');
   toast('Demo disattivata — ora vedi i tuoi dati reali', 'success');
 }
 
 function toggleDemo() {
-  if (state.isDemo) { exitDemo(); }
-  else {
-    state.isDemo = true;
-    document.getElementById('demoBanner').classList.add('active');
-    document.getElementById('demoSbBadge').style.display = 'block';
-    document.getElementById('demoToggleBtn').textContent = 'Disattiva demo';
-    document.getElementById('demoStatusInfo').textContent = 'Demo attiva — stai vedendo dati di esempio.';
-    if (localStorage.getItem('demo_db_ver') !== 'v2') enterDemo(); else renderAll();
-    toast('Demo attivata — stai esplorando con dati di esempio', 'warn');
-  }
+  if (state.isDemo) { exitDemo(); return; }
+  // attiva demo SENZA perdere l'identita reale (non sovrascrive state.user)
+  state.isDemo = true;
+  document.getElementById('demoBanner').classList.add('active');
+  document.getElementById('demoSbBadge').style.display = 'block';
+  ['demoToggleBtn','demoToggleBtn2'].forEach(id=>{var b=document.getElementById(id);if(b)b.textContent='Disattiva demo';});
+  var si=document.getElementById('demoStatusInfo'); if(si) si.textContent='Demo attiva — stai vedendo dati di esempio.';
+  ensureDemoData();
+  renderAll();
+  nav('bandi');   // porta l'utente sulla lista bandi cosi VEDE i dati demo caricati
+  toast('Demo attivata — stai esplorando con dati di esempio', 'warn');
 }
 
 // ── APP INIT ──────────────────────────────────────────────
@@ -2865,7 +2904,7 @@ setupWiz.innerHTML = `<div style="background:#0F0F1C;border:1px solid rgba(200,1
     Ottieni la chiave su <a href="https://console.anthropic.com" target="_blank" style="color:#C8A84B">console.anthropic.com</a>.<br>
     Registrati → API Keys → Create Key → copia e incolla qui sotto.
   </div>
-  <input id="swKey" style="width:100%;background:rgba(26,28,56,.04);border:1.5px solid rgba(200,168,75,.2);border-radius:8px;padding:12px 14px;color:#F0F0F8;font-family:JetBrains Mono,monospace;font-size:13px;outline:none;margin-bottom:8px" type="password" placeholder="sk-ant-api03-...">
+  <input id="swKey" style="width:100%;background:rgba(26,28,56,.04);border:1.5px solid rgba(200,168,75,.2);border-radius:8px;padding:12px 14px;color:var(--text);font-family:JetBrains Mono,monospace;font-size:13px;outline:none;margin-bottom:8px" type="password" placeholder="sk-ant-api03-...">
   <div id="swErr" style="font-size:12px;color:#EF4444;min-height:16px;margin-bottom:12px"></div>
   <button onclick="swSave()" style="width:100%;background:#C8A84B;color:#08080F;border:none;border-radius:8px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif">Salva e inizia →</button>
 </div>`;
