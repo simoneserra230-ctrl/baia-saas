@@ -121,6 +121,12 @@ async def init_auth_db():
                 value TEXT,
                 PRIMARY KEY (user_id, key)
             )""")
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS user_data (
+                user_id TEXT PRIMARY KEY,
+                data TEXT,
+                updated_at TEXT DEFAULT (datetime('now'))
+            )""")
         await db.commit()
     print("[AUTH] Tabelle utenti pronte")
 
@@ -1266,6 +1272,48 @@ async def me_preferences(request: Request):
             (u["id"], "email_notifications", val))
         await db.commit()
     return {"ok": True}
+
+# ── Persistenza dati utente (document store per-utente, cross-device) ──
+# Conserva l'intero stato del browser (bandi/aziende/storico) scoped sull'utente
+# autenticato: niente leak fra account. La modalità demo NON viene mai sincronizzata.
+MAX_DATA_BYTES = 8 * 1024 * 1024
+
+@app.get("/me/data")
+async def me_data_get(request: Request):
+    u = await _get_user(request)
+    if not u:
+        return JSONResponse({"ok": False, "error": "Non autenticato"}, 401)
+    async with aiosqlite.connect(DB) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT data,updated_at FROM user_data WHERE user_id=?", (u["id"],)) as c:
+            r = await c.fetchone()
+    if not r or not r["data"]:
+        return {"ok": True, "data": None}
+    try:
+        return {"ok": True, "data": json.loads(r["data"]), "updated_at": r["updated_at"]}
+    except Exception:
+        return {"ok": True, "data": None}
+
+@app.put("/me/data")
+async def me_data_put(request: Request):
+    u = await _get_user(request)
+    if not u:
+        return JSONResponse({"ok": False, "error": "Non autenticato"}, 401)
+    raw = await request.body()
+    if len(raw) > MAX_DATA_BYTES:
+        return JSONResponse({"ok": False, "error": "Dati troppo grandi"}, 413)
+    try:
+        data = json.loads(raw.decode("utf-8"))
+    except Exception:
+        return JSONResponse({"ok": False, "error": "JSON non valido"}, 400)
+    now = datetime.datetime.utcnow().isoformat()
+    async with aiosqlite.connect(DB) as db:
+        await db.execute(
+            "INSERT INTO user_data (user_id,data,updated_at) VALUES (?,?,?) "
+            "ON CONFLICT(user_id) DO UPDATE SET data=excluded.data, updated_at=excluded.updated_at",
+            (u["id"], json.dumps(data), now))
+        await db.commit()
+    return {"ok": True, "updated_at": now}
 
 # ══════════════════════════════════════════════════════════
 # PACK BANDI IMPORT

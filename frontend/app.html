@@ -5831,5 +5831,72 @@ function copyDraft() {
   };
   document.addEventListener('keydown',function(e){if(e.key==='Escape'){var p=document.getElementById('acctPanel');if(p&&p.style.display==='flex')p.style.display='none';}});
 })();</script>
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!-- ══ CLOUD SYNC — i dati reali persistono sul server (cross-device) ══ -->
+<!-- La modalità demo resta solo locale. Scoped per-utente (no bleed). ════ -->
+<script>(function(){
+  var API=(location.protocol==='file:'||location.hostname==='localhost'||location.hostname==='127.0.0.1')?'http://localhost:8000':location.origin+'/api';
+  var KEYS=['baia_db','baia_matchHistory','baia_sal'];   // chiavi dei dati REALI (non demo)
+  var OWNER='baia_data_owner';
+  function tok(){return localStorage.getItem('baia_auth_token')||'';}
+  function isDemo(){try{return typeof state!=='undefined'&&state.isDemo;}catch(e){return false;}}
+  function uid(){try{return (state&&state.user&&state.user.id)||'';}catch(e){return '';}}
+  function hdr(){return {'X-Auth-Token':tok(),'Content-Type':'application/json'};}
+  function snapshot(){var o={};KEYS.forEach(function(k){var v=localStorage.getItem(k);if(v!=null)o[k]=v;});return JSON.stringify(o);}
+  function hasReal(snapStr){try{var o=JSON.parse(snapStr);return !!(o['baia_db'] && o['baia_db'].length>30);}catch(e){return false;}}
+  var lastSynced=null,timer=null,busy=false;
+
+  async function pull(){
+    if(!tok()||isDemo()||busy)return;
+    busy=true;
+    try{
+      var r=await fetch(API+'/me/data',{headers:{'X-Auth-Token':tok()}});
+      if(r.ok){
+        var d=await r.json(), u=uid();
+        if(d&&d.ok&&d.data&&d.data['baia_db']&&d.data['baia_db'].length>30){
+          // il server ha dati reali → vince al caricamento
+          KEYS.forEach(function(k){ if(d.data[k]!=null) localStorage.setItem(k, d.data[k]); else localStorage.removeItem(k); });
+          localStorage.setItem(OWNER,u);
+          lastSynced=snapshot();
+          if(typeof state!=='undefined'&&!state.isDemo&&window.renderAll){try{window.renderAll();}catch(e){}}
+        } else {
+          // server vuoto
+          if(localStorage.getItem(OWNER)===u && hasReal(snapshot())){
+            await push(true);                 // stesso utente: migra il locale sul server
+          } else {
+            KEYS.forEach(function(k){localStorage.removeItem(k);});   // utente diverso: parti pulito
+            localStorage.setItem(OWNER,u);
+            if(typeof state!=='undefined'&&!state.isDemo&&window.renderAll){try{window.renderAll();}catch(e){}}
+          }
+        }
+      }
+    }catch(e){}
+    busy=false;
+  }
+  async function push(force){
+    if(!tok()||isDemo())return;
+    var snap=snapshot();
+    if(!hasReal(snap))return;
+    if(!force && snap===lastSynced)return;
+    try{var r=await fetch(API+'/me/data',{method:'PUT',headers:hdr(),body:snap});if(r.ok){lastSynced=snap;localStorage.setItem(OWNER,uid());}}catch(e){}
+  }
+  function schedule(){if(isDemo())return;clearTimeout(timer);timer=setTimeout(function(){push(false);},1600);}
+
+  // intercetta le scritture localStorage dei dati reali → push (debounce)
+  try{var _set=localStorage.setItem.bind(localStorage);localStorage.setItem=function(k,v){_set(k,v);if(KEYS.indexOf(k)>=0&&!isDemo())schedule();};}catch(e){}
+
+  function onApp(){ if(tok()&&!isDemo()) pull(); }
+  if(window.showApp){var _s=window.showApp;window.showApp=function(){var x=_s.apply(this,arguments);setTimeout(onApp,500);return x;};}
+  // salva all'uscita/cambio scheda (best-effort, keepalive)
+  document.addEventListener('visibilitychange',function(){
+    if(document.visibilityState==='hidden'&&tok()&&!isDemo()){
+      var snap=snapshot();
+      if(hasReal(snap)&&snap!==lastSynced){try{fetch(API+'/me/data',{method:'PUT',keepalive:true,headers:hdr(),body:snap});lastSynced=snap;}catch(e){}}
+    }
+  });
+  setTimeout(onApp,1300);
+  window.bvCloudPush=function(){return push(true);};   // push manuale (debug)
+})();</script>
 </body>
 </html>
