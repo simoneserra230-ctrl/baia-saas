@@ -1618,39 +1618,110 @@ function logout() {
 function enterDemo() {
   state.user = {id:'demo', name:'Demo', surname:'', email:'demo@baia.it', role:'Demo'};
   state.isDemo = true;
-  // Carica dati demo se non esistono
-  if (!localStorage.getItem('demo_db')) {
+  // Carica dati demo (ricarica se versione vecchia)
+  if (localStorage.getItem('demo_db_ver') !== 'v2') {
     const demoDb = {
-      bandi: [{
-        id:'demo-b1', name:'PNRR — Transizione 5.0 (Demo)', ente:'MIMIT',
-        scadenza:'2025-06-30', status:'active',
-        pdfs:[{id:'demo-p1',name:'bando-t50.pdf',uploadedAt:now(),analyzed:true,textLength:42000,
-          analysis:'Bando per la transizione digitale ed energetica. Incentivi tra 35% e 50% per investimenti in macchinari, software e formazione.',
+      bandi: [
+      {
+        id:'demo-b1', name:'Nuove Imprese a Tasso Zero (Demo)', ente:'Invitalia',
+        scadenza:'2026-09-30', status:'active',
+        pdfs:[{id:'demo-p1',name:'analisi-tecnica-nito.pdf',uploadedAt:now(),analyzed:true,textLength:38000,
+          analysis:'Finanziamento agevolato a tasso zero per nuove imprese (under 36 / donne / costituite da meno di 60 mesi). Copre fino al 90% delle spese ammissibili per avvio attivita, in regime de minimis.',
           checklist:[
-            {id:'cl1',text:'Presentare domanda tramite portale MIMIT entro il 30/06/2025',done:false,urgent:true},
-            {id:'cl2',text:'Allegare perizia tecnica asseverata per investimenti superiori a 300.000€',done:false,urgent:false},
-            {id:'cl3',text:'Il bene deve essere interconnesso al sistema informatico di gestione',done:true,urgent:false},
+            {id:'cl1',text:'Impresa costituita da meno di 60 mesi (o persona fisica che la costituisce)',done:false,urgent:true},
+            {id:'cl2',text:'Presentare domanda sulla piattaforma Invitalia con SPID e firma digitale',done:false,urgent:true},
+            {id:'cl3',text:'Allegare business plan e piano economico-finanziario',done:false,urgent:false},
           ]
         }],
         fields:[
-          {section:'Identificazione bando',label:'Titolo',value:'Transizione 5.0',source:'pdf'},
-          {section:'Identificazione bando',label:'Ente erogatore',value:'MIMIT',source:'pdf'},
-          {section:'Importi',label:'Contributo massimo',value:'€2.000.000 per impresa',source:'pdf'},
-          {section:'Importi',label:'Aliquota base',value:'35% spese ammissibili',source:'pdf'},
-          {section:'Beneficiari',label:'Dimensione impresa',value:'Micro, piccole e medie imprese',source:'pdf'},
-          {section:'Beneficiari',label:'Codici ATECO ammessi',value:'Tutti salvo settori esclusi',source:'external',externalNote:'Da circolare MIMIT n.12/2024'},
-          {section:'Scadenze',label:'Apertura sportello',value:'01/01/2025',source:'pdf'},
-          {section:'Scadenze',label:'Chiusura sportello',value:'30/06/2025',source:'pdf'},
+          {section:'Iniziativa/Bando',label:'Ente',value:'Invitalia',source:'pdf'},
+          {section:'Obiettivo',label:'Finalita',value:'Sostenere la nascita e lo sviluppo di nuove imprese su tutto il territorio nazionale',source:'pdf'},
+          {section:'Soggetti beneficiari',label:'Requisiti',value:'Imprese costituite da meno di 60 mesi, micro e piccole, o persone fisiche che le costituiscono',source:'pdf'},
+          {section:'Spese ammissibili',label:'Spese',value:'Opere murarie, macchinari, attrezzature, programmi informatici, servizi',source:'pdf'},
+          {section:'Agevolazioni',label:'Tipo',value:'Finanziamento agevolato a tasso zero fino al 90% delle spese (de minimis)',source:'pdf'},
+          {section:'Scadenze',label:'Sportello',value:'Aperto a sportello fino a esaurimento risorse',source:'pdf'},
+          {section:'Sito',label:'URL',value:'https://www.invitalia.it',source:'pdf'},
+        ],
+        note:'', createdAt:now(), updatedAt:now()
+      },
+      {
+        id:'demo-b2', name:'IN.DO.M.A.U.S — Domotica e Assistenza (Demo)', ente:'Regione Autonoma della Sardegna',
+        scadenza:'2026-07-31', status:'active',
+        pdfs:[{id:'demo-p2',name:'analisi-tecnica-indomaus.pdf',uploadedAt:now(),analyzed:true,textLength:30000,
+          analysis:'Contributo a fondo perduto per ammodernamento della rete dei servizi socio-sanitari residenziali, con soglia minima del 50% di spesa in soluzioni di domotica e telemedicina.',
+          checklist:[
+            {id:'cl1',text:'Soggetto privato con sede operativa in Sardegna nel socio-sanitario',done:false,urgent:true},
+            {id:'cl2',text:'Almeno 50% delle spese in impianti di domotica/telemedicina',done:false,urgent:true},
+            {id:'cl3',text:'Presentazione tramite piattaforma SIPES con marca da bollo',done:false,urgent:false},
+          ]
+        }],
+        fields:[
+          {section:'Iniziativa/Bando',label:'Ente',value:'Regione Sardegna - Assessorato Igiene e Sanita',source:'pdf'},
+          {section:'Obiettivo',label:'Finalita',value:'Ammodernamento della rete dei servizi di assistenza residenziale tramite domotica',source:'pdf'},
+          {section:'Soggetti beneficiari',label:'Requisiti',value:'Soggetti privati con sede operativa in Sardegna nel settore socio-sanitario',source:'pdf'},
+          {section:'Vincoli',label:'Soglia domotica',value:'Minimo 50% delle spese in domotica e telemedicina',source:'pdf'},
+          {section:'Agevolazioni',label:'Tipo',value:'Contributo a fondo perduto (de minimis)',source:'pdf'},
+          {section:'Budget',label:'Dotazione',value:'Circa 31 milioni di euro annualita 2026',source:'pdf'},
+          {section:'Scadenze',label:'Chiusura',value:'Fino alle 14:00 del 31/07/2026',source:'pdf'},
+        ],
+        note:'', createdAt:now(), updatedAt:now()
+      },
+      {
+        id:'demo-b3', name:'Alberghi Diffusi e Ospitalita (Demo)', ente:'Regione Sardegna / Enti Locali',
+        scadenza:'2026-10-15', status:'active',
+        pdfs:[{id:'demo-p3',name:'analisi-tecnica-alberghi.pdf',uploadedAt:now(),analyzed:true,textLength:26000,
+          analysis:'Sostegno alla creazione e riqualificazione di alberghi diffusi e strutture ricettive nei borghi, con contributo in conto capitale per recupero immobili e arredi.',
+          checklist:[
+            {id:'cl1',text:'Struttura ricettiva o impresa turistica con sede in Sardegna',done:false,urgent:false},
+            {id:'cl2',text:'Progetto di recupero/riqualificazione immobili nei centri storici',done:false,urgent:true},
+            {id:'cl3',text:'Coerenza con la classificazione di albergo diffuso',done:false,urgent:false},
+          ]
+        }],
+        fields:[
+          {section:'Iniziativa/Bando',label:'Ente',value:'Regione Sardegna - Turismo / Enti Locali',source:'pdf'},
+          {section:'Obiettivo',label:'Finalita',value:'Sviluppo dell ospitalita diffusa e valorizzazione dei borghi',source:'pdf'},
+          {section:'Soggetti beneficiari',label:'Requisiti',value:'Imprese turistico-ricettive con sede operativa in Sardegna',source:'pdf'},
+          {section:'Spese ammissibili',label:'Spese',value:'Recupero immobili, arredi, allestimenti, impianti',source:'pdf'},
+          {section:'Agevolazioni',label:'Tipo',value:'Contributo in conto capitale (fondo perduto)',source:'pdf'},
+          {section:'Scadenze',label:'Chiusura',value:'15/10/2026',source:'pdf'},
         ],
         note:'', createdAt:now(), updatedAt:now()
       }],
-      aziende:[{
-        id:'demo-a1', name:'Tech Innovazione SRL (Demo)', piva:'12345678901',
-        ateco:'62.01.00', forma:'SRL', dipendenti:15, fatturato:'1.200.000',
-        documents:[], campi:[], note:'', createdAt:now(), updatedAt:now()
-      }]
+      aziende:[
+        {
+          id:'demo-a1', name:'Costa Verde Hospitality SRL (Demo)', piva:'01234567891',
+          ateco:'55.10.00', forma:'SRL', dipendenti:6, fatturato:'320.000',
+          documents:[], campi:[
+            {label:'Settore',value:'Turismo / ricettivo'},
+            {label:'Anno costituzione',value:'2024 (nuova impresa)'},
+            {label:'Sede operativa',value:'Sardegna'},
+            {label:'Progetto',value:'Apertura nuova struttura ricettiva'},
+          ], note:'Match atteso: Nuove Imprese a Tasso Zero + Alberghi Diffusi', createdAt:now(), updatedAt:now()
+        },
+        {
+          id:'demo-a2', name:'Cooperativa Serena Assistenza (Demo)', piva:'01234567892',
+          ateco:'87.30.00', forma:'Cooperativa sociale', dipendenti:24, fatturato:'1.450.000',
+          documents:[], campi:[
+            {label:'Settore',value:'Assistenza socio-sanitaria residenziale'},
+            {label:'Anno costituzione',value:'2016'},
+            {label:'Sede operativa',value:'Sardegna'},
+            {label:'Progetto',value:'Domotica e telemedicina nella RSA'},
+          ], note:'Match atteso: IN.DO.M.A.U.S', createdAt:now(), updatedAt:now()
+        },
+        {
+          id:'demo-a3', name:'Borgo Antico Srls (Demo)', piva:'01234567893',
+          ateco:'55.20.51', forma:'SRLS', dipendenti:3, fatturato:'140.000',
+          documents:[], campi:[
+            {label:'Settore',value:'Albergo diffuso / extralberghiero'},
+            {label:'Anno costituzione',value:'2023 (nuova impresa)'},
+            {label:'Sede operativa',value:'Sardegna (borgo storico)'},
+            {label:'Progetto',value:'Recupero immobili per ospitalita diffusa'},
+          ], note:'Match atteso: Alberghi Diffusi + Nuove Imprese a Tasso Zero', createdAt:now(), updatedAt:now()
+        }
+      ]
     };
     saveDB(demoDb);
+    localStorage.setItem('demo_db_ver','v2');
   }
   showApp();
 }
@@ -1675,7 +1746,7 @@ function toggleDemo() {
     document.getElementById('demoSbBadge').style.display = 'block';
     document.getElementById('demoToggleBtn').textContent = 'Disattiva demo';
     document.getElementById('demoStatusInfo').textContent = 'Demo attiva — stai vedendo dati di esempio.';
-    if (!localStorage.getItem('demo_db')) enterDemo(); else renderAll();
+    if (localStorage.getItem('demo_db_ver') !== 'v2') enterDemo(); else renderAll();
     toast('Demo attivata — stai esplorando con dati di esempio', 'warn');
   }
 }

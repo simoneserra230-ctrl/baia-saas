@@ -28,3 +28,7 @@ Thumbs.db
 # Render env — NEVER commit
 .env.render
 .env.*.local
+
+# ── DATI SENSIBILI CLIENTE / ESEMPI REALI — MAI committare ──────────
+DEMO/
+da fare.txt
