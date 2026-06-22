@@ -594,6 +594,10 @@ button{cursor:pointer;font-family:'Inter',sans-serif}
         </div>
 
         <div class="sb-section" style="margin-top:16px">Account</div>
+        <div class="sb-item" onclick="acctOpen()" id="nav-account">
+          <svg class="icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.2"/><path d="M2.5 14a5.5 5.5 0 0111 0" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          Il mio account
+        </div>
         <div class="sb-item" onclick="nav('settings')" id="nav-settings">
           <svg class="icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.2"/><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3.05 3.05l1.06 1.06M11.89 11.89l1.06 1.06M3.05 12.95l1.06-1.06M11.89 4.11l1.06-1.06" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
           Impostazioni
@@ -5729,6 +5733,103 @@ function copyDraft() {
   document.getElementById('cfgBtn').onclick=function(){document.getElementById('cfgPanel').style.display='flex';load();};
   document.getElementById('cfgClose').onclick=function(){document.getElementById('cfgPanel').style.display='none';};
   document.addEventListener('keydown',function(e){if(e.key==='Escape'){var p=document.getElementById('cfgPanel');if(p&&p.style.display==='flex')p.style.display='none';}});
+})();</script>
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!-- ══ ACCOUNT UTENTE (tutti gli utenti, limitato al proprio ruolo) ════ -->
+<!-- Profilo · Piano + utilizzo AI · Cambio password · Preferenze ════════ -->
+<style>
+#acctPanel{display:none;position:fixed;inset:0;z-index:99996;background:rgba(10,12,24,.55);backdrop-filter:blur(6px);align-items:flex-start;justify-content:center;padding:28px 16px;overflow:auto}
+#acctPanel .box{max-width:560px;width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:24px;color:var(--text);box-shadow:var(--shadow)}
+#acctPanel h2{font:800 19px Syne,sans-serif;margin:0}
+#acctPanel .sec{border:1px solid var(--border);border-radius:12px;padding:16px;margin-top:14px;background:var(--bg3)}
+#acctPanel .sec h3{font:700 14px Inter;margin:0 0 10px;display:flex;align-items:center;gap:8px}
+#acctPanel label{font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;display:block;margin:8px 0 3px}
+#acctPanel input{width:100%;padding:9px 11px;border:1px solid var(--border2);border-radius:8px;background:var(--bg2);color:var(--text);font:13px Inter;outline:none}
+#acctPanel input:focus{border-color:var(--accent)}
+#acctPanel input[disabled]{background:var(--bg4);color:var(--muted)}
+#acctPanel .gbtn{background:var(--grad);color:#fff;border:none;font-weight:700;padding:9px 16px;border-radius:8px;cursor:pointer;margin-top:10px}
+#acctPanel .obtn{background:var(--bg2);color:var(--text);border:1px solid var(--border2);font-weight:600;padding:9px 14px;border-radius:8px;cursor:pointer;margin-top:10px}
+#acctPanel .msg{font-size:12px;margin-top:8px;min-height:16px;margin-left:8px;display:inline-block}
+#acctPanel .pbar{height:9px;background:var(--bg4);border-radius:99px;overflow:hidden;margin:6px 0}
+#acctPanel .pfill{height:100%;border-radius:99px}
+#acctPanel .plan-badge{font:700 11px Inter;padding:3px 10px;border-radius:99px;background:var(--gold-dim);color:var(--accent)}
+#acctPanel .sw{display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text)}
+#acctClose{float:right;cursor:pointer;color:var(--muted);font-size:18px}
+</style>
+<div id="acctPanel"><div class="box">
+  <span id="acctClose">✕</span>
+  <h2>👤 Il mio account</h2>
+  <div id="acctBody"><div style="padding:20px;color:var(--muted)">Caricamento…</div></div>
+</div></div>
+<script>(function(){
+  var API=(location.protocol==='file:'||location.hostname==='localhost'||location.hostname==='127.0.0.1')?'http://localhost:8000':location.origin+'/api';
+  function tok(){return localStorage.getItem('baia_auth_token')||'';}
+  function api(p,o){o=o||{};o.headers=Object.assign({'X-Auth-Token':tok(),'Content-Type':'application/json'},o.headers||{});return fetch(API+p,o);}
+  function v(id){var e=document.getElementById(id);return e?e.value:'';}
+  function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function daysLeft(iso){if(!iso)return null;var s=String(iso).trim().replace(' ','T').replace(/([+-]\d{2})$/,'$1:00');var d=new Date(s);if(isNaN(d)){var m=String(iso).match(/(\d{4})-(\d{2})-(\d{2})/);if(m)d=new Date(+m[1],+m[2]-1,+m[3]);}if(isNaN(d))return null;return Math.max(0,Math.ceil((d-new Date())/86400000));}
+  var P={};
+  window.acctOpen=function(){ document.getElementById('acctPanel').style.display='flex'; load(); };
+  window.acctClose=function(){ document.getElementById('acctPanel').style.display='none'; };
+  document.getElementById('acctClose').onclick=window.acctClose;
+  async function load(){
+    var b=document.getElementById('acctBody');
+    if(!tok()){ b.innerHTML='<div style="padding:16px;color:var(--muted)">Accedi per vedere il tuo account.</div>'; return; }
+    try{ var r=await api('/me/profile'); var d=await r.json(); if(!d.ok){ b.innerHTML='<div style="padding:16px;color:var(--danger)">'+esc(d.error||'Errore')+'</div>'; return; } P=d; render(); }
+    catch(e){ b.innerHTML='<div style="padding:16px;color:var(--danger)">Backend non raggiungibile.</div>'; }
+  }
+  function planLabel(u){
+    if(u.is_admin) return 'Amministratore';
+    var p=(u.plan||'trial');
+    if(p==='trial'){var dl=daysLeft(u.trial_ends_at);return 'Prova gratuita'+(dl!=null?' · '+dl+' giorni rimasti':'');}
+    if(p==='active') return 'Abbonato';
+    if(p==='free') return 'Licenza gratuita';
+    if(p==='expired') return 'Scaduto';
+    return p;
+  }
+  function render(){
+    var u=P.user||{}, us=P.usage||{}, pr=P.preferences||{};
+    var used=us.used||0, lim=us.limit||0, unl=us.unlimited, pct=unl?6:Math.min(100,lim?Math.round(used/lim*100):0);
+    var col=pct>=90?'var(--danger)':pct>=70?'var(--gold-dark)':'var(--green)';
+    var showUpgrade = !u.is_admin && u.plan!=='active' && u.plan!=='free';
+    document.getElementById('acctBody').innerHTML=''
+    +'<div class="sec"><h3>👤 Profilo</h3>'
+      +'<label>Nome</label><input value="'+esc((u.name||''))+'" disabled>'
+      +'<label>Email</label><input value="'+esc((u.email||''))+'" disabled>'
+      +'<div style="margin-top:8px"><span class="plan-badge">'+esc(planLabel(u))+'</span></div></div>'
+    +'<div class="sec"><h3>💎 Il mio piano</h3>'
+      +'<div style="display:flex;justify-content:space-between;font-size:12.5px"><span>Operazioni AI ('+esc(us.period||'')+')</span><span style="font-weight:700">'+(unl?'illimitate':(used+' / '+lim))+'</span></div>'
+      +'<div class="pbar"><div class="pfill" style="width:'+pct+'%;background:'+(unl?'var(--accent)':col)+'"></div></div>'
+      +(unl?'<div style="font-size:11px;color:var(--muted)">Nessun limite sul tuo piano.</div>':(used>=lim?'<div style="font-size:11.5px;color:var(--danger)">Hai esaurito le operazioni di questo mese.</div>':'<div style="font-size:11px;color:var(--muted)">Si azzera ogni mese.</div>'))
+      +(showUpgrade?'<div><button class="gbtn" onclick="window.bvStartUpgrade && window.bvStartUpgrade(\'pro\')">⭐ Abbonati / Cambia piano</button></div>':'')
+    +'</div>'
+    +'<div class="sec"><h3>🔒 Cambia password</h3>'
+      +'<label>Password attuale</label><input id="acctOld" type="password" placeholder="••••••••">'
+      +'<label>Nuova password (min. 8)</label><input id="acctNew" type="password" placeholder="••••••••">'
+      +'<label>Conferma nuova password</label><input id="acctNew2" type="password" placeholder="••••••••">'
+      +'<button class="gbtn" onclick="acctSavePwd()">Aggiorna password</button><span class="msg" id="acctPwdMsg"></span></div>'
+    +'<div class="sec"><h3>🔔 Preferenze</h3>'
+      +'<label class="sw"><input type="checkbox" id="acctNotif" style="width:auto" '+(pr.email_notifications?'checked':'')+'> Ricevi notifiche via email (scadenze, nuovi bandi)</label>'
+      +'<div><button class="obtn" onclick="acctSavePrefs()">Salva preferenze</button><span class="msg" id="acctPrefMsg"></span></div></div>';
+  }
+  window.acctSavePwd=async function(){
+    var m=document.getElementById('acctPwdMsg'), old=v('acctOld'), nw=v('acctNew'), nw2=v('acctNew2');
+    m.style.color='var(--muted)';
+    if(nw.length<8){m.style.color='var(--danger)';m.textContent='Min. 8 caratteri';return;}
+    if(nw!==nw2){m.style.color='var(--danger)';m.textContent='Le password non coincidono';return;}
+    m.textContent='Aggiornamento…';
+    try{var r=await api('/me/password',{method:'POST',body:JSON.stringify({old:old,new:nw})});var d=await r.json();
+      if(d.ok){m.style.color='var(--green)';m.textContent='✓ Password aggiornata';document.getElementById('acctOld').value='';document.getElementById('acctNew').value='';document.getElementById('acctNew2').value='';}
+      else{m.style.color='var(--danger)';m.textContent='✗ '+(d.error||'errore');}
+    }catch(e){m.style.color='var(--danger)';m.textContent='✗ errore di rete';}
+  };
+  window.acctSavePrefs=async function(){
+    var m=document.getElementById('acctPrefMsg');m.style.color='var(--muted)';m.textContent='Salvataggio…';
+    try{var r=await api('/me/preferences',{method:'POST',body:JSON.stringify({email_notifications:document.getElementById('acctNotif').checked})});var d=await r.json();
+      m.style.color=d.ok?'var(--green)':'var(--danger)';m.textContent=d.ok?'✓ Salvato':'✗ '+(d.error||'errore');}catch(e){m.style.color='var(--danger)';m.textContent='✗ errore';}
+  };
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'){var p=document.getElementById('acctPanel');if(p&&p.style.display==='flex')p.style.display='none';}});
 })();</script>
 </body>
 </html>

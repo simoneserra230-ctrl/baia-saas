@@ -107,6 +107,20 @@ async def init_auth_db():
                 value TEXT,
                 updated_at TEXT DEFAULT (datetime('now'))
             )""")
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS usage_counters (
+                user_id TEXT NOT NULL,
+                period TEXT NOT NULL,
+                count INTEGER DEFAULT 0,
+                PRIMARY KEY (user_id, period)
+            )""")
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS user_settings (
+                user_id TEXT NOT NULL,
+                key TEXT NOT NULL,
+                value TEXT,
+                PRIMARY KEY (user_id, key)
+            )""")
         await db.commit()
     print("[AUTH] Tabelle utenti pronte")
 
@@ -977,25 +991,75 @@ def _payments_on():
     sec, _ = _stripe_keys()
     return os.environ.get("PAYMENTS_ENABLED", "0") == "1" and bool(sec) and _stripe_available()
 
-# ── PAYWALL middleware: blocca gli endpoint AI se l'utente non ha accesso ──
+# ── USAGE / QUOTA per piano (controllo costi modello centralizzato) ──
+# Operazioni AI/mese per piano. Sovrascrivibili con env LIMIT_<PIANO> (es. LIMIT_TRIAL=50).
+PLAN_LIMITS_DEFAULT = {"trial": 25, "free": 10**9, "active": 600, "base": 150,
+                       "pro": 600, "business": 3000, "expired": 0}
+
+def _plan_limit(plan, role=None, email=None):
+    if _is_admin(email, role):
+        return 10**9
+    plan = (plan or "trial").lower()
+    env = os.environ.get("LIMIT_" + plan.upper(), "")
+    if env.isdigit():
+        return int(env)
+    return PLAN_LIMITS_DEFAULT.get(plan, 25)
+
+def _period():
+    return datetime.datetime.utcnow().strftime("%Y-%m")
+
+async def _usage_get(user_id):
+    try:
+        async with aiosqlite.connect(DB) as db:
+            db.row_factory = aiosqlite.Row
+            async with db.execute(
+                "SELECT count FROM usage_counters WHERE user_id=? AND period=?",
+                (user_id, _period())) as c:
+                r = await c.fetchone()
+        return (r["count"] if r else 0) or 0
+    except Exception:
+        return 0
+
+async def _usage_inc(user_id):
+    async with aiosqlite.connect(DB) as db:
+        await db.execute(
+            "INSERT INTO usage_counters (user_id,period,count) VALUES (?,?,1) "
+            "ON CONFLICT(user_id,period) DO UPDATE SET count=usage_counters.count+1",
+            (user_id, _period()))
+        await db.commit()
+
+# ── PAYWALL middleware: accesso (402) + quota mensile (429) sugli endpoint AI ──
 PAYWALL_PATHS = ("/bando/analisi-tecnica", "/analyze", "/match-ai", "/bando/ricontrollo",
                  "/advisor", "/enrich", "/prompt", "/analyze-company-doc")
 
 @app.middleware("http")
 async def paywall_middleware(request: Request, call_next):
-    try:
-        if request.method == "POST":
-            p = request.url.path
-            if any(seg in p for seg in PAYWALL_PATHS):
-                user = await _get_user(request)
-                if user and not user.get("access", True):
+    is_ai = request.method == "POST" and any(seg in request.url.path for seg in PAYWALL_PATHS)
+    user = None
+    if is_ai:
+        try:
+            user = await _get_user(request)
+            if user:
+                if not user.get("access", True):
                     return JSONResponse(
                         {"ok": False, "code": "no_access",
-                         "error": "Prova terminata o abbonamento non attivo. Abbonati per continuare."},
-                        status_code=402)
-    except Exception as e:
-        print(f"[PAYWALL] middleware err: {e}")
-    return await call_next(request)
+                         "error": "Prova terminata o abbonamento non attivo. Abbonati per continuare."}, 402)
+                limit = _plan_limit(user.get("plan"), user.get("role"), user.get("email"))
+                if await _usage_get(user["id"]) >= limit:
+                    return JSONResponse(
+                        {"ok": False, "code": "quota",
+                         "error": f"Hai raggiunto il limite di {limit} operazioni AI del tuo piano per questo mese. "
+                                  f"Passa a un piano superiore per continuare."}, 429)
+        except Exception as e:
+            print(f"[PAYWALL] middleware err: {e}")
+    response = await call_next(request)
+    if is_ai and user:
+        try:
+            if getattr(response, "status_code", 500) == 200:
+                await _usage_inc(user["id"])
+        except Exception as e:
+            print(f"[USAGE] inc err: {e}")
+    return response
 
 # ── Admin: lettura/scrittura impostazioni sito ──
 @app.get("/admin/settings")
@@ -1136,6 +1200,71 @@ async def billing_webhook(request: Request):
             print(f"[BILLING] plan EXPIRED per {email}")
     except Exception as e:
         print(f"[BILLING] webhook apply err: {e}")
+    return {"ok": True}
+
+# ══════════════════════════════════════════════════════════
+# IMPOSTAZIONI UTENTE (role-limited: ogni utente vede solo le proprie)
+# ══════════════════════════════════════════════════════════
+async def _user_pref_get(user_id):
+    out = {}
+    try:
+        async with aiosqlite.connect(DB) as db:
+            db.row_factory = aiosqlite.Row
+            async with db.execute("SELECT key,value FROM user_settings WHERE user_id=?", (user_id,)) as c:
+                for r in await c.fetchall():
+                    out[r["key"]] = r["value"]
+    except Exception:
+        pass
+    return out
+
+@app.get("/me/profile")
+async def me_profile(request: Request):
+    u = await _get_user(request)
+    if not u:
+        return JSONResponse({"ok": False, "error": "Non autenticato"}, 401)
+    used = await _usage_get(u["id"])
+    limit = _plan_limit(u.get("plan"), u.get("role"), u.get("email"))
+    prefs = await _user_pref_get(u["id"])
+    return {"ok": True, "user": u,
+            "usage": {"used": used, "limit": limit, "period": _period(), "unlimited": limit >= 10**9},
+            "preferences": {"email_notifications": prefs.get("email_notifications", "1") == "1"},
+            "payments_enabled": _payments_on()}
+
+@app.post("/me/password")
+async def me_password(request: Request):
+    u = await _get_user(request)
+    if not u:
+        return JSONResponse({"ok": False, "error": "Non autenticato"}, 401)
+    body = await request.json()
+    old = body.get("old") or ""
+    new = body.get("new") or ""
+    if len(new) < 8:
+        return JSONResponse({"ok": False, "error": "La nuova password deve avere almeno 8 caratteri"}, 400)
+    async with aiosqlite.connect(DB) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT password_hash FROM users WHERE id=?", (u["id"],)) as c:
+            row = await c.fetchone()
+    if not row or not verify_password(old, row["password_hash"]):
+        return JSONResponse({"ok": False, "error": "Password attuale non corretta"}, 400)
+    async with aiosqlite.connect(DB) as db:
+        await db.execute("UPDATE users SET password_hash=? WHERE id=?", (hash_password(new), u["id"]))
+        await db.commit()
+    await log_action("user.password_change", user_id=u["id"], user_email=u["email"])
+    return {"ok": True}
+
+@app.post("/me/preferences")
+async def me_preferences(request: Request):
+    u = await _get_user(request)
+    if not u:
+        return JSONResponse({"ok": False, "error": "Non autenticato"}, 401)
+    body = await request.json()
+    val = "1" if body.get("email_notifications") else "0"
+    async with aiosqlite.connect(DB) as db:
+        await db.execute(
+            "INSERT INTO user_settings (user_id,key,value) VALUES (?,?,?) "
+            "ON CONFLICT(user_id,key) DO UPDATE SET value=excluded.value",
+            (u["id"], "email_notifications", val))
+        await db.commit()
     return {"ok": True}
 
 # ══════════════════════════════════════════════════════════
