@@ -573,6 +573,11 @@ button{cursor:pointer;font-family:'Inter',sans-serif}
           <svg class="icon" viewBox="0 0 16 16" fill="none"><circle cx="4" cy="8" r="2.5" stroke="currentColor" stroke-width="1.2"/><circle cx="12" cy="8" r="2.5" stroke="currentColor" stroke-width="1.2"/><path d="M6.5 8h3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
           Matching
         </div>
+        <div class="sb-item" onclick="bvOpen()" id="nav-valutazione">
+          <svg class="icon" viewBox="0 0 16 16" fill="none"><path d="M2 14V9M6 14V4M10 14V7M14 14V2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+          Valutazione
+          <span class="sb-badge" style="color:var(--accent);background:var(--gold-dim);border-color:rgba(99,102,241,.25)">PRO</span>
+        </div>
         <div class="sb-item" onclick="nav('sal')" id="nav-sal">
           <svg class="icon" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="3" height="10" rx="1" fill="currentColor" opacity=".5"/><rect x="6.5" y="1" width="3" height="12" rx="1" fill="currentColor"/><rect x="12" y="5" width="3" height="8" rx="1" fill="currentColor" opacity=".7"/></svg>
           SAL Tracker
@@ -5045,6 +5050,556 @@ function copyDraft() {
   function atVis(){document.getElementById('atBtn').style.display=tok()?'block':'none';}
   setTimeout(atVis,900);
   if(window.showApp){var _s2=window.showApp;window.showApp=function(){var x=_s2.apply(this,arguments);setTimeout(atVis,350);return x;};}
+})();
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!-- ══ VALUTAZIONE AVANZATA — motore consulenziale (port BA V7.1) ══════ -->
+<!-- Eligibilità 10 controlli · Profilo rischio · Proiezione economica ·  -->
+<!-- Posizionamento competitivo · SWOT · Roadmap · Radar · Confronta ·    -->
+<!-- Storico match · Export DOCX/PDF                                       -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<style>
+:root{ --gold-dark:#B8860B; --danger:#E02424; --ink:#1A1B2E; --cream:#EFF1F7; --warn:#C27803; }
+#bvOverlay{display:none;position:fixed;inset:0;z-index:99990;background:var(--bg);overflow-y:auto}
+#bvOverlay.open{display:block}
+#bvHead{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 22px;background:var(--bg2);border-bottom:1px solid var(--border);box-shadow:var(--shadow)}
+#bvHead .bv-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:17px;letter-spacing:-.5px;background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+#bvTabs{display:flex;gap:4px;background:var(--bg3);border-radius:8px;padding:3px}
+.bv-tab{padding:7px 14px;border:none;background:transparent;color:var(--muted);font:600 12.5px Inter,sans-serif;border-radius:6px;cursor:pointer;transition:var(--t)}
+.bv-tab.active{background:var(--bg2);color:var(--text);box-shadow:0 1px 4px rgba(60,66,110,.12)}
+#bvClose{margin-left:auto;background:var(--bg3);border:1px solid var(--border);border-radius:8px;width:34px;height:34px;color:var(--muted);font-size:16px;cursor:pointer}
+#bvClose:hover{color:var(--text);background:var(--bg4)}
+#bvBody{padding:22px;max-width:1180px;margin:0 auto}
+#bvBody .card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:18px;box-shadow:var(--shadow)}
+#bvBody .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px;flex-wrap:wrap}
+#bvBody .card-title{font-family:'Syne',sans-serif;font-weight:700;font-size:14.5px;color:var(--text)}
+#bvBody select,#bvBody input{font-family:Inter,sans-serif;font-size:13px;color:var(--text);background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:9px 11px;outline:none}
+#bvBody select:focus,#bvBody input:focus{border-color:var(--accent)}
+#bvBody .badge{display:inline-flex;align-items:center;gap:4px;font:600 10.5px Inter;padding:3px 9px;border-radius:99px;border:1px solid var(--border)}
+.badge-green{background:rgba(14,159,110,.12);color:var(--green);border-color:rgba(14,159,110,.25)}
+.bv-badge-gold{background:var(--gold-dim);color:var(--accent);border-color:rgba(99,102,241,.25)}
+.badge-red{background:rgba(224,36,36,.10);color:var(--danger);border-color:rgba(224,36,36,.22)}
+.bv-btn{font:600 12.5px Inter;padding:9px 16px;border-radius:8px;border:1px solid var(--border2);background:var(--bg2);color:var(--text);cursor:pointer;transition:var(--t)}
+.bv-btn:hover{border-color:var(--accent)}
+.bv-btn-gold{background:var(--grad);color:#fff;border:none;box-shadow:0 3px 12px rgba(99,102,241,.3)}
+.bv-btn-gold:hover{opacity:.92}
+.bv-grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.bv-full{grid-column:1/-1}
+@media(max-width:880px){.bv-grid2{grid-template-columns:1fr}}
+/* hero */
+.match-hero{display:flex;align-items:center;gap:20px;flex-wrap:wrap;background:linear-gradient(135deg,#1A1B2E,#2A2550);border-radius:var(--r2);padding:22px 24px;color:#EEEEFF;box-shadow:var(--shadow)}
+.match-score-circle{width:96px;height:96px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;border:4px solid}
+.match-score-circle.score-high{border-color:#34D399;background:rgba(52,211,153,.12)}
+.match-score-circle.score-mid{border-color:#FBBF24;background:rgba(251,191,36,.12)}
+.match-score-circle.score-low{border-color:#F87171;background:rgba(248,113,113,.12)}
+.match-score-num{font-family:'Syne',sans-serif;font-weight:800;font-size:26px;line-height:1}
+.match-score-label{font-size:9px;letter-spacing:1px;opacity:.7;margin-top:2px}
+.match-hero-body{flex:1;min-width:220px}
+.match-hero-title{font-family:'Syne',sans-serif;font-weight:700;font-size:17px;margin-bottom:5px}
+.match-hero-sub{font-size:12.5px;opacity:.8;margin-bottom:10px}
+.match-hero-tags{display:flex;gap:7px;flex-wrap:wrap}
+.match-hero-tag{font-size:11px;padding:4px 10px;border-radius:99px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.18)}
+.match-hero-actions{display:flex;flex-direction:column;gap:8px}
+/* kpi */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+@media(max-width:880px){.kpi-row{grid-template-columns:1fr 1fr}}
+.kpi-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:16px;text-align:center;box-shadow:var(--shadow)}
+.kpi-card.kpi-green{border-top:3px solid var(--green)}.kpi-card.kpi-gold{border-top:3px solid var(--gold-dark)}
+.kpi-card.kpi-red{border-top:3px solid var(--danger)}.kpi-card.kpi-blue{border-top:3px solid var(--blue)}
+.kpi-score{font-family:'Syne',sans-serif;font-weight:800;font-size:26px;color:var(--text)}
+.kpi-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:3px}
+.kpi-sub{font-size:11px;color:var(--subtle);margin-top:2px}
+/* eligibility */
+.elig-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media(max-width:880px){.elig-grid{grid-template-columns:1fr}}
+.elig-row{display:flex;align-items:center;gap:11px;padding:11px 13px;border-radius:10px;border:1px solid var(--border);background:var(--bg3)}
+.elig-row.pass{border-left:4px solid var(--green)}.elig-row.warn{border-left:4px solid var(--gold-dark)}
+.elig-row.fail{border-left:4px solid var(--danger)}.elig-row.na{border-left:4px solid var(--subtle);opacity:.75}
+.elig-icon{font-size:18px;flex-shrink:0}
+.elig-body{flex:1;min-width:0}
+.elig-label{font-weight:600;font-size:12.5px;color:var(--text)}
+.elig-detail{font-size:11px;color:var(--muted);margin-top:2px;overflow-wrap:anywhere}
+.elig-status{font:700 11px Inter;flex-shrink:0;padding:3px 8px;border-radius:6px;background:var(--bg2);border:1px solid var(--border)}
+/* financial */
+.financials-grid{display:grid;gap:12px}
+.financial-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:13px;text-align:center}
+.financial-num{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;color:var(--text)}
+.financial-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-top:3px}
+.financial-note{font-size:10px;color:var(--subtle);margin-top:2px}
+/* risk + progress */
+.risk-grid{display:flex;flex-direction:column;gap:13px}
+.risk-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.risk-name{font-weight:600;font-size:12.5px}
+.risk-level{font:700 10px Inter;padding:2px 8px;border-radius:6px}
+.risk-low{background:rgba(14,159,110,.12);color:var(--green)}.risk-mid{background:rgba(184,134,11,.14);color:var(--gold-dark)}
+.risk-high{background:rgba(224,36,36,.10);color:var(--danger)}
+.progress-bar{height:7px;background:var(--bg4);border-radius:99px;overflow:hidden;margin:3px 0}
+.progress-fill{height:100%;border-radius:99px;transition:width .4s}
+/* timeline (azioni) */
+.bv-tl{display:flex;flex-direction:column;gap:2px}
+.tl-item{display:flex;gap:12px}
+.tl-left{display:flex;flex-direction:column;align-items:center}
+.tl-dot{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-size:14px;flex-shrink:0;border:2px solid var(--border)}
+.tl-dot.urgent{background:rgba(224,36,36,.10);border-color:var(--danger)}
+.tl-dot.important{background:rgba(184,134,11,.14);border-color:var(--gold-dark)}
+.tl-dot.normal{background:var(--bg3)}
+.tl-line{width:2px;flex:1;background:var(--border);min-height:8px}
+.tl-body{padding-bottom:14px}
+.tl-title{font-weight:600;font-size:12.5px}
+.tl-desc{font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.45}
+.tl-date{font:700 10px 'JetBrains Mono',monospace;color:var(--accent);margin-top:4px}
+/* empty */
+.bv-empty{text-align:center;padding:60px 20px}
+.bv-empty-icon{font-size:46px;margin-bottom:12px}
+.bv-empty-title{font-family:'Syne',sans-serif;font-weight:700;font-size:18px;margin-bottom:6px}
+/* radar */
+.radar-hero{background:linear-gradient(135deg,#1A1B2E,#2A2550);border-radius:var(--r2);padding:22px 24px;color:#EEEEFF;margin-bottom:18px;box-shadow:var(--shadow)}
+.radar-title{font-family:'Syne',sans-serif;font-weight:800;font-size:22px}
+.radar-sub{font-size:12.5px;opacity:.8;margin:4px 0 14px}
+.radar-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px}
+.radar-controls label{opacity:.75;font-weight:600}
+.radar-controls select{background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.2)}
+.radar-controls select option{color:#1A1B2E}
+.rank-row{display:flex;align-items:center;gap:14px;padding:14px 16px;border:1px solid var(--border);border-radius:12px;background:var(--bg2);margin-bottom:10px;box-shadow:var(--shadow);cursor:pointer;transition:var(--t)}
+.rank-row:hover{border-color:var(--accent);transform:translateY(-1px)}
+.rank-medal{font-size:24px;width:34px;text-align:center;flex-shrink:0}
+.rank-score{width:62px;height:62px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;border:3px solid}
+.rank-main{flex:1;min-width:0}
+.rank-title{font-weight:700;font-size:14px;color:var(--text);overflow:hidden;text-overflow:ellipsis}
+.rank-meta{font-size:11.5px;color:var(--muted);margin-top:3px;display:flex;gap:12px;flex-wrap:wrap}
+.bv-stat{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center;box-shadow:var(--shadow)}
+.bv-stat-num{font-family:'Syne',sans-serif;font-weight:800;font-size:26px}
+.bv-stat-lab{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-top:2px}
+/* storico */
+.history-card{display:flex;align-items:center;gap:14px;padding:13px 16px;border:1px solid var(--border);border-radius:12px;background:var(--bg2);margin-bottom:10px;box-shadow:var(--shadow)}
+.history-score{width:58px;height:58px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;border:3px solid;color:var(--text)}
+.history-score.hs-high{border-color:var(--green)}.history-score.hs-mid{border-color:var(--gold-dark)}.history-score.hs-low{border-color:var(--danger)}
+.history-score-num{font-family:'Syne',sans-serif;font-weight:800;font-size:16px}
+.bv-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.bv-table th{text-align:left;padding:9px 10px;background:var(--bg3);color:var(--muted);font-weight:700;font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border)}
+.bv-table td{padding:9px 10px;border-bottom:1px solid var(--border);color:var(--text)}
+.bv-profile-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.bv-profile-grid label{font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:4px}
+.bv-profile-grid input,.bv-profile-grid select{width:100%}
+</style>
+
+<div id="bvOverlay">
+  <div id="bvHead">
+    <span class="bv-logo">BA.IA · Valutazione</span>
+    <div id="bvTabs">
+      <button class="bv-tab active" data-tab="valutazione" onclick="bvTab('valutazione')">📊 Valutazione</button>
+      <button class="bv-tab" data-tab="radar" onclick="bvTab('radar')">🎯 Radar Bandi</button>
+      <button class="bv-tab" data-tab="confronta" onclick="bvTab('confronta')">🔀 Confronta</button>
+      <button class="bv-tab" data-tab="storico" onclick="bvTab('storico')">🕓 Storico</button>
+    </div>
+    <button id="bvClose" onclick="bvClose()" title="Chiudi">✕</button>
+  </div>
+  <div id="bvBody"></div>
+</div>
+
+<script>
+(function(){
+  // ── storage (mirror getDB/saveDB, demo-aware) ──
+  function bvK(){ try{ return (typeof state!=='undefined' && state.isDemo) ? 'demo_' : 'baia_'; }catch(e){ return 'baia_'; } }
+  function bvGetDB(){ try{ return JSON.parse(localStorage.getItem(bvK()+'db')||'{"bandi":[],"aziende":[]}'); }catch(e){ return {bandi:[],aziende:[]}; } }
+  function bvSaveDB(db){ try{ localStorage.setItem(bvK()+'db', JSON.stringify(db)); }catch(e){} }
+  function bvHist(){ try{ return JSON.parse(localStorage.getItem(bvK()+'matchHistory')||'[]'); }catch(e){ return []; } }
+  function bvSaveHist(h){ try{ localStorage.setItem(bvK()+'matchHistory', JSON.stringify(h)); }catch(e){} }
+  function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function eur(n){ return '€'+Math.round(n).toLocaleString('it-IT'); }
+  function toast(m,t){ try{ if(window.toast) return window.toast(m,t);}catch(e){} }
+
+  var bvSel = { tab:'valutazione', aziendaId:null, bandoId:null, radarSort:'score' };
+
+  // ── ADAPTERS : modello attuale → strutture motore V7.1 ──
+  function fieldsOf(b){ var f=b.fields||[]; if(!f.length && b.pdfs){ /*fallback*/ } return f; }
+  function fv(b){ // (bando, ...keywords) → primo/i valori il cui section|label contiene una keyword
+    var keys=[].slice.call(arguments,1).map(function(k){return k.toLowerCase();});
+    var hits=fieldsOf(b).filter(function(f){ var s=((f.section||'')+' '+(f.label||'')).toLowerCase(); return keys.some(function(k){return s.indexOf(k)>=0;}); });
+    return hits.map(function(h){return h.value;}).filter(Boolean).join(' · ');
+  }
+  function fmtDate(iso){ if(!iso) return ''; var m=String(iso).match(/(\d{4})-(\d{2})-(\d{2})/); return m?(m[3]+'/'+m[2]+'/'+m[1]):String(iso); }
+  function parseMoney(v){ if(v==null) return 0; var s=String(v).replace(/[^\d,.-]/g,''); s=s.replace(/\.(?=\d{3}\b)/g,'').replace(',','.'); var n=parseFloat(s); return isNaN(n)?0:n; }
+
+  function bvData(b){ // costruisce le sezioni dal bando attuale
+    var allTxt=fieldsOf(b).map(function(f){return f.value;}).join(' ');
+    var nReq=fieldsOf(b).length;
+    // indicatori sintetici euristici (in assenza di estrazione AI dedicata)
+    var complessita = Math.min(10, Math.max(3, Math.round(nReq/2)));
+    var accessibilita = /pmi|micro|piccol|nuove impres|under|giovani|donne|tasso zero/i.test(allTxt)?7:5;
+    var rischioOp = complessita>7?'alto':complessita<5?'basso':'medio';
+    return {
+      meta:{ fileName:b.name||'' },
+      sezione1_identificazione:{ enteEmanante:(b.ente||fv(b,'ente','iniziativa')||'—'), titoloCompleto:b.name||'—',
+        ambitoTerritoriale:(fv(b,'territor','ambito','sede','regione')||b.ente||''), settoreIntervento:fv(b,'settore','obiettivo','finalita') },
+      sezione3_dotazioneFinanziaria:{ budgetComplessivo:fv(b,'budget','dotazione') },
+      sezione4_tempistiche:{ dataChiusura:(b.scadenza?fmtDate(b.scadenza):fv(b,'chiusura','scadenza','termine')),
+        dataApertura:fv(b,'apertura'), terminePresentazioneDomande:fv(b,'presentazione','chiusura','scadenza') },
+      sezione5_beneficiari:{ dimensioneImpresaAmmessa:fv(b,'beneficiari','dimensione','pmi','micro','soggetti'),
+        tipologiaSoggettiAmmessi:fv(b,'beneficiari','soggetti','forma','tipologia'),
+        settoriAmmessi:(fv(b,'settori','beneficiari','obiettivo')||'tutti'), settoriEsclusi:fv(b,'esclus','non ammiss') },
+      sezione6_requisitiAmmissibilita:{ requisitiEconomicoFinanziari:{ deMinimisResiduo:fv(b,'de minimis','cumulab','minimis'), fatturatoMinimo:fv(b,'fatturato') } },
+      sezione9_intensitaAgevolazione:{ percentualeContributo:fv(b,'agevolaz','contributo','intensit','fondo perduto'),
+        massimaleContributo:fv(b,'massimale','importo max'), investimentoMinimo:fv(b,'investimento minimo','soglia minima'),
+        investimentoMassimo:fv(b,'investimento massimo','programmi di spesa','fino a 1','massimale') },
+      sezione11_modalitaErogazione:{ necessitaFideiussione:fv(b,'erogazione','fideiussione','anticipo','sal') },
+      sezione14_vincoliObblighi:{ mantenimentoInvestimento:fv(b,'vincoli','mantenimento','destinazione'), mantenimentoOccupazionale:fv(b,'occupaz') },
+      sezione16_criticita:{ complessitaDocumentale:'', rischiNormativi:'' },
+      sezione17_indicatoriSintetici:{ accessibilitaPmi:accessibilita, indiceComplessita:complessita, rischioOperativo:rischioOp, rigiditaNormativa:complessita },
+      suggerimenti:{}
+    };
+  }
+
+  function bvAteco(a){ return a.ateco||''; }
+  function azCampo(a){ var keys=[].slice.call(arguments,1).map(function(k){return k.toLowerCase();}); var arr=a.campi||[];
+    var h=arr.find(function(c){ return keys.some(function(k){return (c.label||'').toLowerCase().indexOf(k)>=0;}); }); return h?h.value:''; }
+  function deriveDim(a){ var dip=parseInt(a.dipendenti)||0, fat=parseMoney(a.fatturato);
+    if(dip>=250||fat>=50000000) return 'grande'; if(dip>=50||fat>=10000000) return 'media'; if(dip>=10||fat>=2000000) return 'piccola'; return 'micro'; }
+  function bvCompany(a){ var bv=a.bv||{};
+    return { id:a.id, ragioneSociale:a.name||a.ragioneSociale||'Azienda',
+      dimensione:bv.dimensione||deriveDim(a),
+      regione:bv.regione||azCampo(a,'sede','regione','territor')||'',
+      settore:bv.settore||azCampo(a,'settore')||a.settore||'',
+      forma:a.forma||bv.forma||azCampo(a,'forma')||'',
+      ateco:bvAteco(a), investimento:bv.investimento||'', deMinimis:bv.deMinimis||'',
+      durc:bv.durc||'', antimafia:bv.antimafia||'',
+      fatturato:parseMoney(a.fatturato)||'', dipendenti:a.dipendenti||'' }; }
+
+  // ══════════ MOTORE (port verbatim della logica V7.1) ══════════
+  function computeEligibility(company, d){
+    var s5=d.sezione5_beneficiari||{}, s6=d.sezione6_requisitiAmmissibilita||{}, s9=d.sezione9_intensitaAgevolazione||{}, s1=d.sezione1_identificazione||{};
+    var checks=[];
+    var dimAmmessa=(s5.dimensioneImpresaAmmessa||'').toLowerCase(), dimAz=(company.dimensione||'').toLowerCase(), dimStatus='na';
+    if(dimAmmessa){ dimStatus = (dimAmmessa.includes(dimAz)||dimAmmessa.includes('tutte')||dimAmmessa.includes('tutti')) ? 'pass' : ((dimAmmessa.includes('micro')&&dimAz==='micro')||(dimAmmessa.includes('pmi')&&['micro','piccola','media'].includes(dimAz))) ? 'pass' : 'warn'; }
+    checks.push({label:'Dimensione Impresa',icon:'🏭',status:dimStatus,bandoValue:s5.dimensioneImpresaAmmessa||'N/D',companyValue:company.dimensione||'N/D',note:dimStatus==='fail'?'La tua dimensione aziendale potrebbe non essere ammessa':''});
+    var territorioB=(s1.ambitoTerritoriale||'').toLowerCase(), regioneAz=(company.regione||'').toLowerCase(), terrStatus='na';
+    if(territorioB){ terrStatus = (territorioB.includes('nazional')||territorioB.includes('tutto')||territorioB.includes('italia')) ? 'pass' : (regioneAz&&territorioB.includes(regioneAz)) ? 'pass' : regioneAz ? 'warn' : 'na'; }
+    checks.push({label:'Territorio',icon:'📍',status:terrStatus,bandoValue:s1.ambitoTerritoriale||'N/D',companyValue:company.regione||'N/D',note:terrStatus==='warn'?'Verifica che la sede ricada nell’ambito territoriale del bando':''});
+    var tipoAmmesso=(s5.tipologiaSoggettiAmmessi||'').toLowerCase(), formaAz=(company.forma||'').toLowerCase(), formaStatus='na';
+    if(tipoAmmesso&&formaAz){ formaStatus = (tipoAmmesso.includes(formaAz)||tipoAmmesso.includes('impres')||tipoAmmesso.includes('tutte')) ? 'pass' : 'warn'; }
+    checks.push({label:'Forma Giuridica',icon:'⚖️',status:formaStatus,bandoValue:s5.tipologiaSoggettiAmmessi||'N/D',companyValue:company.forma||'N/D',note:''});
+    var settoriAmmessi=(s5.settoriAmmessi||'').toLowerCase(), settoriEsclusi=(s5.settoriEsclusi||'').toLowerCase(), atecoAz=(company.ateco||'').toLowerCase(), settoreAz=(company.settore||'').toLowerCase(), atecoStatus='na';
+    if(settoriAmmessi){ atecoStatus = (settoriAmmessi.includes('tutti')||settoriAmmessi.includes('tutte')) ? 'pass' : (atecoAz&&settoriAmmessi.includes(atecoAz.substring(0,2))) ? 'pass' : (settoreAz&&settoriAmmessi.includes(settoreAz.substring(0,4))) ? 'pass' : 'warn'; }
+    if(settoriEsclusi&&atecoAz&&settoriEsclusi.includes(atecoAz.substring(0,2))) atecoStatus='fail';
+    checks.push({label:'Settore ATECO',icon:'🏗️',status:atecoStatus,bandoValue:s5.settoriAmmessi||'N/D',companyValue:company.ateco?(company.ateco+' ('+(company.settore||'—')+')'):'N/D',note:atecoStatus==='warn'?'Verifica compatibilità codice ATECO con i settori ammessi':''});
+    var invMin=(s9.investimentoMinimo||'').replace(/[.€ ]/g,'').match(/(\d+)/), invAz=parseFloat(company.investimento)||0, invStatus='na';
+    if(invMin&&invAz>0){ var minVal=parseInt(invMin[1]); invStatus = invAz>=minVal ? 'pass' : invAz>=minVal*0.8 ? 'warn' : 'fail'; }
+    checks.push({label:'Investimento Min.',icon:'💶',status:invStatus,bandoValue:s9.investimentoMinimo||'N/D',companyValue:invAz>0?eur(invAz):'N/D',note:invStatus==='fail'?'Investimento pianificato sotto la soglia minima':''});
+    var invMax=(s9.investimentoMassimo||'').replace(/[.€ ]/g,'').match(/(\d+)/), invMaxStatus='na';
+    if(invMax&&invAz>0){ var maxVal=parseInt(invMax[1]); invMaxStatus = invAz<=maxVal ? 'pass' : 'warn'; }
+    checks.push({label:'Investimento Max.',icon:'💹',status:invMaxStatus,bandoValue:s9.investimentoMassimo||'N/D',companyValue:invAz>0?eur(invAz):'N/D',note:invMaxStatus==='warn'?'Investimento vicino/oltre il massimale: verifica':''});
+    var deMinB=((s6.requisitiEconomicoFinanziari||{}).deMinimisResiduo||'').toLowerCase(), deMinAz=parseFloat(company.deMinimis)||200000, deMinStatus='na';
+    if(deMinB){ deMinStatus = deMinAz>=200000 ? 'pass' : deMinAz>=100000 ? 'warn' : 'fail'; }
+    checks.push({label:'De Minimis Residuo',icon:'🏛️',status:deMinStatus,bandoValue:deMinB||'N/D',companyValue:eur(deMinAz),note:deMinStatus==='warn'?'Verifica il plafond de minimis residuo':''});
+    var durcAz=company.durc==='si';
+    checks.push({label:'DURC Regolare',icon:'📋',status:company.durc?(durcAz?'pass':'fail'):'na',bandoValue:'Richiesto',companyValue:company.durc?(durcAz?'Regolare':'Non regolare'):'Da compilare',note:(company.durc&&!durcAz)?'⚠️ DURC non regolare: requisito bloccante in quasi tutti i bandi':''});
+    var antimafiaAz=company.antimafia==='si';
+    checks.push({label:'Certificato Antimafia',icon:'🛡️',status:company.antimafia?(antimafiaAz?'pass':'warn'):'na',bandoValue:'Richiesto',companyValue:company.antimafia?(antimafiaAz?'OK':'Da verificare'):'Da compilare',note:(company.antimafia&&!antimafiaAz)?'Verifica la regolarità antimafia':''});
+    var fattMin=(((s6.requisitiEconomicoFinanziari||{}).fatturatoMinimo)||'').replace(/[.€ ]/g,'').match(/(\d+)/), fattAz=parseFloat(company.fatturato)||0, fattStatus='na';
+    if(fattMin&&fattAz>0){ var minFatt=parseInt(fattMin[1]); fattStatus = fattAz>=minFatt ? 'pass' : fattAz>=minFatt*0.9 ? 'warn' : 'fail'; }
+    checks.push({label:'Fatturato Minimo',icon:'📈',status:fattStatus,bandoValue:((s6.requisitiEconomicoFinanziari||{}).fatturatoMinimo)||'N/D',companyValue:fattAz>0?eur(fattAz):'N/D',note:fattStatus==='fail'?'Fatturato sotto la soglia minima richiesta':''});
+    return checks;
+  }
+  function computeRisks(company, d){
+    var s16=d.sezione16_criticita||{}, s17=d.sezione17_indicatoriSintetici||{}, s14=d.sezione14_vincoliObblighi||{}, s11=d.sezione11_modalitaErogazione||{}, risks=[];
+    var rischioB=(s17.rischioOperativo||'medio').toLowerCase();
+    risks.push({name:'Rischio Operativo',level:rischioB==='basso'?'low':rischioB==='alto'?'high':'mid',pct:rischioB==='basso'?30:rischioB==='alto'?85:55,note:'Valutazione sul bando: '+rischioB});
+    var complessita=parseInt(s17.indiceComplessita)||5;
+    risks.push({name:'Rischio Documentale',level:complessita>7?'high':complessita>4?'mid':'low',pct:complessita*10,note:s16.complessitaDocumentale||('Complessità bando: '+complessita+'/10')});
+    var fidej=(s11.necessitaFideiussione||'').toLowerCase(), needsFidej=fidej&&fidej.includes('fideiuss');
+    var invAz=parseFloat(company.investimento)||0, fatAz=parseFloat(company.fatturato)||0, lev=fatAz>0&&invAz>0?invAz/fatAz:0;
+    var finR=lev>1.5||needsFidej?'high':lev>0.5?'mid':'low';
+    risks.push({name:'Rischio Finanziario',level:finR,pct:finR==='low'?25:finR==='mid'?55:80,note:needsFidej?'Possibile fideiussione richiesta':lev>0?('Investim./Fatturato: '+Math.round(lev*100)+'%'):'Dati insufficienti'});
+    var rigidita=parseInt(s17.rigiditaNormativa)||5;
+    risks.push({name:'Rischio Normativo',level:rigidita>7?'high':rigidita>4?'mid':'low',pct:rigidita*10,note:s16.rischiNormativi||('Rigidità normativa: '+rigidita+'/10')});
+    var hasVincoli=(s14.mantenimentoInvestimento||'').length>20||(s14.mantenimentoOccupazionale||'').length>20;
+    risks.push({name:'Rischio Vincoli Post-Erog.',level:hasVincoli?'mid':'low',pct:hasVincoli?50:20,note:hasVincoli?'Presenza di vincoli post-concessione':'Vincoli standard'});
+    return risks;
+  }
+  function buildCompetitive(company, d){
+    var s17=d.sezione17_indicatoriSintetici||{}, fat=parseFloat(company.fatturato)||0, items=[];
+    var acc=s17.accessibilitaPmi||5;
+    items.push({label:'Accessibilità per la tua dimensione',pct:acc*10,value:acc+'/10',color:acc>=7?'var(--green)':acc>=4?'var(--gold-dark)':'var(--danger)'});
+    var dip=parseInt(company.dipendenti)||0, dipScore=dip>=50?90:dip>=10?65:dip>=3?40:20;
+    items.push({label:'Solidità organizzativa (dipendenti)',pct:dipScore,value:dip+' dip.',color:dipScore>=65?'var(--green)':dipScore>=40?'var(--gold-dark)':'var(--danger)'});
+    var fattScore=fat>=5000000?90:fat>=1000000?70:fat>=500000?50:fat>=100000?30:15;
+    items.push({label:'Capacità finanziaria (fatturato)',pct:fattScore,value:fat>0?eur(fat):'—',color:fattScore>=70?'var(--green)':fattScore>=40?'var(--gold-dark)':'var(--danger)'});
+    var compl=parseInt(s17.indiceComplessita)||5, ready=Math.max(10,100-(compl*8));
+    items.push({label:'Readiness vs complessità bando',pct:ready,value:ready+'%',color:ready>=60?'var(--green)':ready>=40?'var(--gold-dark)':'var(--danger)'});
+    return items;
+  }
+  function buildCompetitiveNote(company, d, score){
+    if(score>=70) return '<strong>Profilo altamente compatibile.</strong> '+esc(company.ragioneSociale||'L’azienda')+' presenta caratteristiche allineate ai requisiti del bando. Procedere con la preparazione della domanda. <span style="color:var(--green);font-weight:700">Priorità: ALTA</span>';
+    if(score>=40) return '<strong>Profilo parzialmente compatibile.</strong> Esistono requisiti da verificare prima di procedere. <span style="color:var(--gold-dark);font-weight:700">Priorità: MEDIA</span>';
+    return '<strong>Profilo con criticità rilevanti.</strong> Sono presenti requisiti bloccanti o mancanti. Valutare se intervenire prima di presentare domanda. <span style="color:var(--danger);font-weight:700">Priorità: BASSA</span>';
+  }
+  function buildActions(checks, company, d){
+    var s4=d.sezione4_tempistiche||{}, actions=[], fails=checks.filter(function(c){return c.status==='fail';}), warns=checks.filter(function(c){return c.status==='warn';});
+    if(s4.dataChiusura) actions.push({priority:'urgent',icon:'⏰',title:'Verifica scadenza bando',desc:'Data chiusura: '+s4.dataChiusura+'. Calcola i giorni rimanenti.',date:s4.dataChiusura});
+    if(fails.find(function(f){return f.label==='DURC Regolare';})) actions.push({priority:'urgent',icon:'📋',title:'Regolarizza DURC',desc:'Il DURC non regolare è bloccante. Contatta subito il consulente del lavoro.',date:'IMMEDIATO'});
+    var otherFails=fails.filter(function(f){return f.label!=='DURC Regolare';});
+    if(otherFails.length) actions.push({priority:'urgent',icon:'🚨',title:'Risolvi '+otherFails.length+' requisito/i critico/i',desc:otherFails.map(function(f){return f.label;}).join(', ')+': da sanare o verificare.',date:'Prima di procedere'});
+    if(!company.investimento) actions.push({priority:'important',icon:'💶',title:'Definisci piano di investimento',desc:'Inserisci l’investimento previsto nel profilo per stimare il contributo e l’analisi finanziaria.'});
+    if(warns.length) actions.push({priority:'important',icon:'⚠️',title:'Verifica '+warns.length+' requisito/i parziale/i',desc:warns.map(function(w){return w.label;}).join(', ')+': da approfondire.'});
+    actions.push({priority:'normal',icon:'📄',title:'Predisponi documentazione',desc:'Raccogli visura camerale, bilanci, dichiarazioni antimafia, DURC.'});
+    return actions.slice(0,5);
+  }
+  function buildTimeline(company, d){
+    var s4=d.sezione4_tempistiche||{};
+    return [
+      {phase:'Fase 1 — Verifica',icon:'🔍',actions:'Controlla requisiti soggettivi/oggettivi, DURC e antimafia',deadline:'Subito',color:'var(--danger)'},
+      {phase:'Fase 2 — Documentazione',icon:'📁',actions:'Raccogli visura, bilanci, dichiarazioni, business plan',deadline:s4.dataApertura?('Entro apertura: '+s4.dataApertura):'Pre-apertura',color:'var(--gold-dark)'},
+      {phase:'Fase 3 — Progettazione',icon:'✏️',actions:'Definisci piano investimento, ottimizza coerenza con il bando',deadline:'Prima della domanda',color:'var(--accent)'},
+      {phase:'Fase 4 — Presentazione',icon:'📤',actions:'Compila domanda su piattaforma ufficiale, allega documenti, invia',deadline:s4.terminePresentazioneDomande||s4.dataChiusura||'Scadenza bando',color:'var(--accent2)'},
+      {phase:'Fase 5 — Post-Concessione',icon:'📊',actions:'Avvia investimento, monitora KPI, rendiconta SAL/saldo',deadline:'Termine progetto',color:'var(--muted)'}
+    ];
+  }
+  function buildStrengths(company, d, checks){
+    var st=[], pass=checks.filter(function(c){return c.status==='pass';});
+    if(pass.find(function(p){return p.label==='Dimensione Impresa';})) st.push('Dimensione aziendale compatibile con i requisiti');
+    if(pass.find(function(p){return p.label==='DURC Regolare';})) st.push('Posizione contributiva regolare (DURC in ordine)');
+    if(pass.find(function(p){return p.label==='Certificato Antimafia';})) st.push('Certificazione antimafia in regola');
+    if(pass.find(function(p){return p.label==='Investimento Min.';})) st.push('Investimento superiore alla soglia minima richiesta');
+    if(pass.find(function(p){return p.label==='Territorio';})) st.push('Sede nell’ambito territoriale del bando');
+    var fat=parseFloat(company.fatturato)||0; if(fat>1000000) st.push('Fatturato significativo: solidità finanziaria');
+    var dip=parseInt(company.dipendenti)||0; if(dip>=10) st.push('Struttura organizzativa con adeguata base occupazionale');
+    return st.slice(0,4);
+  }
+  function buildWeaknesses(company, d, checks){
+    var w=[], fails=checks.filter(function(c){return c.status==='fail';}), warns=checks.filter(function(c){return c.status==='warn';});
+    fails.forEach(function(f){ if(f.note) w.push(f.note.replace('⚠️ ','')); });
+    warns.slice(0,2).forEach(function(x){ if(x.note) w.push(x.note); });
+    if(!company.investimento) w.push('Piano di investimento non definito — contributo non stimabile');
+    var deMin=parseFloat(company.deMinimis)||200000; if(deMin&&deMin<100000) w.push('Plafond de minimis residuo ridotto: può limitare il contributo');
+    return w.slice(0,4);
+  }
+  function buildProjections(inv, pct, d){
+    var lordo=pct>0?inv*pct/100:0, iva=inv*0.22, cap=inv-lordo, roi=lordo>0&&cap>0?Math.round((lordo/cap)*100):0;
+    return [
+      {icon:'💰',value:eur(inv),label:'Invest. Netto',color:'var(--ink)',note:'base di calcolo'},
+      {icon:'🏛️',value:pct>0?eur(lordo):'—',label:'Contributo Stimato',color:'var(--green)',note:pct>0?(pct+'% agevolaz.'):'N/D dal bando'},
+      {icon:'🏦',value:eur(cap),label:'Capitale Proprio',color:'var(--accent)',note:'a carico azienda'},
+      {icon:'📈',value:roi>0?roi+'%':'—',label:'ROI Agevolazione',color:roi>50?'var(--green)':roi>20?'var(--gold-dark)':'var(--muted)',note:'contributo/capitale'},
+      {icon:'⚡',value:eur(iva),label:'IVA (22%)',color:'var(--warn)',note:'verificare ammissibilità'}
+    ];
+  }
+  function scoreOf(checks){ var pass=checks.filter(function(c){return c.status==='pass';}).length, warn=checks.filter(function(c){return c.status==='warn';}).length, total=checks.filter(function(c){return c.status!=='na';}).length||1; return Math.round(((pass+warn*0.5)/total)*100); }
+  function pctContribOf(d, inv){ var s9=d.sezione9_intensitaAgevolazione||{}, m=(s9.percentualeContributo||'').match(/(\d{1,3})\s*%/)||(s9.percentualeContributo||'').match(/(\d{1,3})/); var pct=m?parseInt(m[1]):0; var mass=Infinity, mm=(s9.massimaleContributo||'').replace(/[.]/g,'').match(/(\d+)/); if(mm)mass=parseInt(mm[1]); var contr=inv>0&&pct>0?Math.min(Math.round(inv*pct/100),isFinite(mass)?mass:9e9):0; return {pct:pct,contributo:contr,massimale:s9.massimaleContributo||''}; }
+
+  // ══════════ RENDER ══════════
+  function bvBody(){ return document.getElementById('bvBody'); }
+  window.bvOpen=function(){ document.getElementById('bvOverlay').classList.add('open'); document.body.style.overflow='hidden'; bvRender(); };
+  window.bvClose=function(){ document.getElementById('bvOverlay').classList.remove('open'); document.body.style.overflow=''; };
+  window.bvTab=function(t){ bvSel.tab=t; document.querySelectorAll('.bv-tab').forEach(function(b){ b.classList.toggle('active', b.dataset.tab===t); }); bvRender(); };
+
+  function bvRender(){
+    var db=bvGetDB(), az=db.aziende||[], bd=db.bandi||[];
+    if(!bvSel.aziendaId && az.length) bvSel.aziendaId=az[0].id;
+    if(!bvSel.bandoId && bd.length) bvSel.bandoId=bd[0].id;
+    if(bvSel.tab==='valutazione') bvRenderValutazione(db);
+    else if(bvSel.tab==='radar') bvRenderRadar(db);
+    else if(bvSel.tab==='confronta') bvRenderConfronta(db);
+    else bvRenderStorico(db);
+  }
+
+  function aziendaSelector(az){ return '<select onchange="bvSetAzienda(this.value)" style="min-width:200px">'+az.map(function(a){var c=bvCompany(a);return '<option value="'+a.id+'" '+(a.id==bvSel.aziendaId?'selected':'')+'>'+esc(c.ragioneSociale)+' · '+esc(c.dimensione)+' · '+esc(c.regione||'?')+'</option>';}).join('')+'</select>'; }
+  window.bvSetAzienda=function(id){ bvSel.aziendaId=isNaN(+id)?id:+id; bvRender(); };
+  window.bvSetBando=function(id){ bvSel.bandoId=isNaN(+id)?id:+id; bvRender(); };
+
+  function bvRenderValutazione(db){
+    var az=db.aziende||[], bd=db.bandi||[];
+    if(!az.length || !bd.length){ bvBody().innerHTML='<div class="bv-empty"><div class="bv-empty-icon">'+(!bd.length?'📂':'🏢')+'</div><div class="bv-empty-title">'+(!bd.length?'Nessun bando caricato':'Nessuna azienda')+'</div><p style="color:var(--muted)">Servono almeno 1 bando e 1 azienda. Aggiungili dalla sezione Bandi/Aziende (o attiva la Demo).</p></div>'; return; }
+    var aRaw=az.find(function(a){return a.id==bvSel.aziendaId;})||az[0]; bvSel.aziendaId=aRaw.id;
+    var bRaw=bd.find(function(b){return b.id==bvSel.bandoId;})||bd[0]; bvSel.bandoId=bRaw.id;
+    var company=bvCompany(aRaw), d=bvData(bRaw);
+    var checks=computeEligibility(company,d), pass=checks.filter(function(c){return c.status==='pass';}).length, warn=checks.filter(function(c){return c.status==='warn';}).length, fail=checks.filter(function(c){return c.status==='fail';}).length, total=checks.filter(function(c){return c.status!=='na';}).length||1;
+    var score=scoreOf(checks);
+    var scoreClass=score>=70?'score-high':score>=40?'score-mid':'score-low', scoreLabel=score>=70?'✅ AMMISSIBILE':score>=40?'⚠️ PARZIALE':'❌ CRITICO';
+    var inv=parseFloat(company.investimento)||0, pc=pctContribOf(d,inv), pctContrib=pc.pct, contributo=pc.contributo, cofin=inv>0&&contributo>0?inv-contributo:0;
+    var risks=computeRisks(company,d), timeline=buildTimeline(company,d), actions=buildActions(checks,company,d), comp=buildCompetitive(company,d);
+    var deMin=parseFloat(company.deMinimis)||200000, deUse=contributo>0?Math.min(100,Math.round(contributo/deMin*100)):0;
+    var s17=d.sezione17_indicatoriSintetici||{};
+
+    bvBody().innerHTML=''
+    +'<div class="card" style="margin-bottom:16px"><div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">'
+      +'<div style="font-weight:700;font-size:13px">👤 Analisi per:</div>'+aziendaSelector(az)
+      +'<div style="font-weight:700;font-size:13px;margin-left:8px">📄 Bando:</div>'
+      +'<select onchange="bvSetBando(this.value)" style="min-width:240px;flex:1">'+bd.map(function(b){return '<option value="'+b.id+'" '+(b.id==bvSel.bandoId?'selected':'')+'>'+esc(b.name||'Bando')+'</option>';}).join('')+'</select>'
+    +'</div></div>'
+
+    // profilo agevolazione (mini-form)
+    +'<div class="card" style="margin-bottom:16px"><div class="card-header"><div class="card-title">⚙️ Profilo agevolazione — '+esc(company.ragioneSociale)+'</div><span style="font-size:11px;color:var(--muted)">Compila per un match preciso</span></div>'
+      +'<div class="bv-profile-grid">'
+      +'<div><label>Regione/Sede</label><input id="bvpRegione" value="'+esc((aRaw.bv||{}).regione||company.regione||'')+'" placeholder="es. Sardegna"></div>'
+      +'<div><label>Dimensione</label><select id="bvpDim">'+['micro','piccola','media','grande'].map(function(x){return '<option '+(company.dimensione===x?'selected':'')+'>'+x+'</option>';}).join('')+'</select></div>'
+      +'<div><label>Investimento previsto €</label><input id="bvpInv" value="'+esc((aRaw.bv||{}).investimento||'')+'" placeholder="es. 150000"></div>'
+      +'<div><label>De minimis residuo €</label><input id="bvpDeMin" value="'+esc((aRaw.bv||{}).deMinimis||'')+'" placeholder="es. 200000"></div>'
+      +'<div><label>DURC</label><select id="bvpDurc"><option value="">—</option><option value="si" '+(company.durc==='si'?'selected':'')+'>Regolare</option><option value="no" '+(company.durc==='no'?'selected':'')+'>Non regolare</option></select></div>'
+      +'<div><label>Antimafia</label><select id="bvpAnti"><option value="">—</option><option value="si" '+(company.antimafia==='si'?'selected':'')+'>OK</option><option value="no" '+(company.antimafia==='no'?'selected':'')+'>Da verificare</option></select></div>'
+      +'<div><label>Settore</label><input id="bvpSett" value="'+esc((aRaw.bv||{}).settore||company.settore||'')+'" placeholder="es. turismo"></div>'
+      +'<div style="display:flex;align-items:flex-end"><button class="bv-btn bv-btn-gold" style="width:100%" onclick="bvSaveProfile()">💾 Aggiorna match</button></div>'
+      +'</div></div>'
+
+    // HERO
+    +'<div class="match-hero" style="margin-bottom:16px">'
+      +'<div class="match-score-circle '+scoreClass+'"><div><div class="match-score-num">'+score+'%</div><div class="match-score-label">MATCH</div></div></div>'
+      +'<div class="match-hero-body"><div class="match-hero-title">'+esc(company.ragioneSociale)+' × '+esc((bRaw.name||'').substring(0,60))+'</div>'
+        +'<div class="match-hero-sub">'+scoreLabel+' · '+pass+'/'+total+' requisiti soddisfatti · '+warn+' parziali · '+fail+' critici</div>'
+        +'<div class="match-hero-tags"><span class="match-hero-tag">📍 '+esc(company.regione||'—')+'</span><span class="match-hero-tag">🏭 '+esc(company.dimensione||'—')+'</span><span class="match-hero-tag">📊 '+esc(company.settore||'—')+'</span>'+(contributo>0?'<span class="match-hero-tag" style="background:rgba(99,102,241,.3)">💰 Contributo est. '+eur(contributo)+'</span>':'')+'</div></div>'
+      +'<div class="match-hero-actions"><button class="bv-btn bv-btn-gold" onclick="bvSaveMatch()">💾 Salva match</button><button class="bv-btn" style="color:#fff;border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.08)" onclick="bvExport()">📄 Esporta report</button></div>'
+    +'</div>'
+
+    // KPI
+    +'<div class="kpi-row">'
+      +'<div class="kpi-card '+(score>=70?'kpi-green':score>=40?'kpi-gold':'kpi-red')+'"><div class="kpi-score">'+score+'%</div><div class="kpi-label">Match Score</div><div class="kpi-sub">'+scoreLabel.replace(/[✅⚠️❌]/g,'').trim()+'</div></div>'
+      +'<div class="kpi-card kpi-blue"><div class="kpi-score">'+pass+'<span style="font-size:15px">/'+total+'</span></div><div class="kpi-label">Req. Soddisfatti</div><div class="kpi-sub">'+warn+' parziali</div></div>'
+      +'<div class="kpi-card kpi-green"><div class="kpi-score">'+(contributo>0?'€'+Math.round(contributo/1000)+'k':'—')+'</div><div class="kpi-label">Contributo Stimato</div><div class="kpi-sub">'+(pctContrib>0?pctContrib+'% invest.':'inserisci investimento')+'</div></div>'
+      +'<div class="kpi-card kpi-gold"><div class="kpi-score">'+(s17.accessibilitaPmi||'—')+'<span style="font-size:15px">/10</span></div><div class="kpi-label">Accessib. PMI</div><div class="kpi-sub">indice bando</div></div>'
+    +'</div>'
+
+    +'<div class="bv-grid2">'
+      // matrice
+      +'<div class="card bv-full"><div class="card-header"><div class="card-title">🎯 Matrice di Ammissibilità</div><div style="display:flex;gap:6px"><span class="badge badge-green">✅ '+pass+'</span><span class="badge bv-badge-gold">⚠️ '+warn+'</span><span class="badge badge-red">❌ '+fail+'</span></div></div>'
+        +'<div class="elig-grid">'+checks.map(function(ch){return '<div class="elig-row '+ch.status+'"><div class="elig-icon">'+ch.icon+'</div><div class="elig-body"><div class="elig-label">'+esc(ch.label)+'</div><div class="elig-detail"><strong>'+esc(ch.bandoValue||'—').substring(0,90)+'</strong> vs <em>'+esc(ch.companyValue||'—')+'</em></div>'+(ch.note?'<div style="font-size:10px;color:var(--muted);margin-top:3px">'+esc(ch.note)+'</div>':'')+'</div><div class="elig-status">'+(ch.status==='pass'?'OK':ch.status==='warn'?'⚠️':ch.status==='fail'?'NO':'N/A')+'</div></div>';}).join('')+'</div></div>'
+      // finanziaria
+      +'<div class="card"><div class="card-header"><div class="card-title">💰 Analisi Finanziaria</div></div>'
+        +'<div class="financials-grid" style="grid-template-columns:1fr 1fr">'
+        +'<div class="financial-card"><div class="financial-num">'+(inv>0?eur(inv):'—')+'</div><div class="financial-label">Investimento</div><div class="financial-note">pianificato</div></div>'
+        +'<div class="financial-card" style="background:rgba(14,159,110,.08)"><div class="financial-num" style="color:var(--green)">'+(contributo>0?eur(contributo):'—')+'</div><div class="financial-label">Contributo Est.</div><div class="financial-note">'+(pctContrib>0?pctContrib+'% agevolaz.':'% non rilevata')+'</div></div>'
+        +'<div class="financial-card" style="background:rgba(184,134,11,.08)"><div class="financial-num" style="color:var(--gold-dark)">'+(cofin>0?eur(cofin):'—')+'</div><div class="financial-label">Cofinanziamento</div><div class="financial-note">a carico azienda</div></div>'
+        +'<div class="financial-card"><div class="financial-num" style="color:var(--accent);font-size:13px">'+esc(pc.massimale||'—')+'</div><div class="financial-label">Massimale Bando</div><div class="financial-note">contributo max</div></div>'
+        +'</div>'
+        +'<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin:14px 0 6px">Utilizzo De Minimis</div>'
+        +'<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>'+eur(contributo)+' su '+eur(deMin)+'</span><span style="font-weight:700;color:'+(deUse>80?'var(--danger)':deUse>50?'var(--gold-dark)':'var(--green)')+'">'+deUse+'%</span></div>'
+        +'<div class="progress-bar" style="height:8px"><div class="progress-fill" style="width:'+deUse+'%;background:'+(deUse>80?'var(--danger)':deUse>50?'var(--gold-dark)':'var(--green)')+'"></div></div>'
+        +(deUse>80?'<div style="font-size:11px;color:var(--danger);margin-top:6px">⚠️ Utilizzo de minimis elevato: verifica la disponibilità residua.</div>':'')+'</div>'
+      // rischio
+      +'<div class="card"><div class="card-header"><div class="card-title">⚠️ Profilo di Rischio</div></div><div class="risk-grid">'
+        +risks.map(function(r){return '<div><div class="risk-header"><span class="risk-name">'+r.name+'</span><span class="risk-level risk-'+r.level+'">'+(r.level==='low'?'Basso':r.level==='mid'?'Medio':'Alto')+'</span></div><div class="progress-bar"><div class="progress-fill" style="width:'+r.pct+'%;background:'+(r.level==='low'?'var(--green)':r.level==='mid'?'var(--gold-dark)':'var(--danger)')+'"></div></div><div style="font-size:11px;color:var(--muted);margin-top:2px">'+esc(r.note)+'</div></div>';}).join('')+'</div></div>'
+      // competitivo
+      +'<div class="card"><div class="card-header"><div class="card-title">🏆 Posizionamento Competitivo</div></div><div style="display:flex;flex-direction:column;gap:10px">'
+        +comp.map(function(it){return '<div><div style="display:flex;justify-content:space-between;font-size:12px"><span style="font-weight:600">'+it.label+'</span><span style="font-size:11px;color:'+it.color+'">'+it.value+'</span></div><div class="progress-bar"><div class="progress-fill" style="width:'+it.pct+'%;background:'+it.color+'"></div></div></div>';}).join('')
+        +'</div><div style="margin-top:14px;padding:12px;background:var(--bg3);border-radius:8px;font-size:12px;line-height:1.6">'+buildCompetitiveNote(company,d,score)+'</div></div>'
+      // azioni
+      +'<div class="card"><div class="card-header"><div class="card-title">🚀 Azioni Prioritarie</div></div><div class="bv-tl">'
+        +actions.map(function(a,i){return '<div class="tl-item"><div class="tl-left"><div class="tl-dot '+a.priority+'">'+a.icon+'</div>'+(i<actions.length-1?'<div class="tl-line"></div>':'')+'</div><div class="tl-body"><div class="tl-title">'+esc(a.title)+'</div><div class="tl-desc">'+esc(a.desc)+'</div>'+(a.date?'<div class="tl-date">'+esc(a.date)+'</div>':'')+'</div></div>';}).join('')+'</div></div>'
+      // roadmap
+      +'<div class="card bv-full"><div class="card-header"><div class="card-title">📅 Roadmap Operativa</div>'+(d.sezione4_tempistiche.dataChiusura?'<span class="badge badge-red">⏰ Scadenza: '+esc(d.sezione4_tempistiche.dataChiusura)+'</span>':'')+'</div>'
+        +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px">'+timeline.map(function(tl){return '<div style="border:1px solid var(--border);border-radius:10px;padding:14px;position:relative;overflow:hidden"><div style="position:absolute;top:0;left:0;right:0;height:3px;background:'+tl.color+'"></div><div style="font-size:20px;margin-bottom:6px">'+tl.icon+'</div><div style="font-family:Syne,sans-serif;font-size:12px;font-weight:700;margin-bottom:4px">'+tl.phase+'</div><div style="font-size:11px;color:var(--muted);margin-bottom:6px;line-height:1.4">'+esc(tl.actions)+'</div><div style="font-size:10px;color:'+tl.color+';font-weight:700">'+esc(tl.deadline)+'</div></div>';}).join('')+'</div></div>'
+      // SWOT
+      +'<div class="card"><div class="card-header"><div class="card-title">✨ Punti di Forza</div></div><div style="display:flex;flex-direction:column;gap:6px">'+(buildStrengths(company,d,checks).map(function(s){return '<div style="display:flex;gap:8px;padding:8px 12px;background:rgba(14,159,110,.10);border-radius:8px;font-size:12px"><span>✅</span><span>'+esc(s)+'</span></div>';}).join('')||'<div style="color:var(--muted);font-size:12px;padding:8px">Compila il profilo per identificare i punti di forza</div>')+'</div></div>'
+      +'<div class="card"><div class="card-header"><div class="card-title">⚡ Punti Critici</div></div><div style="display:flex;flex-direction:column;gap:6px">'+(buildWeaknesses(company,d,checks).map(function(w){return '<div style="display:flex;gap:8px;padding:8px 12px;background:rgba(224,36,36,.08);border-radius:8px;font-size:12px"><span>⚠️</span><span>'+esc(w)+'</span></div>';}).join('')||'<div style="color:var(--muted);font-size:12px;padding:8px">Nessuna criticità rilevata</div>')+'</div></div>'
+      // proiezione
+      +(inv>0?'<div class="card bv-full"><div class="card-header"><div class="card-title">📊 Proiezione Economica Investimento</div></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px">'+buildProjections(inv,pctContrib,d).map(function(p){return '<div style="text-align:center;padding:14px;border:1px solid var(--border);border-radius:10px"><div style="font-size:18px;margin-bottom:6px">'+p.icon+'</div><div style="font-weight:800;font-size:'+(p.value.length>10?'13px':'16px')+';color:'+p.color+';margin-bottom:4px">'+p.value+'</div><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase">'+p.label+'</div>'+(p.note?'<div style="font-size:10px;color:var(--subtle);margin-top:4px">'+p.note+'</div>':'')+'</div>';}).join('')+'</div></div>':'')
+    +'</div>'
+    +'<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px"><button class="bv-btn bv-btn-gold" onclick="bvSaveMatch()">💾 Salva in Storico</button><button class="bv-btn" onclick="bvExport()">📄 Esporta DOCX</button><button class="bv-btn" onclick="window.print()">🖨️ Stampa/PDF</button></div>';
+  }
+
+  window.bvSaveProfile=function(){
+    var db=bvGetDB(), i=(db.aziende||[]).findIndex(function(a){return a.id==bvSel.aziendaId;}); if(i<0) return;
+    db.aziende[i].bv={ regione:val('bvpRegione'), dimensione:val('bvpDim'), investimento:val('bvpInv'), deMinimis:val('bvpDeMin'), durc:val('bvpDurc'), antimafia:val('bvpAnti'), settore:val('bvpSett') };
+    bvSaveDB(db); toast('Profilo agevolazione aggiornato','success'); bvRender();
+  };
+  function val(id){ var e=document.getElementById(id); return e?e.value.trim():''; }
+
+  window.bvSaveMatch=function(){
+    var db=bvGetDB(), a=(db.aziende||[]).find(function(x){return x.id==bvSel.aziendaId;}), b=(db.bandi||[]).find(function(x){return x.id==bvSel.bandoId;});
+    if(!a||!b){ toast('Seleziona azienda e bando','warn'); return; }
+    var company=bvCompany(a), checks=computeEligibility(company,bvData(b)), score=scoreOf(checks);
+    var h=bvHist(), ex=h.find(function(m){return m.bandoId==b.id&&m.aziendaId==a.id;});
+    if(ex){ ex.score=score; ex.savedAt=new Date().toISOString(); toast('Match aggiornato nello storico','success'); }
+    else { h.push({id:Date.now(),bandoId:b.id,aziendaId:a.id,score:score,bandoName:b.name,aziendaName:company.ragioneSociale,savedAt:new Date().toISOString()}); toast('Match salvato nello storico','success'); }
+    bvSaveHist(h);
+  };
+
+  function bvRankAll(db){
+    var a=(db.aziende||[]).find(function(x){return x.id==bvSel.aziendaId;}); if(!a) return [];
+    var company=bvCompany(a);
+    return (db.bandi||[]).map(function(b){
+      var d=bvData(b), checks=computeEligibility(company,d), pass=checks.filter(function(c){return c.status==='pass';}).length, warn=checks.filter(function(c){return c.status==='warn';}).length, fail=checks.filter(function(c){return c.status==='fail';}).length, total=checks.filter(function(c){return c.status!=='na';}).length||1;
+      var match=Math.round(((pass+warn*0.5)/total)*100);
+      var inv=parseFloat(company.investimento)||0, pc=pctContribOf(d,inv);
+      var close=d.sezione4_tempistiche.dataChiusura||'', daysLeft=null, dm=close.match(/(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})/);
+      if(dm){ var y=dm[3].length===2?'20'+dm[3]:dm[3]; var dl=new Date(y+'-'+dm[2].padStart(2,'0')+'-'+dm[1].padStart(2,'0')); if(!isNaN(dl)) daysLeft=Math.ceil((dl-Date.now())/86400000); }
+      var s17=d.sezione17_indicatoriSintetici||{}, urg=daysLeft!==null&&daysLeft>0&&daysLeft<=60?8:0, noFail=fail===0?10:fail===1?5:0, acc=(s17.accessibilitaPmi||5)*2;
+      var composite=Math.min(100,Math.round(match*0.6+acc*0.2+urg+noFail));
+      return {bando:b,match:match,composite:composite,contributo:pc.contributo,pass:pass,warn:warn,fail:fail,total:total,daysLeft:daysLeft,close:close,ente:d.sezione1_identificazione.enteEmanante};
+    });
+  }
+  window.bvRadarSort=function(v){ bvSel.radarSort=v; bvRender(); };
+  function bvRenderRadar(db){
+    var az=db.aziende||[], bd=db.bandi||[];
+    if(!bd.length||!az.length){ bvBody().innerHTML='<div class="bv-empty"><div class="bv-empty-icon">🎯</div><div class="bv-empty-title">Radar non disponibile</div><p style="color:var(--muted)">Servono almeno 1 azienda e 1 bando.</p></div>'; return; }
+    if(!bvSel.aziendaId) bvSel.aziendaId=az[0].id;
+    var ranked=bvRankAll(db), sort=bvSel.radarSort;
+    if(sort==='match') ranked.sort(function(a,b){return b.match-a.match;});
+    else if(sort==='contributo') ranked.sort(function(a,b){return b.contributo-a.contributo;});
+    else if(sort==='scadenza') ranked.sort(function(a,b){ if(a.daysLeft===null)return 1; if(b.daysLeft===null)return -1; return a.daysLeft-b.daysLeft;});
+    else ranked.sort(function(a,b){return b.composite-a.composite;});
+    var amm=ranked.filter(function(r){return r.match>=70;}).length, par=ranked.filter(function(r){return r.match>=40&&r.match<70;}).length, cri=ranked.filter(function(r){return r.match<40;}).length;
+    var medals=['🥇','🥈','🥉'];
+    bvBody().innerHTML=''
+    +'<div class="radar-hero"><div class="radar-title">🎯 Radar Bandi</div><div class="radar-sub">Classifica automatica di tutti i bandi per il profilo aziendale selezionato</div>'
+      +'<div class="radar-controls"><label>Azienda</label><select onchange="bvSetAzienda(this.value)">'+az.map(function(a){var c=bvCompany(a);return '<option value="'+a.id+'" '+(a.id==bvSel.aziendaId?'selected':'')+'>'+esc(c.ragioneSociale)+' · '+esc(c.dimensione)+' · '+esc(c.regione||'?')+'</option>';}).join('')+'</select>'
+      +'<label style="margin-left:10px">Ordina per</label><select onchange="bvRadarSort(this.value)">'+[['score','⭐ Punteggio Composito'],['match','🎯 Match Requisiti'],['contributo','💰 Contributo Stimato'],['scadenza','⏰ Scadenza vicina']].map(function(o){return '<option value="'+o[0]+'" '+(sort===o[0]?'selected':'')+'>'+o[1]+'</option>';}).join('')+'</select></div></div>'
+    +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px"><div class="bv-stat"><div class="bv-stat-num" style="color:var(--accent)">'+ranked.length+'</div><div class="bv-stat-lab">Bandi analizzati</div></div><div class="bv-stat"><div class="bv-stat-num" style="color:var(--green)">'+amm+'</div><div class="bv-stat-lab">Ammissibili</div></div><div class="bv-stat"><div class="bv-stat-num" style="color:var(--gold-dark)">'+par+'</div><div class="bv-stat-lab">Parziali</div></div><div class="bv-stat"><div class="bv-stat-num" style="color:var(--danger)">'+cri+'</div><div class="bv-stat-lab">Critici</div></div></div>'
+    +ranked.map(function(r,i){var col=r.match>=70?'var(--green)':r.match>=40?'var(--gold-dark)':'var(--danger)';return '<div class="rank-row" onclick="bvOpenMatch('+JSON.stringify(r.bando.id)+')"><div class="rank-medal">'+(medals[i]||'#'+(i+1))+'</div><div class="rank-score" style="border-color:'+col+'"><div style="text-align:center"><div style="font-family:Syne,sans-serif;font-weight:800;font-size:16px;color:'+col+'">'+r.match+'%</div></div></div><div class="rank-main"><div class="rank-title">'+esc(r.bando.name||'Bando')+'</div><div class="rank-meta"><span>🏛️ '+esc(r.ente||'—')+'</span><span>⭐ Comp. '+r.composite+'</span>'+(r.contributo>0?'<span>💰 '+eur(r.contributo)+'</span>':'')+'<span>'+(r.fail?'❌ '+r.fail+' critici':'✅ nessun blocco')+'</span>'+(r.daysLeft!==null?'<span>⏰ '+(r.daysLeft>0?r.daysLeft+' gg':'scaduto')+'</span>':'')+'</div></div><div style="font-size:18px;color:var(--muted)">›</div></div>';}).join('');
+  }
+  window.bvOpenMatch=function(bid){ bvSel.bandoId=isNaN(+bid)?bid:+bid; bvTab('valutazione'); };
+
+  function bvRenderConfronta(db){
+    var az=db.aziende||[], bd=db.bandi||[];
+    if(!bd.length||!az.length){ bvBody().innerHTML='<div class="bv-empty"><div class="bv-empty-icon">🔀</div><div class="bv-empty-title">Confronto non disponibile</div><p style="color:var(--muted)">Servono almeno 1 azienda e 1 bando.</p></div>'; return; }
+    if(!bvSel.aziendaId) bvSel.aziendaId=az[0].id;
+    var ranked=bvRankAll(db); ranked.sort(function(a,b){return b.match-a.match;});
+    bvBody().innerHTML='<div class="card"><div class="card-header"><div class="card-title">🔀 Confronto Bandi</div>'+aziendaSelector(az)+'</div>'
+      +'<div style="overflow-x:auto"><table class="bv-table"><thead><tr><th>Bando</th><th>Match</th><th>Contributo est.</th><th>Critici</th><th>Parziali</th><th>Scadenza</th><th></th></tr></thead><tbody>'
+      +ranked.map(function(r){var col=r.match>=70?'var(--green)':r.match>=40?'var(--gold-dark)':'var(--danger)';return '<tr><td style="font-weight:600;max-width:280px">'+esc(r.bando.name||'Bando')+'</td><td><span style="font-weight:800;color:'+col+'">'+r.match+'%</span></td><td>'+(r.contributo>0?eur(r.contributo):'—')+'</td><td>'+(r.fail||'—')+'</td><td>'+(r.warn||'—')+'</td><td>'+(r.close?esc(r.close):'—')+'</td><td><button class="bv-btn" style="padding:5px 10px" onclick="bvOpenMatch('+JSON.stringify(r.bando.id)+')">Apri</button></td></tr>';}).join('')
+      +'</tbody></table></div></div>';
+  }
+
+  function bvRenderStorico(db){
+    var h=bvHist();
+    if(!h.length){ bvBody().innerHTML='<div class="bv-empty"><div class="bv-empty-icon">🕓</div><div class="bv-empty-title">Nessun match salvato</div><p style="color:var(--muted)">Apri la Valutazione di un bando e premi “Salva match” per registrarlo qui.</p></div>'; return; }
+    h.sort(function(a,b){return new Date(b.savedAt)-new Date(a.savedAt);});
+    var avg=Math.round(h.reduce(function(s,m){return s+m.score;},0)/h.length);
+    bvBody().innerHTML='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px"><div class="bv-stat"><div class="bv-stat-num" style="color:var(--accent)">'+h.length+'</div><div class="bv-stat-lab">Match totali</div></div><div class="bv-stat"><div class="bv-stat-num" style="color:var(--green)">'+h.filter(function(m){return m.score>=70;}).length+'</div><div class="bv-stat-lab">Ammissibili</div></div><div class="bv-stat"><div class="bv-stat-num" style="color:var(--gold-dark)">'+avg+'%</div><div class="bv-stat-lab">Score medio</div></div><div class="bv-stat"><div class="bv-stat-num" style="color:var(--danger)">'+h.filter(function(m){return m.score<40;}).length+'</div><div class="bv-stat-lab">Critici</div></div></div>'
+    +'<div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px"><button class="bv-btn" onclick="bvExportCsv()">↓ CSV</button><button class="bv-btn" onclick="bvClearHist()">🗑️ Azzera</button></div>'
+    +h.map(function(m){var cls=m.score>=70?'hs-high':m.score>=40?'hs-mid':'hs-low', col=m.score>=70?'var(--green)':m.score>=40?'var(--gold-dark)':'var(--danger)';return '<div class="history-card"><div class="history-score '+cls+'"><div style="text-align:center"><div class="history-score-num" style="color:'+col+'">'+m.score+'%</div></div></div><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:13.5px">'+esc((m.aziendaName||'Azienda').substring(0,40))+' × '+esc((m.bandoName||'Bando').substring(0,46))+'</div><div style="font-size:11.5px;color:var(--muted);margin-top:3px">'+new Date(m.savedAt).toLocaleString('it-IT')+'</div></div><div style="display:flex;gap:6px"><button class="bv-btn" style="padding:6px 10px" onclick="bvOpenSaved('+JSON.stringify(m.bandoId)+','+JSON.stringify(m.aziendaId)+')">🔍 Apri</button><button class="bv-btn" style="padding:6px 10px;color:var(--danger)" onclick="bvDelMatch('+m.id+')">✕</button></div></div>';}).join('');
+  }
+  window.bvOpenSaved=function(bid,aid){ bvSel.bandoId=isNaN(+bid)?bid:+bid; bvSel.aziendaId=isNaN(+aid)?aid:+aid; bvTab('valutazione'); };
+  window.bvDelMatch=function(id){ bvSaveHist(bvHist().filter(function(m){return m.id!==id;})); bvRender(); };
+  window.bvClearHist=function(){ if(confirm('Cancellare tutto lo storico match?')){ bvSaveHist([]); bvRender(); } };
+  window.bvExportCsv=function(){ var rows=[['Data','Azienda','Bando','Score','Esito']]; bvHist().forEach(function(m){rows.push([new Date(m.savedAt).toLocaleDateString('it-IT'),m.aziendaName,m.bandoName,m.score+'%',m.score>=70?'Ammissibile':m.score>=40?'Parziale':'Critico']);});
+    var csv=rows.map(function(r){return r.map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+    var a=document.createElement('a'); a.href=URL.createObjectURL(new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8;'})); a.download='BAIA_Storico_Match.csv'; a.click(); };
+
+  window.bvExport=function(){
+    var db=bvGetDB(), aRaw=(db.aziende||[]).find(function(x){return x.id==bvSel.aziendaId;}), bRaw=(db.bandi||[]).find(function(x){return x.id==bvSel.bandoId;});
+    if(!aRaw||!bRaw){ toast('Dati insufficienti per l’export','warn'); return; }
+    var company=bvCompany(aRaw), d=bvData(bRaw), checks=computeEligibility(company,d), score=scoreOf(checks);
+    var inv=parseFloat(company.investimento)||0, pc=pctContribOf(d,inv);
+    var risks=computeRisks(company,d);
+    var html='<html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;max-width:820px;margin:36px auto;color:#1A1B2E}h1{border-bottom:3px solid #6366F1;padding-bottom:8px}h2{color:#4338CA;margin-top:24px;border-left:4px solid #6366F1;padding-left:10px}table{width:100%;border-collapse:collapse;margin:10px 0}th{background:#1A1B2E;color:#fff;padding:8px;text-align:left}td{padding:7px 8px;border-bottom:1px solid #ddd}.ok{color:#0E9F6E;font-weight:700}.no{color:#E02424;font-weight:700}.wa{color:#B8860B;font-weight:700}</style></head><body>'
+      +'<h1>Report di Valutazione — Finanza Agevolata</h1>'
+      +'<p><strong>Azienda:</strong> '+esc(company.ragioneSociale)+' &nbsp;·&nbsp; <strong>Dimensione:</strong> '+esc(company.dimensione)+' &nbsp;·&nbsp; <strong>Regione:</strong> '+esc(company.regione||'—')+'</p>'
+      +'<p><strong>Bando:</strong> '+esc(bRaw.name||'—')+' &nbsp;·&nbsp; <strong>Ente:</strong> '+esc(d.sezione1_identificazione.enteEmanante||'—')+'</p>'
+      +'<p><strong>Match Score:</strong> '+score+'% &nbsp;·&nbsp; <strong>Data:</strong> '+new Date().toLocaleString('it-IT')+'</p>'
+      +'<h2>Matrice di Ammissibilità</h2><table><tr><th>Requisito</th><th>Bando</th><th>Azienda</th><th>Esito</th></tr>'
+      +checks.map(function(c){var cl=c.status==='pass'?'ok':c.status==='fail'?'no':'wa';return '<tr><td>'+esc(c.label)+'</td><td>'+esc(c.bandoValue)+'</td><td>'+esc(c.companyValue)+'</td><td class="'+cl+'">'+c.status.toUpperCase()+'</td></tr>';}).join('')+'</table>'
+      +'<h2>Analisi Finanziaria</h2><table><tr><th>Voce</th><th>Valore</th></tr><tr><td>Investimento previsto</td><td>'+(inv>0?eur(inv):'—')+'</td></tr><tr><td>Contributo stimato</td><td>'+(pc.contributo>0?eur(pc.contributo)+' ('+pc.pct+'%)':'—')+'</td></tr><tr><td>Cofinanziamento a carico</td><td>'+(inv>0&&pc.contributo>0?eur(inv-pc.contributo):'—')+'</td></tr></table>'
+      +'<h2>Profilo di Rischio</h2><table><tr><th>Rischio</th><th>Livello</th><th>Note</th></tr>'+risks.map(function(r){return '<tr><td>'+r.name+'</td><td>'+(r.level==='low'?'Basso':r.level==='mid'?'Medio':'Alto')+'</td><td>'+esc(r.note)+'</td></tr>';}).join('')+'</table>'
+      +'<h2>Punti di Forza</h2><ul>'+(buildStrengths(company,d,checks).map(function(s){return '<li>'+esc(s)+'</li>';}).join('')||'<li>—</li>')+'</ul>'
+      +'<h2>Punti Critici</h2><ul>'+(buildWeaknesses(company,d,checks).map(function(w){return '<li>'+esc(w)+'</li>';}).join('')||'<li>—</li>')+'</ul>'
+      +'<p style="margin-top:26px;font-size:11px;color:#888">Documento generato automaticamente. Le stime non costituiscono garanzia di ammissibilità: verificare sempre i testi ufficiali del bando.</p>'
+      +'</body></html>';
+    var a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([html],{type:'application/msword'})); a.download='Valutazione_'+(company.ragioneSociale||'azienda').replace(/[^a-z0-9]+/gi,'_')+'.doc'; a.click();
+    toast('Report DOCX esportato','success');
+  };
+
+  // ESC per chiudere
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape'&&document.getElementById('bvOverlay').classList.contains('open')) bvClose(); });
 })();
 </script>
 </body>

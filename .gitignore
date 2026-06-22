@@ -32,3 +32,6 @@ Thumbs.db
 # ── DATI SENSIBILI CLIENTE / ESEMPI REALI — MAI committare ──────────
 DEMO/
 da fare.txt
+
+# Archivio versioni storiche (locale, non pubblicare)
+storico/
