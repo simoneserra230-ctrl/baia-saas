@@ -4962,19 +4962,33 @@ function copyDraft() {
   function api(p,o){o=o||{};o.headers=Object.assign({'X-Auth-Token':tok(),'Content-Type':'application/json'},o.headers||{});return fetch(API+p,o);}
   function daysLeft(iso){if(!iso)return null;var s=String(iso).trim().replace(' ','T').replace(/([+-]\d{2})$/,'$1:00');var end=new Date(s);if(isNaN(end)){var m=String(iso).match(/(\d{4})-(\d{2})-(\d{2})/);if(m)end=new Date(+m[1],+m[2]-1,+m[3]);}if(isNaN(end))return null;return Math.max(0,Math.ceil((end-new Date())/86400000));}
   function goPricing(){location.href='index.html#prezzi';}
+  // CTA "Abbonati": se i pagamenti sono attivi apre Stripe Checkout, altrimenti la pagina prezzi
+  window.bvStartUpgrade=async function(plan){
+    try{
+      var r=await fetch(API+'/billing/config'); var d=await r.json();
+      if(d && d.enabled){
+        var rr=await api('/billing/checkout',{method:'POST',body:JSON.stringify({plan:plan||'pro'})});
+        var dd=await rr.json();
+        if(dd.ok && dd.url){ location.href=dd.url; return; }
+        if(dd.error){ alert(dd.error); return; }
+      }
+    }catch(e){}
+    goPricing();
+  };
   window.pwRefresh=async function(){
     if(!tok())return;
     var d;try{var r=await api('/auth/me');if(!r.ok)return;d=await r.json();}catch(e){return;}
     var u=d.user||{},banner=document.getElementById('pwBanner'),wall=document.getElementById('pwWall'),abtn=document.getElementById('pwAdminBtn');
     abtn.style.display=u.is_admin?'block':'none';
+    var cb=document.getElementById('cfgBtn'); if(cb) cb.style.display=u.is_admin?'block':'none';
     if(u.access===false){wall.style.display='flex';banner.style.display='none';}
     else{
       wall.style.display='none';
-      if(u.plan==='trial' && !u.is_admin){var dl=daysLeft(u.trial_ends_at);banner.innerHTML='⏳ Prova gratuita: <b>'+(dl!=null?dl:'—')+' giorni</b> rimanenti <a id="pwBCta">Abbonati ora</a>';banner.style.display='block';var c=document.getElementById('pwBCta');if(c)c.onclick=goPricing;document.body.style.paddingTop='32px';}
+      if(u.plan==='trial' && !u.is_admin){var dl=daysLeft(u.trial_ends_at);banner.innerHTML='⏳ Prova gratuita: <b>'+(dl!=null?dl:'—')+' giorni</b> rimanenti <a id="pwBCta">Abbonati ora</a>';banner.style.display='block';var c=document.getElementById('pwBCta');if(c)c.onclick=function(){window.bvStartUpgrade('pro');};document.body.style.paddingTop='32px';}
       else{banner.style.display='none';document.body.style.paddingTop='';}
     }
   };
-  document.getElementById('pwWallCta').onclick=goPricing;
+  document.getElementById('pwWallCta').onclick=function(){window.bvStartUpgrade('pro');};
   document.getElementById('pwWallLogout').onclick=function(){try{localStorage.removeItem('baia_auth_token');}catch(e){}location.href='index.html';};
   document.getElementById('pwAdminBtn').onclick=async function(){
     document.getElementById('pwAdmin').style.display='flex';
@@ -5625,5 +5639,96 @@ function copyDraft() {
   document.addEventListener('keydown',function(e){ if(e.key==='Escape'&&document.getElementById('bvOverlay').classList.contains('open')) bvClose(); });
 })();
 </script>
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!-- ══ ADMIN · IMPOSTAZIONI SITO (solo admin) ══════════════════════════ -->
+<!-- API key · SMTP · Pagamenti Stripe (sandbox/live) · Generali ══════════ -->
+<style>
+#cfgBtn{display:none;position:fixed;bottom:54px;left:16px;z-index:9000;background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.4);color:#6366F1;font:600 12px Inter,sans-serif;padding:8px 14px;border-radius:8px;cursor:pointer}
+#cfgPanel{display:none;position:fixed;inset:0;z-index:99996;background:rgba(10,12,24,.55);backdrop-filter:blur(6px);align-items:flex-start;justify-content:center;padding:28px 16px;overflow:auto}
+#cfgPanel .box{max-width:680px;width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:24px;color:var(--text);box-shadow:var(--shadow)}
+#cfgPanel h2{font:800 19px Syne,sans-serif;margin:0}
+#cfgPanel .sec{border:1px solid var(--border);border-radius:12px;padding:16px;margin-top:14px;background:var(--bg3)}
+#cfgPanel .sec h3{font:700 14px Inter;margin:0 0 4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+#cfgPanel .hint{font-size:11.5px;color:var(--muted);margin-bottom:10px;line-height:1.5}
+#cfgPanel label{font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;display:block;margin:8px 0 3px}
+#cfgPanel input,#cfgPanel select{width:100%;padding:9px 11px;border:1px solid var(--border2);border-radius:8px;background:var(--bg2);color:var(--text);font:13px Inter;outline:none}
+#cfgPanel input:focus,#cfgPanel select:focus{border-color:var(--accent)}
+#cfgPanel .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:620px){#cfgPanel .row{grid-template-columns:1fr}}
+#cfgPanel .gbtn{background:var(--grad);color:#fff;border:none;font-weight:700;padding:9px 16px;border-radius:8px;cursor:pointer;margin-top:10px}
+#cfgPanel .obtn{background:var(--bg2);color:var(--text);border:1px solid var(--border2);font-weight:600;padding:9px 14px;border-radius:8px;cursor:pointer;margin-top:10px;margin-left:6px}
+#cfgPanel .msg{font-size:12px;margin-top:8px;min-height:16px;display:inline-block;margin-left:8px}
+#cfgPanel .pill{font-size:9.5px;font-weight:700;padding:2px 8px;border-radius:99px}
+#cfgPanel .pill.on{background:rgba(14,159,110,.14);color:var(--green)}
+#cfgPanel .pill.off{background:rgba(224,36,36,.10);color:var(--danger)}
+#cfgClose{float:right;cursor:pointer;color:var(--muted);font-size:18px}
+#cfgPanel .sw{display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text)}
+#cfgPanel code{background:var(--bg4);padding:2px 6px;border-radius:5px;font-size:11px;word-break:break-all}
+</style>
+<button id="cfgBtn">⚙ Impostazioni Sito</button>
+<div id="cfgPanel"><div class="box">
+  <span id="cfgClose">✕</span>
+  <h2>⚙ Impostazioni Sito</h2>
+  <div style="font-size:12px;color:var(--muted);margin-top:3px">Visibile solo a te (admin). Le chiavi restano sul server, mai nel browser.</div>
+  <div id="cfgBody"><div style="padding:20px;color:var(--muted)">Caricamento…</div></div>
+</div></div>
+<script>(function(){
+  var API=(location.protocol==='file:'||location.hostname==='localhost'||location.hostname==='127.0.0.1')?'http://localhost:8000':location.origin+'/api';
+  function tok(){return localStorage.getItem('baia_auth_token')||'';}
+  function api(p,o){o=o||{};o.headers=Object.assign({'X-Auth-Token':tok(),'Content-Type':'application/json'},o.headers||{});return fetch(API+p,o);}
+  function v(id){var e=document.getElementById(id);return e?e.value.trim():'';}
+  function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  var S={};
+  async function load(){
+    var b=document.getElementById('cfgBody');
+    try{var r=await api('/admin/settings');var d=await r.json();
+      if(!d.ok){b.innerHTML='<div style="color:var(--danger);padding:16px">'+esc(d.error||'Non autorizzato')+'</div>';return;}
+      S=d.settings||{}; render();
+    }catch(e){b.innerHTML='<div style="color:var(--danger);padding:16px">Backend non raggiungibile.</div>';}
+  }
+  function pill(on){return '<span class="pill '+(on?'on':'off')+'">'+(on?'CONFIGURATO':'DA IMPOSTARE')+'</span>';}
+  function sec(t,h,inner){return '<div class="sec"><h3>'+t+'</h3><div class="hint">'+h+'</div>'+inner+'</div>';}
+  function render(){
+    var origin=location.origin;
+    document.getElementById('cfgBody').innerHTML=''
+    +sec('🔑 API Anthropic (Claude) '+pill(S.anthropic_api_key_configured),'Necessaria per tutte le funzioni AI (analisi, match, advisor).',
+      '<label>API key (sk-ant-…)</label><input id="cfgApi" type="password" placeholder="'+(S.anthropic_api_key_configured?esc(S.anthropic_api_key_mask)+' — vuoto = non cambiare':'sk-ant-api03-…')+'">'
+      +'<button class="gbtn" onclick="cfgSaveApi()">Salva API key</button><span class="msg" id="cfgApiMsg"></span>')
+    +sec('📧 SMTP (email di sistema) '+pill(S.smtp_configured),'Per reset password e notifiche. Es. Gmail: smtp.gmail.com · 587 · App Password.',
+      '<div class="row"><div><label>Host</label><input id="cfgSmtpHost" value="'+esc(S.smtp_host||'')+'" placeholder="smtp.gmail.com"></div><div><label>Porta</label><input id="cfgSmtpPort" value="'+esc(S.smtp_port||'587')+'"></div></div>'
+      +'<label>Utente</label><input id="cfgSmtpUser" value="'+esc(S.smtp_user||'')+'" placeholder="tua@email.it">'
+      +'<label>Password / App Password '+pill(S.smtp_pass_configured)+'</label><input id="cfgSmtpPass" type="password" placeholder="vuoto = non cambiare">'
+      +'<label>Mittente (From)</label><input id="cfgSmtpFrom" value="'+esc(S.smtp_from||'')+'" placeholder="BA.IA <tua@email.it>">'
+      +'<button class="gbtn" onclick="cfgSaveSmtp()">Salva SMTP</button><button class="obtn" onclick="cfgTestSmtp()">Invia email di test</button><span class="msg" id="cfgSmtpMsg"></span>')
+    +sec('💳 Pagamenti (Stripe) '+pill(S.payments_live),'Abbonamenti self-service. '+(S.stripe_lib?'Usa prima la modalità Sandbox per testare.':'<b style="color:var(--danger)">Attendi il deploy: modulo stripe in installazione.</b>'),
+      '<label class="sw"><input type="checkbox" id="cfgPayOn" style="width:auto" '+(S.payments_enabled?'checked':'')+'> Attiva pagamenti</label>'
+      +'<label>Modalità</label><select id="cfgMode"><option value="sandbox" '+(S.stripe_mode==='sandbox'?'selected':'')+'>Sandbox (test)</option><option value="live" '+(S.stripe_mode==='live'?'selected':'')+'>Live (reale)</option></select>'
+      +'<div class="row"><div><label>Publishable (test)</label><input id="cfgPubS" value="'+esc(S.stripe_pub_sandbox||'')+'" placeholder="pk_test_…"></div><div><label>Secret (test) '+pill(S.stripe_secret_sandbox_configured)+'</label><input id="cfgSecS" type="password" placeholder="sk_test_… (vuoto=invariato)"></div></div>'
+      +'<div class="row"><div><label>Publishable (live)</label><input id="cfgPubL" value="'+esc(S.stripe_pub_live||'')+'" placeholder="pk_live_…"></div><div><label>Secret (live) '+pill(S.stripe_secret_live_configured)+'</label><input id="cfgSecL" type="password" placeholder="sk_live_… (vuoto=invariato)"></div></div>'
+      +'<div class="row"><div><label>Price ID — Base</label><input id="cfgPriceBase" value="'+esc(S.stripe_price_base||'')+'" placeholder="price_…"></div><div><label>Price ID — Pro</label><input id="cfgPricePro" value="'+esc(S.stripe_price_pro||'')+'" placeholder="price_…"></div></div>'
+      +'<label>Webhook signing secret '+pill(S.stripe_webhook_secret_configured)+'</label><input id="cfgWh" type="password" placeholder="whsec_… (vuoto=invariato)">'
+      +'<div class="hint" style="margin-top:8px">Webhook URL da incollare in Stripe: <code>'+esc(origin)+'/api/billing/webhook</code></div>'
+      +'<button class="gbtn" onclick="cfgSavePay()">Salva pagamenti</button><span class="msg" id="cfgPayMsg"></span>')
+    +sec('🌐 Generali','Indirizzo pubblico dell\'app (link nelle email e nel checkout).',
+      '<label>APP_URL</label><input id="cfgAppUrl" value="'+esc(S.app_url||'')+'" placeholder="https://baia-saas.vercel.app/app.html">'
+      +'<button class="gbtn" onclick="cfgSaveGen()">Salva</button><span class="msg" id="cfgGenMsg"></span>');
+  }
+  async function save(obj,msgId,okText){
+    var m=document.getElementById(msgId); if(m){m.style.color='var(--muted)';m.textContent='Salvataggio…';}
+    try{var r=await api('/admin/settings',{method:'POST',body:JSON.stringify({settings:obj})});var d=await r.json();
+      if(d.ok){ if(m){m.style.color='var(--green)';m.textContent=okText||'✓ Salvato';} await load(); }
+      else if(m){m.style.color='var(--danger)';m.textContent='✗ '+(d.error||'errore');}
+    }catch(e){ if(m){m.style.color='var(--danger)';m.textContent='✗ errore di rete';} }
+  }
+  window.cfgSaveApi=function(){var k=v('cfgApi'); if(!k){document.getElementById('cfgApiMsg').textContent='Inserisci una chiave';return;} save({ANTHROPIC_API_KEY:k},'cfgApiMsg','✓ API key salvata');};
+  window.cfgSaveSmtp=function(){var o={SMTP_HOST:v('cfgSmtpHost'),SMTP_PORT:v('cfgSmtpPort'),SMTP_USER:v('cfgSmtpUser'),SMTP_FROM:v('cfgSmtpFrom')};var p=v('cfgSmtpPass');if(p)o.SMTP_PASS=p;save(o,'cfgSmtpMsg','✓ SMTP salvato');};
+  window.cfgTestSmtp=async function(){var m=document.getElementById('cfgSmtpMsg');m.style.color='var(--muted)';m.textContent='Invio…';try{var r=await api('/admin/smtp/test',{method:'POST',body:JSON.stringify({})});var d=await r.json();m.style.color=d.ok?'var(--green)':'var(--danger)';m.textContent=d.ok?'✓ Email di test inviata':'✗ '+(d.error||'errore');}catch(e){m.style.color='var(--danger)';m.textContent='✗ errore';}};
+  window.cfgSavePay=function(){var o={PAYMENTS_ENABLED:document.getElementById('cfgPayOn').checked?'1':'0',STRIPE_MODE:v('cfgMode'),STRIPE_PUB_SANDBOX:v('cfgPubS'),STRIPE_PUB_LIVE:v('cfgPubL'),STRIPE_PRICE_BASE:v('cfgPriceBase'),STRIPE_PRICE_PRO:v('cfgPricePro')};var ss=v('cfgSecS');if(ss)o.STRIPE_SECRET_SANDBOX=ss;var sl=v('cfgSecL');if(sl)o.STRIPE_SECRET_LIVE=sl;var wh=v('cfgWh');if(wh)o.STRIPE_WEBHOOK_SECRET=wh;save(o,'cfgPayMsg','✓ Pagamenti salvati');};
+  window.cfgSaveGen=function(){save({APP_URL:v('cfgAppUrl')},'cfgGenMsg','✓ Salvato');};
+  document.getElementById('cfgBtn').onclick=function(){document.getElementById('cfgPanel').style.display='flex';load();};
+  document.getElementById('cfgClose').onclick=function(){document.getElementById('cfgPanel').style.display='none';};
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'){var p=document.getElementById('cfgPanel');if(p&&p.style.display==='flex')p.style.display='none';}});
+})();</script>
 </body>
 </html>
