@@ -152,6 +152,16 @@ button{cursor:pointer;font-family:'Inter',sans-serif}
   position:relative;z-index:10;
 }
 .main{flex:1;overflow-y:auto;background:transparent}
+/* ── Responsive: sidebar a cassetto su mobile/tablet ── */
+.sb-toggle{display:none;position:fixed;top:12px;left:12px;z-index:1001;width:40px;height:40px;border-radius:10px;background:var(--bg2);border:1px solid var(--border);box-shadow:var(--shadow);align-items:center;justify-content:center;cursor:pointer;color:var(--text)}
+.sb-backdrop{display:none;position:fixed;inset:0;background:rgba(10,12,24,.4);z-index:999}
+.sb-backdrop.show{display:block}
+@media(max-width:860px){
+  .sb-toggle{display:flex}
+  .sidebar{position:fixed;top:0;left:0;bottom:0;transform:translateX(-100%);transition:transform .25s ease;z-index:1000;box-shadow:0 0 40px rgba(0,0,0,.25)}
+  .sidebar.open{transform:none}
+  .page-header{padding-left:64px}
+}
 
 /* ── SIDEBAR ─────────────────────────────────────── */
 .sb-logo{
@@ -550,6 +560,12 @@ button{cursor:pointer;font-family:'Inter',sans-serif}
 <div id="app">
   <div class="app-body">
 
+    <!-- Toggle menu (mobile) -->
+    <button class="sb-toggle" aria-label="Menu" onclick="var s=document.querySelector('.sidebar'),b=document.querySelector('.sb-backdrop');s.classList.toggle('open');b.classList.toggle('show')">
+      <svg width="20" height="20" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </button>
+    <div class="sb-backdrop" onclick="document.querySelector('.sidebar').classList.remove('open');this.classList.remove('show')"></div>
+
     <!-- SIDEBAR -->
     <div class="sidebar">
       <div class="sb-logo">BA<span>.</span>IA</div>
@@ -598,7 +614,7 @@ button{cursor:pointer;font-family:'Inter',sans-serif}
           <svg class="icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.2"/><path d="M2.5 14a5.5 5.5 0 0111 0" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
           Il mio account
         </div>
-        <div class="sb-item" onclick="nav('settings')" id="nav-settings">
+        <div class="sb-item" onclick="nav('settings')" id="nav-settings" style="display:none">
           <svg class="icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.2"/><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3.05 3.05l1.06 1.06M11.89 11.89l1.06 1.06M3.05 12.95l1.06-1.06M11.89 4.11l1.06-1.06" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
           Impostazioni
         </div>
@@ -1861,6 +1877,9 @@ function nav(view) {
   // special: bando/azienda detail
   document.getElementById('viewBandoDetail').style.display = 'none';
   document.getElementById('viewAziendaDetail').style.display = 'none';
+  // chiudi il cassetto su mobile dopo la navigazione
+  var _sb=document.querySelector('.sidebar'); if(_sb) _sb.classList.remove('open');
+  var _bk=document.querySelector('.sb-backdrop'); if(_bk) _bk.classList.remove('show');
 }
 
 function navDetail(which) {
@@ -4991,6 +5010,7 @@ function copyDraft() {
     var adm=u.is_admin?'flex':'none';   // i controlli admin sono voci del menu (non più bottoni flottanti)
     var nl=document.getElementById('nav-licenze'); if(nl) nl.style.display=adm;
     var ncf=document.getElementById('nav-cfg'); if(ncf) ncf.style.display=adm;
+    var nst=document.getElementById('nav-settings'); if(nst) nst.style.display=adm;  // "Impostazioni" solo admin
     if(u.access===false){wall.style.display='flex';banner.style.display='none';}
     else{
       wall.style.display='none';
