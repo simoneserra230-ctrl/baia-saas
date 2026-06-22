@@ -146,10 +146,9 @@ button{cursor:pointer;font-family:'Inter',sans-serif}
 .app-body{display:flex;flex:1;overflow:hidden}
 .sidebar{
   width:var(--sidebar);
-  background:rgba(10,10,20,.9);
+  background:var(--bg2);
   border-right:1px solid var(--border);
   display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;
-  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
   position:relative;z-index:10;
 }
 .main{flex:1;overflow-y:auto;background:transparent}
@@ -158,6 +157,7 @@ button{cursor:pointer;font-family:'Inter',sans-serif}
 .sb-logo{
   padding:22px 20px 16px;
   font-family:'Syne',sans-serif;font-weight:800;font-size:22px;letter-spacing:-.5px;
+  color:var(--text);
   border-bottom:1px solid var(--border);flex-shrink:0;
 }
 .sb-logo span{
@@ -176,7 +176,7 @@ button{cursor:pointer;font-family:'Inter',sans-serif}
 }
 .sb-item:hover{background:rgba(26,28,56,.04);color:var(--text);border-left-color:rgba(99,102,241,.25)}
 .sb-item.active{
-  background:var(--gold-dim);color:#fff;
+  background:var(--gold-dim);color:var(--accent);
   border-left-color:var(--accent);
   font-weight:600;
 }
@@ -189,7 +189,7 @@ button{cursor:pointer;font-family:'Inter',sans-serif}
   font-size:10px;color:var(--muted);font-weight:600;
   border:1px solid var(--border);
 }
-.sb-item.active .sb-badge{background:rgba(99,102,241,.25);color:#a5b4fc;border-color:rgba(99,102,241,.3)}
+.sb-item.active .sb-badge{background:rgba(99,102,241,.16);color:var(--accent);border-color:rgba(99,102,241,.3)}
 .sb-bottom{padding:10px 8px 14px;border-top:1px solid var(--border)}
 .sb-user{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--r);transition:var(--t)}
 .sb-user:hover{background:rgba(26,28,56,.03)}
@@ -607,6 +607,17 @@ button{cursor:pointer;font-family:'Inter',sans-serif}
           Portale Clienti
           <span class="sb-badge" id="portal-unread-badge" style="display:none;background:rgba(239,68,68,.15);color:var(--red);border-color:rgba(239,68,68,.2)"></span>
         </div>
+        <!-- Admin (visibile solo all'amministratore) -->
+        <div class="sb-item" id="nav-cfg" style="display:none" onclick="var b=document.getElementById('cfgBtn');if(b)b.click();">
+          <svg class="icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.4" stroke="currentColor" stroke-width="1.2"/><path d="M8 1.5v1.6M8 12.9v1.6M1.5 8h1.6M12.9 8h1.6M3.2 3.2l1.1 1.1M11.7 11.7l1.1 1.1M3.2 12.8l1.1-1.1M11.7 4.3l1.1-1.1" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>
+          Impostazioni Sito
+          <span class="sb-badge" style="background:var(--gold-dim);color:var(--accent);border-color:rgba(99,102,241,.25)">ADMIN</span>
+        </div>
+        <div class="sb-item" id="nav-licenze" style="display:none" onclick="var b=document.getElementById('pwAdminBtn');if(b)b.click();">
+          <svg class="icon" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M2 6h12M5 9.5h3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          Licenze
+          <span class="sb-badge" style="background:var(--gold-dim);color:var(--accent);border-color:rgba(99,102,241,.25)">ADMIN</span>
+        </div>
       </div>
       <!-- Notification bell -->
       <div id="notifWrap" style="position:relative;padding:0 10px 4px">
@@ -628,17 +639,11 @@ button{cursor:pointer;font-family:'Inter',sans-serif}
         <!-- Ecosistema Skills Solutions -->
         <div style="padding:8px 10px 4px;border-top:1px solid var(--border);margin-bottom:6px;">
           <div style="font-size:9px;font-weight:700;color:var(--subtle);text-transform:uppercase;letter-spacing:.9px;margin-bottom:6px;">Ecosistema</div>
-          <div style="display:flex;flex-direction:column;gap:3px;">
-            <a href="../../../SKILLSOLUTIONS.COM/simone-serra.html" style="display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:6px;text-decoration:none;color:var(--muted);font-size:11px;transition:all .15s;border:1px solid transparent;" onmouseover="this.style.background='rgba(201,168,76,.08)';this.style.color='#C9A84C';this.style.borderColor='rgba(201,168,76,.2)'" onmouseout="this.style.background='transparent';this.style.color='var(--muted)';this.style.borderColor='transparent'">
-              <span style="font-size:11px;">✦</span> Skills Solutions
-            </a>
-            <a href="../../../BAD360.SKILLSOLUTIONS.COM/BAD360_SPLIT/hub.html" style="display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:6px;text-decoration:none;color:var(--muted);font-size:11px;transition:all .15s;border:1px solid transparent;" onmouseover="this.style.background='rgba(201,168,76,.06)';this.style.color='#C9A84C'" onmouseout="this.style.background='transparent';this.style.color='var(--muted)'">
-              <span style="font-size:11px;">🔄</span> BAD360
-            </a>
-            <a href="../../../BAD.SKILLSOLUTIONS.COM/bads_v7_2026.html" style="display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:6px;text-decoration:none;color:var(--muted);font-size:11px;transition:all .15s;border:1px solid transparent;" onmouseover="this.style.background='rgba(0,229,180,.06)';this.style.color='#00E5B4'" onmouseout="this.style.background='transparent';this.style.color='var(--muted)'">
-              <span style="font-size:11px;">🥂</span> BAD.S Events
-            </a>
-          </div>
+          <a href="../../../SKILLSOLUTIONS.COM/index.html" style="display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:8px;text-decoration:none;color:var(--text);font-size:12px;font-weight:600;border:1px solid var(--border);background:var(--gold-dim);transition:all .15s;" onmouseover="this.style.borderColor='var(--accent)';this.style.background='rgba(99,102,241,.16)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--gold-dim)'">
+            <span style="font-size:14px;">◆</span>
+            <span style="flex:1">SSuite</span>
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
         </div>
         <div id="demoSbBadge" style="display:none;padding:6px 10px;margin-bottom:8px">
           <span class="badge badge-amber" style="font-size:10px">⚡ DEMO</span>
@@ -4982,9 +4987,10 @@ function copyDraft() {
   window.pwRefresh=async function(){
     if(!tok())return;
     var d;try{var r=await api('/auth/me');if(!r.ok)return;d=await r.json();}catch(e){return;}
-    var u=d.user||{},banner=document.getElementById('pwBanner'),wall=document.getElementById('pwWall'),abtn=document.getElementById('pwAdminBtn');
-    abtn.style.display=u.is_admin?'block':'none';
-    var cb=document.getElementById('cfgBtn'); if(cb) cb.style.display=u.is_admin?'block':'none';
+    var u=d.user||{},banner=document.getElementById('pwBanner'),wall=document.getElementById('pwWall');
+    var adm=u.is_admin?'flex':'none';   // i controlli admin sono voci del menu (non più bottoni flottanti)
+    var nl=document.getElementById('nav-licenze'); if(nl) nl.style.display=adm;
+    var ncf=document.getElementById('nav-cfg'); if(ncf) ncf.style.display=adm;
     if(u.access===false){wall.style.display='flex';banner.style.display='none';}
     else{
       wall.style.display='none';
