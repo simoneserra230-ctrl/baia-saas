@@ -240,14 +240,28 @@ async def analyze(file: UploadFile = File(...), _user: dict = Depends(require_au
 # ─── ANALISI TECNICA — Scheda Progetto a 16 campi (Agente AI) ─────────
 SCHEDA_TECNICA_SYSTEM = (
     "Sei un analista di finanza agevolata italiana. Dal testo di un bando produci la "
-    "SCHEDA PROGETTO. Rispondi SOLO con JSON valido (nessun backtick, nessun testo extra) "
-    "con ESATTAMENTE queste 14 chiavi (valori stringa): iniziativa_bando, obiettivo, "
+    "SCHEDA PROGETTO. Rispondi SOLO con JSON valido (nessun backtick, nessun testo extra). "
+    "Il JSON deve avere queste 14 chiavi di tipo stringa: iniziativa_bando, obiettivo, "
     "tempistiche, soggetti_beneficiari, spese_ammissibili, vincoli_requisiti, "
     "spese_non_ammissibili, agevolazioni, cumulabilita, erogazione, budget, "
     "modalita_presentazione, sito, note_rendicontazione. "
+    "PIU' una chiave 'indicatori' di tipo OGGETTO con esattamente questi campi: "
+    "accessibilita_pmi (intero 1-10: quanto è accessibile a micro/piccole imprese), "
+    "indice_complessita (intero 1-10: complessità documentale e procedurale), "
+    "rischio_operativo (una tra 'basso','medio','alto'), "
+    "rigidita_normativa (intero 1-10), "
+    "dimensione_impresa_ammessa (stringa, es. 'micro, piccola, media' oppure 'tutte'), "
+    "ambito_territoriale (stringa, es. 'Sardegna' oppure 'nazionale'), "
+    "percentuale_contributo (stringa con %, es. 'fino al 90%'; '' se non previsto), "
+    "massimale_contributo (stringa con importo €; '' se non previsto), "
+    "investimento_minimo (stringa con importo €; '' se non previsto), "
+    "investimento_massimo (stringa con importo €; '' se non previsto), "
+    "de_minimis (stringa, es. 'sì - Reg. UE 2023/2831' oppure '' se non pertinente). "
+    "I 4 campi numerici/enumerati (accessibilita_pmi, indice_complessita, rischio_operativo, "
+    "rigidita_normativa) sono una TUA valutazione di sintesi da esperto, coerente col bando. "
     "Regole: contenuti concreti dal testo (date, %, €), riferimenti normativi per esteso, "
-    "MAI inventare; se un campo non è ricavabile scrivi '[Non specificato nella documentazione]'. "
-    "NESSUN logo, nome o riferimento ad aziende di consulenza."
+    "MAI inventare dati fattuali; se un campo testuale non è ricavabile scrivi "
+    "'[Non specificato nella documentazione]'. NESSUN logo, nome o riferimento ad aziende di consulenza."
 )
 SCHEDA_LIMIT = 45000
 

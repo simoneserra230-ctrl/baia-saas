@@ -1621,13 +1621,14 @@ function logout() {
 }
 
 // Dati demo: Scheda Progetto COMPLETA (16 campi) come la produce l'Analisi Tecnica reale.
-const DEMO_DB_VER = 'v3';
+const DEMO_DB_VER = 'v4';
 function demoSeed() {
   return {
     bandi: [
     {
       id:'demo-b1', name:'Nuove Imprese a Tasso Zero (Demo)', ente:'Invitalia',
       scadenza:'2026-09-30', status:'active',
+      indicatori:{accessibilita_pmi:9,indice_complessita:5,rischio_operativo:'basso',rigidita_normativa:5,dimensione_impresa_ammessa:'micro, piccola',ambito_territoriale:'nazionale',percentuale_contributo:'fino al 90%',massimale_contributo:'',investimento_minimo:'',investimento_massimo:'1.500.000 €',de_minimis:'sì - Reg. UE 2023/2831'},
       pdfs:[{id:'demo-p1',name:'analisi-tecnica-nito.pdf',uploadedAt:now(),analyzed:true,textLength:38000,
         analysis:'Finanziamento agevolato a tasso zero + contributo a fondo perduto per nuove imprese giovanili e femminili (costituite da meno di 60 mesi). Copre fino al 90% delle spese ammissibili per l’avvio di una nuova attivita, in regime de minimis.',
         checklist:[
@@ -1660,6 +1661,7 @@ function demoSeed() {
     {
       id:'demo-b2', name:'IN.DO.M.A.U.S — Domotica e Assistenza (Demo)', ente:'Regione Autonoma della Sardegna',
       scadenza:'2026-07-31', status:'active',
+      indicatori:{accessibilita_pmi:6,indice_complessita:6,rischio_operativo:'medio',rigidita_normativa:6,dimensione_impresa_ammessa:'tutte (gestori autorizzati)',ambito_territoriale:'Sardegna',percentuale_contributo:'fondo perduto',massimale_contributo:'',investimento_minimo:'',investimento_massimo:'',de_minimis:'sì'},
       pdfs:[{id:'demo-p2',name:'analisi-tecnica-indomaus.pdf',uploadedAt:now(),analyzed:true,textLength:30000,
         analysis:'Contributo a fondo perduto per l’ammodernamento della rete dei servizi socio-sanitari residenziali, con soglia minima del 50% di spesa in soluzioni di domotica e telemedicina.',
         checklist:[
@@ -1690,6 +1692,7 @@ function demoSeed() {
     {
       id:'demo-b3', name:'Alberghi Diffusi e Ospitalita (Demo)', ente:'Regione Sardegna / Enti Locali',
       scadenza:'2026-10-15', status:'active',
+      indicatori:{accessibilita_pmi:7,indice_complessita:5,rischio_operativo:'basso',rigidita_normativa:5,dimensione_impresa_ammessa:'micro, piccola',ambito_territoriale:'Sardegna',percentuale_contributo:'conto capitale (fondo perduto)',massimale_contributo:'',investimento_minimo:'',investimento_massimo:'',de_minimis:'sì'},
       pdfs:[{id:'demo-p3',name:'analisi-tecnica-alberghi.pdf',uploadedAt:now(),analyzed:true,textLength:26000,
         analysis:'Sostegno alla creazione e riqualificazione di alberghi diffusi e strutture ricettive nei borghi, con contributo in conto capitale per recupero immobili e arredi.',
         checklist:[
@@ -5030,11 +5033,25 @@ function copyDraft() {
       if(d.error){msg.textContent='✗ '+d.error;return;}
       var s=d.scheda||{};lastScheda=s;msg.textContent='✓ Scheda generata ('+(d.chars||0)+' caratteri analizzati)';
       out.innerHTML=ORD.map(function(k){return s[k]?('<div class="at-row"><div class="k">'+LAB[k]+'</div><div class="v">'+String(s[k]).replace(/</g,'&lt;')+'</div></div>'):'';}).join('')||('<pre style="white-space:pre-wrap">'+JSON.stringify(s,null,2)+'</pre>');
-      out.innerHTML+='<button id="atRic" style="margin-top:14px;background:#0E9F6E;color:#fff;border:none;font-weight:700;padding:11px 20px;border-radius:9px;cursor:pointer">🔎 Trova aziende compatibili con questo bando</button><div id="atMatch" style="margin-top:14px"></div>';
+      out.innerHTML+='<div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap"><button id="atSave" style="background:linear-gradient(135deg,#6366F1,#8B5CF6);color:#fff;border:none;font-weight:700;padding:11px 20px;border-radius:9px;cursor:pointer">💾 Salva come bando + Valutazione</button><button id="atRic" style="background:#0E9F6E;color:#fff;border:none;font-weight:700;padding:11px 20px;border-radius:9px;cursor:pointer">🔎 Trova aziende compatibili</button></div><div id="atMatch" style="margin-top:14px"></div>';
       document.getElementById('atRic').onclick=ricontrolla;
+      document.getElementById('atSave').onclick=salvaComeBando;
     }catch(e){msg.textContent='✗ Errore di rete o backend.';}
   };
   var lastScheda=null;
+  function salvaComeBando(){
+    if(!lastScheda) return;
+    var s=lastScheda;
+    var fields=ORD.filter(function(k){return s[k];}).map(function(k){return {section:LAB[k],label:LAB[k],value:String(s[k]),source:'pdf'};});
+    var scad='',dm=String(s.tempistiche||'').match(/(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})/);
+    if(dm){var y=dm[3].length===2?'20'+dm[3]:dm[3];scad=y+'-'+('0'+dm[2]).slice(-2)+'-'+('0'+dm[1]).slice(-2);}
+    var bando={id:'b'+Date.now(),name:String(s.iniziativa_bando||'Bando').substring(0,90),ente:'',scadenza:scad,status:'active',pdfs:[],fields:fields,indicatori:s.indicatori||{},note:'',createdAt:Date.now(),updatedAt:Date.now()};
+    if(window.bvAddBando) window.bvAddBando(bando);
+    var msg=document.getElementById('atMsg'); if(msg) msg.textContent='✓ Bando salvato in archivio. Apertura Valutazione...';
+    if(window.toast) window.toast('Bando salvato — disponibile in Bandi e Valutazione','success');
+    document.getElementById('atModal').style.display='none';
+    if(window.bvOpen){ window.bvOpen(); if(window.bvOpenMatch) window.bvOpenMatch(bando.id); }
+  }
   function getAziende(){try{if(window.getDB){var db=window.getDB();if(db&&db.aziende)return db.aziende;}}catch(e){}try{var dm=JSON.parse(localStorage.getItem('demo_db')||'null');if(dm&&dm.aziende)return dm.aziende;}catch(e){}return[];}
   async function ricontrolla(){
     var mt=document.getElementById('atMatch'),az=getAziende();
@@ -5225,28 +5242,31 @@ function copyDraft() {
   function bvData(b){ // costruisce le sezioni dal bando attuale
     var allTxt=fieldsOf(b).map(function(f){return f.value;}).join(' ');
     var nReq=fieldsOf(b).length;
-    // indicatori sintetici euristici (in assenza di estrazione AI dedicata)
-    var complessita = Math.min(10, Math.max(3, Math.round(nReq/2)));
-    var accessibilita = /pmi|micro|piccol|nuove impres|under|giovani|donne|tasso zero/i.test(allTxt)?7:5;
-    var rischioOp = complessita>7?'alto':complessita<5?'basso':'medio';
+    var ind=b.indicatori||{}; // indicatori nativi prodotti dall'Analisi Tecnica AI (se presenti)
+    var aiInd = !!(ind && (ind.accessibilita_pmi||ind.indice_complessita||ind.rischio_operativo));
+    // se l'AI non li ha forniti → euristica di fallback
+    var complessita = parseInt(ind.indice_complessita) || Math.min(10, Math.max(3, Math.round(nReq/2)));
+    var accessibilita = parseInt(ind.accessibilita_pmi) || (/pmi|micro|piccol|nuove impres|under|giovani|donne|tasso zero/i.test(allTxt)?7:5);
+    var rischioOp = ind.rischio_operativo || (complessita>7?'alto':complessita<5?'basso':'medio');
+    var rigidita = parseInt(ind.rigidita_normativa) || complessita;
     return {
-      meta:{ fileName:b.name||'' },
+      meta:{ fileName:b.name||'', aiIndicatori:aiInd },
       sezione1_identificazione:{ enteEmanante:(b.ente||fv(b,'ente','iniziativa')||'—'), titoloCompleto:b.name||'—',
-        ambitoTerritoriale:(fv(b,'territor','ambito','sede','regione')||b.ente||''), settoreIntervento:fv(b,'settore','obiettivo','finalita') },
+        ambitoTerritoriale:(ind.ambito_territoriale||fv(b,'territor','ambito','sede','regione')||b.ente||''), settoreIntervento:fv(b,'settore','obiettivo','finalita') },
       sezione3_dotazioneFinanziaria:{ budgetComplessivo:fv(b,'budget','dotazione') },
       sezione4_tempistiche:{ dataChiusura:(b.scadenza?fmtDate(b.scadenza):fv(b,'chiusura','scadenza','termine')),
         dataApertura:fv(b,'apertura'), terminePresentazioneDomande:fv(b,'presentazione','chiusura','scadenza') },
-      sezione5_beneficiari:{ dimensioneImpresaAmmessa:fv(b,'beneficiari','dimensione','pmi','micro','soggetti'),
+      sezione5_beneficiari:{ dimensioneImpresaAmmessa:(ind.dimensione_impresa_ammessa||fv(b,'beneficiari','dimensione','pmi','micro','soggetti')),
         tipologiaSoggettiAmmessi:fv(b,'beneficiari','soggetti','forma','tipologia'),
         settoriAmmessi:(fv(b,'settori','beneficiari','obiettivo')||'tutti'), settoriEsclusi:fv(b,'esclus','non ammiss') },
-      sezione6_requisitiAmmissibilita:{ requisitiEconomicoFinanziari:{ deMinimisResiduo:fv(b,'de minimis','cumulab','minimis'), fatturatoMinimo:fv(b,'fatturato') } },
-      sezione9_intensitaAgevolazione:{ percentualeContributo:fv(b,'agevolaz','contributo','intensit','fondo perduto'),
-        massimaleContributo:fv(b,'massimale','importo max'), investimentoMinimo:fv(b,'investimento minimo','soglia minima'),
-        investimentoMassimo:fv(b,'investimento massimo','programmi di spesa','fino a 1','massimale') },
+      sezione6_requisitiAmmissibilita:{ requisitiEconomicoFinanziari:{ deMinimisResiduo:(ind.de_minimis||fv(b,'de minimis','cumulab','minimis')), fatturatoMinimo:fv(b,'fatturato') } },
+      sezione9_intensitaAgevolazione:{ percentualeContributo:(ind.percentuale_contributo||fv(b,'agevolaz','contributo','intensit','fondo perduto')),
+        massimaleContributo:(ind.massimale_contributo||fv(b,'massimale','importo max')), investimentoMinimo:(ind.investimento_minimo||fv(b,'investimento minimo','soglia minima')),
+        investimentoMassimo:(ind.investimento_massimo||fv(b,'investimento massimo','programmi di spesa','fino a 1','massimale')) },
       sezione11_modalitaErogazione:{ necessitaFideiussione:fv(b,'erogazione','fideiussione','anticipo','sal') },
       sezione14_vincoliObblighi:{ mantenimentoInvestimento:fv(b,'vincoli','mantenimento','destinazione'), mantenimentoOccupazionale:fv(b,'occupaz') },
       sezione16_criticita:{ complessitaDocumentale:'', rischiNormativi:'' },
-      sezione17_indicatoriSintetici:{ accessibilitaPmi:accessibilita, indiceComplessita:complessita, rischioOperativo:rischioOp, rigiditaNormativa:complessita },
+      sezione17_indicatoriSintetici:{ accessibilitaPmi:accessibilita, indiceComplessita:complessita, rischioOperativo:rischioOp, rigiditaNormativa:rigidita },
       suggerimenti:{}
     };
   }
@@ -5597,6 +5617,9 @@ function copyDraft() {
     var a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([html],{type:'application/msword'})); a.download='Valutazione_'+(company.ragioneSociale||'azienda').replace(/[^a-z0-9]+/gi,'_')+'.doc'; a.click();
     toast('Report DOCX esportato','success');
   };
+
+  // API pubblica: salva un bando nell'archivio (demo-aware), usata dall'Analisi Tecnica
+  window.bvAddBando=function(b){ var db=bvGetDB(); db.bandi=db.bandi||[]; db.bandi.push(b); bvSaveDB(db); try{ if(window.renderAll) window.renderAll(); }catch(e){} return b; };
 
   // ESC per chiudere
   document.addEventListener('keydown',function(e){ if(e.key==='Escape'&&document.getElementById('bvOverlay').classList.contains('open')) bvClose(); });
