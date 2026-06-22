@@ -237,6 +237,69 @@ async def analyze(file: UploadFile = File(...), _user: dict = Depends(require_au
     finally:
         if tmp_path and os.path.exists(tmp_path): os.unlink(tmp_path)
 
+# ─── ANALISI TECNICA — Scheda Progetto a 16 campi (Agente AI) ─────────
+SCHEDA_TECNICA_SYSTEM = (
+    "Sei un analista di finanza agevolata italiana. Dal testo di un bando produci la "
+    "SCHEDA PROGETTO. Rispondi SOLO con JSON valido (nessun backtick, nessun testo extra) "
+    "con ESATTAMENTE queste 14 chiavi (valori stringa): iniziativa_bando, obiettivo, "
+    "tempistiche, soggetti_beneficiari, spese_ammissibili, vincoli_requisiti, "
+    "spese_non_ammissibili, agevolazioni, cumulabilita, erogazione, budget, "
+    "modalita_presentazione, sito, note_rendicontazione. "
+    "Regole: contenuti concreti dal testo (date, %, €), riferimenti normativi per esteso, "
+    "MAI inventare; se un campo non è ricavabile scrivi '[Non specificato nella documentazione]'. "
+    "NESSUN logo, nome o riferimento ad aziende di consulenza."
+)
+SCHEDA_LIMIT = 45000
+
+def _parse_scheda(result: str) -> dict:
+    import json as _json, re as _re
+    try:
+        return _json.loads(result)
+    except Exception:
+        m = _re.search(r"\{.*\}", result, _re.S)
+        if m:
+            try: return _json.loads(m.group(0))
+            except Exception: pass
+    return {"raw": result}
+
+@app.post("/bando/analisi-tecnica")
+async def bando_analisi_tecnica(file: UploadFile = File(...), _user: dict = Depends(require_auth)):
+    """Genera la Scheda Progetto a 16 campi da un PDF di bando."""
+    if not file.filename.lower().endswith(".pdf"):
+        return {"error": "Solo file PDF supportati"}
+    data = await file.read()
+    if len(data) > MAX_UPLOAD_BYTES:
+        return {"error": f"File troppo grande (max {MAX_UPLOAD_BYTES // 1024 // 1024} MB)"}
+    if not is_valid_pdf_bytes(data):
+        return {"error": "Il file non è un PDF valido"}
+    tmp_path = None
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+            tmp.write(data); tmp_path = tmp.name
+        text = extract_text(tmp_path)
+        result, _ = await anthropic_call(
+            SCHEDA_TECNICA_SYSTEM + "\n\nTESTO DEL BANDO:\n" + text[:SCHEDA_LIMIT],
+            json_mode=True, timeout=150)
+        return {"ok": True, "scheda": _parse_scheda(result), "chars": len(text)}
+    except Exception as e:
+        print(f"[ANALISI-TECNICA] errore: {e}")
+        return {"error": "Errore generazione scheda tecnica"}
+    finally:
+        if tmp_path and os.path.exists(tmp_path): os.unlink(tmp_path)
+
+class _SchedaTextReq(BaseModel):
+    text: str
+
+@app.post("/bando/analisi-tecnica-text")
+async def bando_analisi_tecnica_text(req: _SchedaTextReq, _user: dict = Depends(require_auth)):
+    """Genera la Scheda Progetto da testo già estratto."""
+    if not (req.text or "").strip():
+        return {"error": "Testo mancante"}
+    result, _ = await anthropic_call(
+        SCHEDA_TECNICA_SYSTEM + "\n\nTESTO DEL BANDO:\n" + req.text[:SCHEDA_LIMIT],
+        json_mode=True, timeout=150)
+    return {"ok": True, "scheda": _parse_scheda(result)}
+
 @app.post("/extract-text")
 async def extract_text_endpoint(file: UploadFile = File(...), _user: dict = Depends(require_auth)):
     if not file.filename.lower().endswith(".pdf"):

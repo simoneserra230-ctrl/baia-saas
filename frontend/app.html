@@ -4942,5 +4942,56 @@ function copyDraft() {
   if(window.showApp){var _s=window.showApp;window.showApp=function(){var x=_s.apply(this,arguments);setTimeout(window.pwRefresh,300);return x;};}
 })();
 </script>
+<!-- ══ ANALISI TECNICA AI — Scheda Progetto 16 campi ══ -->
+<style>
+#atBtn{display:none;position:fixed;bottom:16px;right:16px;z-index:9000;background:linear-gradient(135deg,#6366F1,#8B5CF6);color:#fff;border:none;font:600 13px Inter;padding:11px 18px;border-radius:10px;cursor:pointer;box-shadow:0 6px 20px rgba(99,102,241,.3)}
+#atModal{display:none;position:fixed;inset:0;z-index:99997;background:rgba(6,6,15,.85);backdrop-filter:blur(8px);align-items:flex-start;justify-content:center;padding:30px 16px;overflow:auto}
+#atModal .box{max-width:760px;width:100%;background:var(--bg2,#fff);border:1px solid var(--border,#ddd);border-radius:16px;padding:26px;color:var(--text,#1A1B2E)}
+#atModal h2{font:700 19px Inter;margin:0 0 4px}
+#atModal .sub{color:var(--muted,#6B7280);font-size:13px;margin-bottom:16px}
+#atClose{float:right;cursor:pointer;color:var(--muted,#888);font-size:18px}
+#atFile{display:block;margin:10px 0}
+#atGen{background:linear-gradient(135deg,#6366F1,#8B5CF6);color:#fff;border:none;font-weight:700;padding:11px 22px;border-radius:9px;cursor:pointer}
+#atOut{margin-top:18px}
+.at-row{border:1px solid var(--border,#eee);border-radius:10px;padding:12px 14px;margin-bottom:8px;background:var(--bg3,#f7f7fb)}
+.at-row .k{font:700 11px Inter;text-transform:uppercase;letter-spacing:.5px;color:var(--accent,#6366F1);margin-bottom:4px}
+.at-row .v{font-size:13.5px;line-height:1.55;white-space:pre-wrap}
+#atMsg{font-size:13px;color:var(--muted,#888);margin-top:10px}
+</style>
+<button id="atBtn">📋 Analisi Tecnica AI</button>
+<div id="atModal"><div class="box"><span id="atClose">✕</span>
+  <h2>Analisi Tecnica — Scheda Progetto</h2>
+  <div class="sub">Carica il PDF di un bando: l'AI genera la Scheda a 16 campi (obiettivo, beneficiari, spese, agevolazioni, vincoli, rendicontazione…) nel formato standard, senza riferimenti aziendali.</div>
+  <input id="atFile" type="file" accept="application/pdf">
+  <button id="atGen">Genera Scheda</button>
+  <div id="atMsg"></div>
+  <div id="atOut"></div>
+</div></div>
+<script>
+(function(){
+  var API=(location.protocol==='file:'||location.hostname==='localhost'||location.hostname==='127.0.0.1')?'http://localhost:8000':location.origin+'/api';
+  function tok(){return localStorage.getItem('baia_auth_token')||'';}
+  var LAB={iniziativa_bando:'Iniziativa / Bando',obiettivo:'Obiettivo',tempistiche:'Tempistiche',soggetti_beneficiari:'Soggetti beneficiari e requisiti',spese_ammissibili:'Spese ammissibili',vincoli_requisiti:'Vincoli e requisiti',spese_non_ammissibili:'Spese NON ammissibili',agevolazioni:'Agevolazioni concedibili',cumulabilita:'Cumulabilità',erogazione:'Erogazione',budget:'Budget',modalita_presentazione:'Modalità di presentazione',sito:'Sito di riferimento',note_rendicontazione:'Note per la rendicontazione'};
+  var ORD=['iniziativa_bando','obiettivo','tempistiche','soggetti_beneficiari','spese_ammissibili','vincoli_requisiti','spese_non_ammissibili','agevolazioni','cumulabilita','erogazione','budget','modalita_presentazione','sito','note_rendicontazione'];
+  document.getElementById('atBtn').onclick=function(){document.getElementById('atModal').style.display='flex';};
+  document.getElementById('atClose').onclick=function(){document.getElementById('atModal').style.display='none';};
+  document.getElementById('atGen').onclick=async function(){
+    var f=document.getElementById('atFile').files[0],msg=document.getElementById('atMsg'),out=document.getElementById('atOut');
+    if(!f){msg.textContent='Seleziona un PDF.';return;}
+    msg.textContent='⏳ Generazione in corso (può richiedere 30-60s)...';out.innerHTML='';
+    var fd=new FormData();fd.append('file',f);
+    try{
+      var r=await fetch(API+'/bando/analisi-tecnica',{method:'POST',headers:{'X-Auth-Token':tok()},body:fd});
+      var d=await r.json();
+      if(d.error){msg.textContent='✗ '+d.error;return;}
+      var s=d.scheda||{};msg.textContent='✓ Scheda generata ('+(d.chars||0)+' caratteri analizzati)';
+      out.innerHTML=ORD.map(function(k){return s[k]?('<div class="at-row"><div class="k">'+LAB[k]+'</div><div class="v">'+String(s[k]).replace(/</g,'&lt;')+'</div></div>'):'';}).join('')||('<pre style="white-space:pre-wrap">'+JSON.stringify(s,null,2)+'</pre>');
+    }catch(e){msg.textContent='✗ Errore di rete o backend.';}
+  };
+  function atVis(){document.getElementById('atBtn').style.display=tok()?'block':'none';}
+  setTimeout(atVis,900);
+  if(window.showApp){var _s2=window.showApp;window.showApp=function(){var x=_s2.apply(this,arguments);setTimeout(atVis,350);return x;};}
+})();
+</script>
 </body>
 </html>
