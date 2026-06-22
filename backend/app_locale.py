@@ -101,6 +101,12 @@ async def init_auth_db():
                 created_at TEXT DEFAULT (datetime('now'))
             )""")
         await db.execute("CREATE INDEX IF NOT EXISTS ix_prt_email ON password_reset_tokens(email)")
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS site_settings (
+                key TEXT PRIMARY KEY,
+                value TEXT,
+                updated_at TEXT DEFAULT (datetime('now'))
+            )""")
         await db.commit()
     print("[AUTH] Tabelle utenti pronte")
 
@@ -115,6 +121,11 @@ async def startup_auth():
     await init_notifications_db()
     register_audit_endpoints(app)
     register_notification_endpoints(app)
+    try:
+        await _load_settings_into_env()
+        print("[SETTINGS] Impostazioni sito caricate dal DB")
+    except Exception as _e:
+        print(f"[SETTINGS] load skip: {_e}")
 
 # ── Helper token/session ─────────────────────────────
 def _make_token() -> str:
@@ -468,15 +479,16 @@ def setup_status():
 
 @app.post("/setup/apikey")
 async def setup_apikey(request: Request):
+    me = await _get_user(request)
+    if not me or not me.get("is_admin"):
+        return JSONResponse({"ok": False, "error": "Solo l'amministratore può configurare la API key"}, 403)
     body = await request.json()
     key = (body.get("api_key") or "").strip()
     if not key.startswith("sk-ant-") or len(key) < 20:
         return JSONResponse({"ok": False, "error": "Chiave non valida (deve iniziare con sk-ant-)"}, 400)
-    _write_env_key("ANTHROPIC_API_KEY", key)
-    _write_env_key("AI_PROVIDER", "anthropic")
-    os.environ["ANTHROPIC_API_KEY"] = key
+    await _settings_set("ANTHROPIC_API_KEY", key)   # persiste su DB + applica a runtime
     os.environ["AI_PROVIDER"] = "anthropic"
-    print(f"[SETUP] Anthropic API key configurata via UI")
+    print(f"[SETUP] Anthropic API key configurata via UI (admin {me['email']})")
     return {"ok": True}
 
 @app.post("/setup/appname")
@@ -856,15 +868,16 @@ class SmtpConfig(_BM):
     from_addr: str = ""
 
 @app.post("/settings/smtp")
-async def save_smtp(cfg: SmtpConfig):
-    _write_env_key("SMTP_HOST", cfg.host)
-    _write_env_key("SMTP_PORT", str(cfg.port))
-    _write_env_key("SMTP_USER", cfg.user)
-    _write_env_key("SMTP_PASS", cfg.password)
-    _write_env_key("SMTP_FROM", cfg.from_addr)
-    for k, v in [("SMTP_HOST", cfg.host), ("SMTP_PORT", str(cfg.port)),
-                  ("SMTP_USER", cfg.user), ("SMTP_PASS", cfg.password), ("SMTP_FROM", cfg.from_addr)]:
-        os.environ[k] = v
+async def save_smtp(cfg: SmtpConfig, request: Request):
+    me = await _get_user(request)
+    if not me or not me.get("is_admin"):
+        return JSONResponse({"ok": False, "error": "Solo l'amministratore può configurare l'SMTP"}, 403)
+    await _settings_set("SMTP_HOST", cfg.host)
+    await _settings_set("SMTP_PORT", str(cfg.port))
+    await _settings_set("SMTP_USER", cfg.user)
+    if cfg.password:  # vuoto = non sovrascrivere la password salvata
+        await _settings_set("SMTP_PASS", cfg.password)
+    await _settings_set("SMTP_FROM", cfg.from_addr)
     return {"ok": True}
 
 @app.get("/settings/smtp")
@@ -890,6 +903,240 @@ async def test_smtp_endpoint(request: Request):
         return {"ok": True}
     except Exception as e:
         return {"ok": False, "error": str(e)}
+
+# ══════════════════════════════════════════════════════════
+# IMPOSTAZIONI SITO (admin-only) · PAYWALL server-side · BILLING (Stripe)
+# ══════════════════════════════════════════════════════════
+SETTING_KEYS = {
+    "ANTHROPIC_API_KEY", "SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS", "SMTP_FROM",
+    "APP_URL", "PAYMENTS_ENABLED", "STRIPE_MODE", "STRIPE_SECRET_SANDBOX", "STRIPE_SECRET_LIVE",
+    "STRIPE_PUB_SANDBOX", "STRIPE_PUB_LIVE", "STRIPE_PRICE_BASE", "STRIPE_PRICE_PRO", "STRIPE_WEBHOOK_SECRET",
+}
+SECRET_KEYS = {"ANTHROPIC_API_KEY", "SMTP_PASS", "STRIPE_SECRET_SANDBOX", "STRIPE_SECRET_LIVE", "STRIPE_WEBHOOK_SECRET"}
+
+def _apply_setting_env(key, value):
+    """Riflette una setting sull'ambiente runtime usato dal resto del codice."""
+    value = "" if value is None else str(value)
+    os.environ[key] = value
+    if key == "ANTHROPIC_API_KEY":
+        os.environ["AI_API_KEY"] = value
+        try:
+            import main as _m
+            _m.ANTHROPIC_API_KEY = value
+        except Exception:
+            pass
+
+async def _settings_get_all():
+    out = {}
+    try:
+        async with aiosqlite.connect(DB) as db:
+            db.row_factory = aiosqlite.Row
+            async with db.execute("SELECT key,value FROM site_settings") as c:
+                for r in await c.fetchall():
+                    out[r["key"]] = r["value"]
+    except Exception as e:
+        print(f"[SETTINGS] read err: {e}")
+    return out
+
+async def _settings_set(key, value):
+    value = "" if value is None else str(value)
+    async with aiosqlite.connect(DB) as db:
+        await db.execute(
+            "INSERT INTO site_settings (key,value) VALUES (?,?) "
+            "ON CONFLICT(key) DO UPDATE SET value=excluded.value", (key, value))
+        await db.commit()
+    _apply_setting_env(key, value)
+
+async def _load_settings_into_env():
+    for k, v in (await _settings_get_all()).items():
+        try:
+            _apply_setting_env(k, v)
+        except Exception:
+            pass
+
+def _mask(v):
+    s = str(v or "")
+    if not s:
+        return ""
+    return ("•" * max(2, min(12, len(s) - 4))) + s[-4:] if len(s) > 4 else "••••"
+
+def _stripe_available():
+    try:
+        import stripe  # noqa: F401
+        return True
+    except Exception:
+        return False
+
+def _stripe_keys():
+    """Ritorna (secret, publishable) in base alla modalità sandbox/live."""
+    if os.environ.get("STRIPE_MODE", "sandbox") == "live":
+        return os.environ.get("STRIPE_SECRET_LIVE", ""), os.environ.get("STRIPE_PUB_LIVE", "")
+    return os.environ.get("STRIPE_SECRET_SANDBOX", ""), os.environ.get("STRIPE_PUB_SANDBOX", "")
+
+def _payments_on():
+    sec, _ = _stripe_keys()
+    return os.environ.get("PAYMENTS_ENABLED", "0") == "1" and bool(sec) and _stripe_available()
+
+# ── PAYWALL middleware: blocca gli endpoint AI se l'utente non ha accesso ──
+PAYWALL_PATHS = ("/bando/analisi-tecnica", "/analyze", "/match-ai", "/bando/ricontrollo",
+                 "/advisor", "/enrich", "/prompt", "/analyze-company-doc")
+
+@app.middleware("http")
+async def paywall_middleware(request: Request, call_next):
+    try:
+        if request.method == "POST":
+            p = request.url.path
+            if any(seg in p for seg in PAYWALL_PATHS):
+                user = await _get_user(request)
+                if user and not user.get("access", True):
+                    return JSONResponse(
+                        {"ok": False, "code": "no_access",
+                         "error": "Prova terminata o abbonamento non attivo. Abbonati per continuare."},
+                        status_code=402)
+    except Exception as e:
+        print(f"[PAYWALL] middleware err: {e}")
+    return await call_next(request)
+
+# ── Admin: lettura/scrittura impostazioni sito ──
+@app.get("/admin/settings")
+async def admin_settings_get(request: Request):
+    me = await _get_user(request)
+    if not me or not me.get("is_admin"):
+        return JSONResponse({"ok": False, "error": "Non autorizzato"}, 403)
+    s = await _settings_get_all()
+    def get(k, d=""): return s.get(k) or os.environ.get(k, d)
+    def has(k): return bool(s.get(k) or os.environ.get(k))
+    return {"ok": True, "settings": {
+        "anthropic_api_key_configured": has("ANTHROPIC_API_KEY"),
+        "anthropic_api_key_mask": _mask(get("ANTHROPIC_API_KEY")),
+        "smtp_host": get("SMTP_HOST"), "smtp_port": get("SMTP_PORT", "587"),
+        "smtp_user": get("SMTP_USER"), "smtp_from": get("SMTP_FROM"),
+        "smtp_pass_configured": has("SMTP_PASS"), "smtp_configured": has("SMTP_HOST"),
+        "app_url": get("APP_URL"),
+        "payments_enabled": get("PAYMENTS_ENABLED", "0") == "1",
+        "payments_live": _payments_on(),
+        "stripe_lib": _stripe_available(),
+        "stripe_mode": get("STRIPE_MODE", "sandbox"),
+        "stripe_pub_sandbox": get("STRIPE_PUB_SANDBOX"), "stripe_pub_live": get("STRIPE_PUB_LIVE"),
+        "stripe_secret_sandbox_configured": has("STRIPE_SECRET_SANDBOX"),
+        "stripe_secret_live_configured": has("STRIPE_SECRET_LIVE"),
+        "stripe_price_base": get("STRIPE_PRICE_BASE"), "stripe_price_pro": get("STRIPE_PRICE_PRO"),
+        "stripe_webhook_secret_configured": has("STRIPE_WEBHOOK_SECRET"),
+        "webhook_url": (get("APP_URL").split("?")[0].rsplit("/", 1)[0] if get("APP_URL") else "") ,
+    }}
+
+@app.post("/admin/settings")
+async def admin_settings_set(request: Request):
+    me = await _get_user(request)
+    if not me or not me.get("is_admin"):
+        return JSONResponse({"ok": False, "error": "Non autorizzato"}, 403)
+    body = await request.json()
+    incoming = body.get("settings") if isinstance(body.get("settings"), dict) else body
+    saved = []
+    for k, v in (incoming or {}).items():
+        K = str(k).upper()
+        if K not in SETTING_KEYS:
+            continue
+        if K in SECRET_KEYS and (v is None or str(v).strip() == "" or "•" in str(v)):
+            continue  # vuoto/mascherato = non sovrascrivere il segreto esistente
+        await _settings_set(K, v)
+        saved.append(K)
+    await log_action("admin.settings_update", user_id=me["id"], user_email=me["email"], details={"keys": saved})
+    return {"ok": True, "saved": saved}
+
+@app.post("/admin/smtp/test")
+async def admin_smtp_test(request: Request):
+    me = await _get_user(request)
+    if not me or not me.get("is_admin"):
+        return JSONResponse({"ok": False, "error": "Non autorizzato"}, 403)
+    body = await request.json()
+    to = (body.get("to") or me["email"]).strip()
+    if not os.environ.get("SMTP_HOST"):
+        return {"ok": False, "error": "SMTP non configurato"}
+    if not validate_email(to):
+        return {"ok": False, "error": "Email non valida"}
+    try:
+        _send_email(to, "Test BA.IA", "<p>Configurazione SMTP funzionante ✓</p>")
+        return {"ok": True}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+# ── Billing (Stripe) — feature-flagged, sandbox/live ──
+@app.get("/billing/config")
+async def billing_config():
+    sec, pub = _stripe_keys()
+    return {"ok": True, "enabled": _payments_on(), "mode": os.environ.get("STRIPE_MODE", "sandbox"),
+            "publishable_key": pub,
+            "prices": {"base": os.environ.get("STRIPE_PRICE_BASE", ""), "pro": os.environ.get("STRIPE_PRICE_PRO", "")}}
+
+@app.post("/billing/checkout")
+async def billing_checkout(request: Request):
+    me = await _get_user(request)
+    if not me:
+        return JSONResponse({"ok": False, "error": "Autenticazione richiesta"}, 401)
+    if not _payments_on():
+        return JSONResponse({"ok": False, "error": "Pagamenti non attivi (configurali dal pannello admin)"}, 400)
+    body = await request.json()
+    plan = (body.get("plan") or "pro").lower()
+    price = os.environ.get("STRIPE_PRICE_PRO", "") if plan == "pro" else os.environ.get("STRIPE_PRICE_BASE", "")
+    if not price:
+        return JSONResponse({"ok": False, "error": "Price ID non configurato per questo piano"}, 400)
+    sec, _ = _stripe_keys()
+    import stripe
+    stripe.api_key = sec
+    app_url = (os.environ.get("APP_URL") or "http://localhost:8000").split("?")[0]
+    try:
+        sess = stripe.checkout.Session.create(
+            mode="subscription",
+            line_items=[{"price": price, "quantity": 1}],
+            customer_email=me["email"],
+            client_reference_id=me["id"],
+            success_url=app_url + "?paid=1",
+            cancel_url=app_url + "?canceled=1",
+        )
+        await log_action("billing.checkout", user_id=me["id"], user_email=me["email"], details={"plan": plan})
+        return {"ok": True, "url": sess.url}
+    except Exception as e:
+        print(f"[BILLING] checkout err: {e}")
+        return JSONResponse({"ok": False, "error": str(e)}, 400)
+
+@app.post("/billing/webhook")
+async def billing_webhook(request: Request):
+    if not _stripe_available():
+        return JSONResponse({"ok": False}, 400)
+    import stripe
+    sec, _ = _stripe_keys()
+    stripe.api_key = sec
+    payload = await request.body()
+    sig = request.headers.get("stripe-signature", "")
+    wh = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
+    try:
+        if wh:
+            event = stripe.Webhook.construct_event(payload, sig, wh)
+        else:
+            event = json.loads(payload.decode("utf-8"))
+    except Exception as e:
+        print(f"[BILLING] webhook verify err: {e}")
+        return JSONResponse({"ok": False, "error": "firma non valida"}, 400)
+    etype = event["type"] if isinstance(event, dict) else event.type
+    obj = (event.get("data", {}) or {}).get("object", {}) if isinstance(event, dict) else event.data.object
+    email = (obj.get("customer_email") or (obj.get("customer_details", {}) or {}).get("email") or "").lower()
+    try:
+        if etype in ("checkout.session.completed", "customer.subscription.created",
+                     "customer.subscription.updated", "invoice.paid") and email:
+            async with aiosqlite.connect(DB) as db:
+                await db.execute("UPDATE users SET plan='active' WHERE email=?", (email,))
+                await db.commit()
+            await log_action("billing.activated", user_email=email, details={"event": etype})
+            print(f"[BILLING] plan ACTIVE per {email}")
+        elif etype == "customer.subscription.deleted" and email:
+            async with aiosqlite.connect(DB) as db:
+                await db.execute("UPDATE users SET plan='expired' WHERE email=?", (email,))
+                await db.commit()
+            print(f"[BILLING] plan EXPIRED per {email}")
+    except Exception as e:
+        print(f"[BILLING] webhook apply err: {e}")
+    return {"ok": True}
 
 # ══════════════════════════════════════════════════════════
 # PACK BANDI IMPORT
