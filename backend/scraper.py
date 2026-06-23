@@ -192,6 +192,175 @@ BANDO_KW = ["bando", "contribut", "agevolaz", "incentiv", "finanziament", "avvis
             "misura", "fondo", "grant", "voucher", "bonus", "sovvenzion", "credito",
             "aiuti", "dote", "sostegno", "sportello", "callforproposal", "call-for"]
 
+# ── REGIONI ITALIANE + GEO ────────────────────────────────
+REGIONI_ITALIANE = [
+    "abruzzo", "basilicata", "calabria", "campania", "emilia-romagna",
+    "friuli-venezia-giulia", "lazio", "liguria", "lombardia", "marche",
+    "molise", "piemonte", "puglia", "sardegna", "sicilia", "toscana",
+    "trentino-alto-adige", "umbria", "valle-d-aosta", "veneto",
+]
+
+def _norm_regione(r: str) -> str:
+    """Normalizza il nome regione: minuscolo, trattini, no spazi/accenti spuri."""
+    return re.sub(r"[^a-z]+", "-", (r or "").strip().lower()).strip("-")
+
+def _geo_for(src: dict) -> str:
+    g = (src.get("geo") or "").lower()
+    if g in ("nazionale", "regionale", "ue"):
+        return g
+    return "regionale" if src.get("regioni") else "nazionale"
+
+def _slugify_id(nome: str, url: str) -> str:
+    base = re.sub(r"[^a-z0-9]+", "-", (nome or "").lower()).strip("-")[:40]
+    if not base:
+        from urllib.parse import urlparse
+        base = re.sub(r"[^a-z0-9]+", "-", urlparse(url).netloc.lower().lstrip("www.")).strip("-")[:40]
+    import secrets
+    return f"{base or 'fonte'}-{secrets.token_hex(3)}"
+
+# ── SOURCE STORE su DB (editabile dalla piattaforma) ──────
+# Le fonti vivono nella tabella `scraper_sources` del DB, così sono modificabili
+# dall'admin dalla piattaforma e PERSISTONO anche su filesystem effimero (Render).
+# Il set curato + scraper_sources.json serve solo come SEED iniziale.
+
+async def _ensure_sources_table(db_path: str):
+    import aiosqlite
+    async with aiosqlite.connect(db_path) as db:
+        await db.execute("""CREATE TABLE IF NOT EXISTS scraper_sources (
+            id TEXT PRIMARY KEY,
+            nome TEXT NOT NULL,
+            url TEXT NOT NULL,
+            tipo TEXT DEFAULT 'html',
+            regioni TEXT DEFAULT '[]',
+            geo TEXT DEFAULT 'nazionale',
+            ambito TEXT DEFAULT '',
+            attivo INTEGER DEFAULT 1,
+            pdf_selector TEXT DEFAULT '',
+            link_selector TEXT DEFAULT '',
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
+        )""")
+        await db.commit()
+
+def _row_to_source(row) -> dict:
+    try:
+        regioni = json.loads(row["regioni"] or "[]")
+    except Exception:
+        regioni = []
+    return {
+        "id": row["id"], "nome": row["nome"], "url": row["url"],
+        "tipo": row["tipo"] or "html", "regioni": regioni,
+        "geo": row["geo"] or "nazionale", "ambito": row["ambito"] or "",
+        "attivo": bool(row["attivo"]),
+        "pdf_selector": row["pdf_selector"] or "a[href$='.pdf']",
+        "link_selector": row["link_selector"] or "a",
+    }
+
+async def seed_sources_if_empty(db_path: str) -> int:
+    """Popola scraper_sources dal set curato + JSON se la tabella è vuota."""
+    import aiosqlite
+    await _ensure_sources_table(db_path)
+    async with aiosqlite.connect(db_path) as db:
+        async with db.execute("SELECT COUNT(*) FROM scraper_sources") as c:
+            n = (await c.fetchone())[0]
+        if n:
+            return 0
+        added = 0
+        used_ids = set()
+        for s in SOURCES:
+            try:
+                sid = s.get("id") or _slugify_id(s.get("nome", ""), s.get("url", ""))
+                if sid in used_ids:  # id duplicato: rendi univoco (pagine diverse, stesso sito)
+                    sid = _slugify_id(s.get("nome", ""), s.get("url", ""))
+                used_ids.add(sid)
+                await db.execute(
+                    "INSERT OR IGNORE INTO scraper_sources "
+                    "(id,nome,url,tipo,regioni,geo,ambito,attivo,pdf_selector,link_selector) "
+                    "VALUES (?,?,?,?,?,?,?,?,?,?)",
+                    (sid,
+                     s.get("nome", ""), s.get("url", ""), s.get("tipo", "html"),
+                     json.dumps([_norm_regione(r) for r in s.get("regioni", [])]),
+                     _geo_for(s), s.get("ambito", ""), 1 if s.get("attivo", True) else 0,
+                     s.get("pdf_selector", ""), s.get("link_selector", "")))
+                added += 1
+            except Exception as e:
+                print(f"[SCRAPER] seed skip {s.get('id')}: {e}")
+        await db.commit()
+    print(f"[SCRAPER] Seed fonti su DB: {added}")
+    return added
+
+async def list_sources_db(db_path: str, only_active: bool = False) -> list:
+    import aiosqlite
+    await _ensure_sources_table(db_path)
+    async with aiosqlite.connect(db_path) as db:
+        db.row_factory = aiosqlite.Row
+        q = "SELECT * FROM scraper_sources"
+        if only_active:
+            q += " WHERE attivo=1"
+        q += " ORDER BY geo, nome"
+        async with db.execute(q) as c:
+            rows = await c.fetchall()
+    return [_row_to_source(r) for r in rows]
+
+async def load_active_sources(db_path: str) -> list:
+    """Fonti attive dal DB; fallback alle statiche se DB vuoto/non disponibile."""
+    try:
+        await seed_sources_if_empty(db_path)
+        srcs = await list_sources_db(db_path, only_active=True)
+        return srcs if srcs else list(SOURCES)
+    except Exception as e:
+        print(f"[SCRAPER] load_active_sources fallback statico: {e}")
+        return list(SOURCES)
+
+async def upsert_source(db_path: str, src: dict) -> dict:
+    """Crea o aggiorna una fonte. Ritorna il record salvato."""
+    import aiosqlite
+    await _ensure_sources_table(db_path)
+    url = (src.get("url") or "").strip()
+    nome = (src.get("nome") or "").strip()
+    if not nome or not url:
+        raise ValueError("Nome e URL sono obbligatori")
+    if not url.startswith("http"):
+        url = "https://" + url
+    regioni = src.get("regioni") or []
+    if isinstance(regioni, str):
+        regioni = [x for x in re.split(r"[,;]", regioni)]
+    regioni = [r for r in (_norm_regione(x) for x in regioni) if r]
+    geo = _geo_for({"geo": src.get("geo"), "regioni": regioni})
+    attivo = 1 if src.get("attivo", True) else 0
+    sid = (src.get("id") or "").strip()
+    async with aiosqlite.connect(db_path) as db:
+        exists = None
+        if sid:
+            async with db.execute("SELECT id FROM scraper_sources WHERE id=?", (sid,)) as c:
+                exists = await c.fetchone()
+        if not sid:
+            sid = _slugify_id(nome, url)
+        if exists:
+            await db.execute(
+                "UPDATE scraper_sources SET nome=?,url=?,tipo=?,regioni=?,geo=?,ambito=?,"
+                "attivo=?,pdf_selector=?,link_selector=?,updated_at=datetime('now') WHERE id=?",
+                (nome, url, src.get("tipo", "html"), json.dumps(regioni), geo,
+                 src.get("ambito", ""), attivo, src.get("pdf_selector", ""),
+                 src.get("link_selector", ""), sid))
+        else:
+            await db.execute(
+                "INSERT INTO scraper_sources (id,nome,url,tipo,regioni,geo,ambito,attivo,pdf_selector,link_selector) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?)",
+                (sid, nome, url, src.get("tipo", "html"), json.dumps(regioni), geo,
+                 src.get("ambito", ""), attivo, src.get("pdf_selector", ""), src.get("link_selector", "")))
+        await db.commit()
+    return {"id": sid, "nome": nome, "url": url, "geo": geo,
+            "regioni": regioni, "attivo": bool(attivo)}
+
+async def delete_source(db_path: str, source_id: str) -> bool:
+    import aiosqlite
+    await _ensure_sources_table(db_path)
+    async with aiosqlite.connect(db_path) as db:
+        cur = await db.execute("DELETE FROM scraper_sources WHERE id=?", (source_id,))
+        await db.commit()
+        return (cur.rowcount or 0) > 0
+
 # ── SCRAPER STATE ─────────────────────────────────────────
 _state = {
     "running": False,
@@ -531,7 +700,10 @@ async def run_all_sources(db_path: str, max_sources: int = None) -> list[dict]:
     _state["running"] = True
     _state["last_run"] = datetime.datetime.utcnow().isoformat()
     _state["run_new"] = 0
-    sources = SOURCES if max_sources is None else SOURCES[:max_sources]
+    # Fonti ATTIVE dal DB (editabili dalla piattaforma); fallback alle statiche.
+    sources = await load_active_sources(db_path)
+    if max_sources is not None:
+        sources = sources[:max_sources]
     results = []
 
     print(f"[SCRAPER] Avvio — {len(sources)} fonti")

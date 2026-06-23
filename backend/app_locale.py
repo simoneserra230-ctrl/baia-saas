@@ -1356,9 +1356,16 @@ _sys.path.insert(0, str(Path(__file__).parent))
 @app.on_event("startup")
 async def start_scraper_scheduler():
     """Avvia lo scheduler scraper e notifiche al boot dell'app."""
+    db_path = os.environ.get("DB_PATH", "./data/ai-bandi.db")
+    # Seed iniziale delle fonti su DB (idempotente: solo se la tabella è vuota)
+    try:
+        from scraper import seed_sources_if_empty
+        await seed_sources_if_empty(db_path)
+    except Exception as e:
+        print(f"[SCRAPER] Seed fonti non eseguito: {e}")
     try:
         from scraper import start_scheduler
-        start_scheduler(os.environ.get("DB_PATH", "./data/ai-bandi.db"))
+        start_scheduler(db_path)
     except Exception as e:
         print(f"[SCRAPER] Scheduler non avviato: {e}")
 
@@ -1383,7 +1390,10 @@ def scraper_status():
 
 @app.post("/scraper/run")
 async def scraper_run_manual(request: Request):
-    """Avvia scraping manuale di tutte le fonti (o un sottoinsieme)."""
+    """Avvia scraping manuale di tutte le fonti (o un sottoinsieme). Solo admin."""
+    me = await _get_user(request)
+    if not me or not me.get("is_admin"):
+        return JSONResponse({"ok": False, "error": "Solo l'amministratore può avviare lo scraping."}, 403)
     try:
         body = {}
         try:
@@ -1402,15 +1412,121 @@ async def scraper_run_manual(request: Request):
     except Exception as e:
         return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
 
+# ── Gestione FONTI scraper (persistenti su DB, editabili dall'admin) ──
 @app.get("/scraper/sources")
-def scraper_sources():
-    """Lista delle fonti configurate."""
+async def scraper_sources_list(request: Request):
+    """Lista fonti. Admin: tutte (con geo/attivo/url, per la gestione).
+    Utenti: solo nome/geo/regioni delle fonti attive (informativo)."""
+    db_path = os.environ.get("DB_PATH", "./data/ai-bandi.db")
+    me = await _get_user(request)
     try:
-        from scraper import SOURCES
-        return {"sources": [{"id": s["id"], "nome": s["nome"], "url": s["url"],
-                              "regioni": s.get("regioni", [])} for s in SOURCES]}
+        from scraper import list_sources_db, seed_sources_if_empty, REGIONI_ITALIANE
+        await seed_sources_if_empty(db_path)
+        is_admin = bool(me and me.get("is_admin"))
+        srcs = await list_sources_db(db_path, only_active=not is_admin)
+        if not is_admin:
+            srcs = [{"nome": s["nome"], "geo": s["geo"], "regioni": s["regioni"],
+                     "ambito": s.get("ambito", "")} for s in srcs]
+        attive = sum(1 for s in srcs if (s.get("attivo") if is_admin else True))
+        return {"ok": True, "is_admin": is_admin, "sources": srcs,
+                "regioni": REGIONI_ITALIANE, "total": len(srcs), "attive": attive}
     except Exception as e:
-        return {"error": str(e)}
+        return JSONResponse({"ok": False, "error": str(e)}, 500)
+
+@app.post("/scraper/sources")
+async def scraper_sources_upsert(request: Request):
+    """Crea o aggiorna una fonte (admin). Senza id = nuova fonte."""
+    me = await _get_user(request)
+    if not me or not me.get("is_admin"):
+        return JSONResponse({"ok": False, "error": "Non autorizzato"}, 403)
+    db_path = os.environ.get("DB_PATH", "./data/ai-bandi.db")
+    try:
+        body = await request.json()
+        from scraper import upsert_source
+        saved = await upsert_source(db_path, body or {})
+        await log_action("admin.scraper_source_save", user_id=me["id"], user_email=me["email"],
+                         details={"id": saved.get("id"), "url": saved.get("url")})
+        return {"ok": True, "source": saved}
+    except ValueError as e:
+        return JSONResponse({"ok": False, "error": str(e)}, 400)
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, 500)
+
+@app.delete("/scraper/sources/{source_id}")
+async def scraper_sources_delete(source_id: str, request: Request):
+    """Elimina una fonte (admin)."""
+    me = await _get_user(request)
+    if not me or not me.get("is_admin"):
+        return JSONResponse({"ok": False, "error": "Non autorizzato"}, 403)
+    db_path = os.environ.get("DB_PATH", "./data/ai-bandi.db")
+    try:
+        from scraper import delete_source
+        ok = await delete_source(db_path, source_id)
+        await log_action("admin.scraper_source_delete", user_id=me["id"], user_email=me["email"],
+                         details={"id": source_id})
+        return {"ok": ok}
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, 500)
+
+# ── Catalogo bandi monitorati (filtro per regione + ricerca, zero costo AI) ──
+@app.get("/bandi/catalog")
+async def bandi_catalog(request: Request, regione: str = "", settore: str = "",
+                        q: str = "", limit: int = 120):
+    """Bandi monitorati filtrati per regione (i nazionali sono SEMPRE inclusi) e
+    per ricerca testo/settore. Ritorna anche i conteggi per regione (per i filtri).
+    Pensato per: 1) l'utente che seleziona la sua regione; 2) la proposta
+    automatica conoscendo l'azienda (passando regione+settore del profilo)."""
+    db_path = os.environ.get("DB_PATH", "./data/ai-bandi.db")
+    from scraper import _norm_regione, REGIONI_ITALIANE
+    reg = _norm_regione(regione)
+    settore_l = (settore or "").strip().lower()
+    q_l = (q or "").strip().lower()
+    cap = max(1, min(int(limit or 120), 300))
+    out, counts = [], {}
+    try:
+        async with aiosqlite.connect(db_path) as db:
+            db.row_factory = aiosqlite.Row
+            async with db.execute(
+                "SELECT id, data FROM bandi WHERE deleted_at IS NULL "
+                "ORDER BY updated_at DESC LIMIT 800") as cur:
+                rows = await cur.fetchall()
+        for row in rows:
+            try:
+                d = json.loads(row["data"])
+            except Exception:
+                continue
+            if d.get("status") == "expired":
+                continue
+            b_reg = [_norm_regione(r) for r in (d.get("regioni") or [])]
+            nazionale = len(b_reg) == 0
+            # conteggi su TUTTO il catalogo non scaduto (per i badge dei filtri)
+            if nazionale:
+                counts["nazionale"] = counts.get("nazionale", 0) + 1
+            for r in b_reg:
+                counts[r] = counts.get(r, 0) + 1
+            # filtro regione: nazionali sempre + quelli della regione scelta
+            if reg and not nazionale and reg not in b_reg:
+                continue
+            if q_l or settore_l:
+                blob = json.dumps(d, ensure_ascii=False).lower()
+                if q_l and q_l not in blob:
+                    continue
+                if settore_l and settore_l not in blob:
+                    continue
+            if len(out) < cap:
+                out.append({
+                    "id": row["id"], "name": d.get("name") or d.get("nome") or "Bando",
+                    "ente": d.get("ente", ""), "scadenza": d.get("scadenza"),
+                    "regioni": d.get("regioni") or [], "nazionale": nazionale,
+                    "source_url": d.get("source_url", ""), "scraped": bool(d.get("scraped")),
+                    "status": d.get("status", "active"),
+                })
+        # ordina per scadenza crescente (senza scadenza in fondo)
+        out.sort(key=lambda b: (b.get("scadenza") in (None, "", "null"), b.get("scadenza") or "9999"))
+        return {"ok": True, "total": len(out), "regione": reg, "counts": counts,
+                "regioni": REGIONI_ITALIANE, "results": out}
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, 500)
 
 # ══════════════════════════════════════════════════════════
 # SEMANTIC MATCHING ENDPOINTS
