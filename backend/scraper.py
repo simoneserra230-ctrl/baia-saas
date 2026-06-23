@@ -184,6 +184,14 @@ print(f"[SCRAPER] {len(SOURCES)} fonti monitorate")
 # Limite di nuovi bandi analizzati per run (controllo costi AI; override via env).
 MAX_NEW_PER_RUN = int(os.getenv("SCRAPER_MAX_NEW_PER_RUN", "60") or 60)
 
+# User-Agent browser realistico: molti siti PA bloccano gli UA "bot".
+BROWSER_UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+              "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36")
+# Parole-chiave che identificano un link/pagina di bando.
+BANDO_KW = ["bando", "contribut", "agevolaz", "incentiv", "finanziament", "avviso",
+            "misura", "fondo", "grant", "voucher", "bonus", "sovvenzion", "credito",
+            "aiuti", "dote", "sostegno", "sportello", "callforproposal", "call-for"]
+
 # ── SCRAPER STATE ─────────────────────────────────────────
 _state = {
     "running": False,
@@ -217,7 +225,7 @@ def _uid() -> str:
 async def _fetch(url: str, timeout: int = 20) -> Optional[str]:
     """Fetch HTML con retry e user-agent realistico."""
     headers = {
-        "User-Agent": "Mozilla/5.0 (compatible; BAIABot/1.0; +https://baia.it/bot)",
+        "User-Agent": BROWSER_UA,
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "Accept-Language": "it-IT,it;q=0.9,en;q=0.5",
     }
@@ -242,7 +250,7 @@ async def _fetch(url: str, timeout: int = 20) -> Optional[str]:
     return None
 
 async def _fetch_pdf_bytes(url: str, timeout: int = 30) -> Optional[bytes]:
-    headers = {"User-Agent": "Mozilla/5.0 (compatible; BAIABot/1.0)"}
+    headers = {"User-Agent": BROWSER_UA}
     try:
         async with httpx.AsyncClient(timeout=timeout, follow_redirects=True,
                                      headers=headers, verify=False) as client:
@@ -268,37 +276,47 @@ def _make_absolute(url: str, base: str) -> str:
     from urllib.parse import urljoin
     return urljoin(base, url)
 
+def _html_to_text(html: str) -> str:
+    """Testo visibile di una pagina HTML (per analizzare i bandi pubblicati come pagina)."""
+    try:
+        soup = BeautifulSoup(html, "lxml")
+        for t in soup(["script", "style", "nav", "header", "footer", "noscript", "svg"]):
+            t.extract()
+        return re.sub(r"\n{3,}", "\n\n", soup.get_text("\n", strip=True))
+    except Exception:
+        return ""
+
 def _extract_links_and_pdfs(html: str, source: dict) -> tuple[list[str], list[str]]:
-    """Estrae link a PDF e link a pagine bando dalla fonte."""
+    """Estrae link a PDF e link a pagine-bando. Matching su testo del link E href."""
+    from urllib.parse import urlparse
     soup = BeautifulSoup(html, "lxml")
     base = source["url"]
-
-    pdf_links = []
-    for a in soup.select(source.get("pdf_selector", "a[href$='.pdf']") or "a[href$='.pdf']"):
-        href = a.get("href", "")
-        if href and ".pdf" in href.lower():
-            pdf_links.append(_make_absolute(href, base))
-
-    page_links = []
-    for a in soup.select(source.get("link_selector", "a") or "a"):
-        href = a.get("href", "")
-        text = a.get_text(strip=True)
-        if href and text and len(text) > 10 and not href.startswith("javascript"):
-            if any(kw in text.lower() for kw in
-                   ["bando", "contribut", "agevolaz", "incentiv", "finanziament",
-                    "avviso", "misura", "fondo", "grant", "voucher", "bonus"]):
-                page_links.append(_make_absolute(href, base))
-
-    return list(set(pdf_links))[:8], list(set(page_links))[:12]
+    base_dom = urlparse(base).netloc.lower().lstrip("www.")
+    pdf_links, page_links = [], []
+    for a in soup.find_all("a", href=True):
+        href = (a.get("href") or "").strip()
+        if not href or href.startswith(("javascript", "#", "mailto", "tel")):
+            continue
+        low = href.lower()
+        absu = _make_absolute(href, base)
+        if ".pdf" in low:
+            pdf_links.append(absu)
+            continue
+        text = a.get_text(strip=True).lower()
+        if (len(text) > 8 and any(k in text for k in BANDO_KW)) or any(k in low for k in BANDO_KW):
+            dom = urlparse(absu).netloc.lower().lstrip("www.")
+            if dom in (base_dom, ""):   # solo pagine dello stesso dominio
+                page_links.append(absu)
+    return list(dict.fromkeys(pdf_links))[:10], list(dict.fromkeys(page_links))[:12]
 
 async def _analyze_text(text: str, source_name: str, title_hint: str = "") -> Optional[dict]:
     """Analizza testo bando con AI e ritorna struttura."""
     if len(text) < 200:
         return None
     try:
-        from main import groq_call
         from app_locale import ai_call_multi
-    except Exception:
+    except Exception as _e:
+        print(f"[SCRAPER] ai_call_multi non disponibile: {_e}")
         return None
 
     prompt = (
@@ -323,6 +341,45 @@ async def _analyze_text(text: str, source_name: str, title_hint: str = "") -> Op
         return None
 
 # ── CORE SCRAPE FUNCTION ──────────────────────────────────
+
+async def _save_bando(ai_data: dict, source: dict, source_url: str,
+                      content_hash: str, text_len: int, db_path: str) -> bool:
+    """Costruisce e salva un bando nel DB. Ritorna True se salvato."""
+    import aiosqlite
+    nome = (ai_data.get("nome") or "").strip() or f"Bando {source['nome']} {datetime.date.today()}"
+    is_pdf = ".pdf" in source_url.lower()
+    bando_obj = {
+        "id": _uid(), "name": nome,
+        "ente": ai_data.get("ente") or source["nome"],
+        "scadenza": ai_data.get("scadenza"),
+        "regioni": ai_data.get("regioni") or source.get("regioni", []),
+        "source_url": source_url, "source_id": source["id"], "source_hash": content_hash,
+        "scraped": True,
+        "pdfs": [{
+            "id": _uid(),
+            "name": (source_url.split("/")[-1] or "bando.pdf") if is_pdf else "pagina-web",
+            "uploadedAt": datetime.datetime.utcnow().isoformat(),
+            "analyzed": True, "textLength": text_len,
+            "analysis": f"Bando: {nome}\nEnte: {ai_data.get('ente','')}\n"
+                        f"Scadenza: {ai_data.get('scadenza','n/d')}\n"
+                        f"Contributo max: {ai_data.get('contributo_max','n/d')}\n"
+                        f"Beneficiari: {ai_data.get('beneficiari','n/d')}\n"
+                        f"Descrizione: {ai_data.get('descrizione','n/d')}",
+            "checklist": [],
+        }],
+        "fields": _ai_data_to_fields(ai_data),
+        "note": f"Importato automaticamente dallo scraper il {datetime.date.today()} — fonte: {source_url}",
+        "status": "active",
+        "createdAt": datetime.datetime.utcnow().isoformat(),
+        "updatedAt": datetime.datetime.utcnow().isoformat(),
+    }
+    now_str = datetime.datetime.utcnow().isoformat()
+    async with aiosqlite.connect(db_path) as db:
+        await db.execute(
+            "INSERT INTO bandi (id,data,created_at,updated_at) VALUES (?,?,?,?)",
+            (bando_obj["id"], json.dumps(bando_obj), now_str, now_str))
+        await db.commit()
+    return True
 
 async def scrape_source(source: dict, db_path: str) -> dict:
     """Scrapa una singola fonte. Ritorna report."""
@@ -358,81 +415,59 @@ async def scrape_source(source: dict, db_path: str) -> dict:
         pdf_links, page_links = _extract_links_and_pdfs(html, source)
         print(f"[SCRAPER] {source['nome']}: {len(pdf_links)} PDF, {len(page_links)} link pagine")
 
-        # Analizza PDF trovati
-        for pdf_url in pdf_links[:5]:  # max 5 PDF per fonte per run
+        import aiosqlite
+        async def _process(text: str, source_url: str) -> bool:
+            """Dedup + AI + salvataggio. Ritorna True se nuovo bando salvato."""
+            if not text or len(text) < 350:
+                return False
+            content_hash = _hash(text)
+            async with aiosqlite.connect(db_path) as db:
+                async with db.execute(
+                    "SELECT id FROM bandi WHERE JSON_EXTRACT(data,'$.source_hash')=?",
+                    (content_hash,)) as cur:
+                    if await cur.fetchone():
+                        return False
+            ai_data = await _analyze_text(text, source["nome"])
+            if not ai_data or not (ai_data.get("nome") or "").strip():
+                return False
+            await _save_bando(ai_data, source, source_url, content_hash, len(text), db_path)
+            result["new"] += 1
+            _state["total_new"] += 1
+            _state["run_new"] = _state.get("run_new", 0) + 1
+            print(f"[SCRAPER] ✅ Nuovo bando: {ai_data.get('nome')}")
+            await asyncio.sleep(2)
+            return True
+
+        # 1) PDF diretti sulla pagina fonte
+        for pdf_url in pdf_links[:5]:
             if _state.get("run_new", 0) >= MAX_NEW_PER_RUN:
-                break  # cap costi AI raggiunto
+                break
             try:
                 pdf_bytes = await _fetch_pdf_bytes(pdf_url)
-                if not pdf_bytes:
-                    continue
-                text = _extract_pdf_text(pdf_bytes)
-                if len(text) < 300:
-                    continue
-
-                content_hash = _hash(text)
-                # Controlla duplicati
-                async with aiosqlite.connect(db_path) as db:
-                    async with db.execute(
-                        "SELECT id FROM bandi WHERE JSON_EXTRACT(data,'$.source_hash')=?",
-                        (content_hash,)
-                    ) as cur:
-                        exists = await cur.fetchone()
-                if exists:
-                    continue
-
-                # Analisi AI
-                ai_data = await _analyze_text(text, source["nome"])
-                if not ai_data:
-                    continue
-
-                nome = (ai_data.get("nome") or "").strip() or f"Bando {source['nome']} {datetime.date.today()}"
-                bando_obj = {
-                    "id": _uid(),
-                    "name": nome,
-                    "ente": ai_data.get("ente") or source["nome"],
-                    "scadenza": ai_data.get("scadenza"),
-                    "regioni": ai_data.get("regioni") or source.get("regioni", []),
-                    "source_url": pdf_url,
-                    "source_id": source["id"],
-                    "source_hash": content_hash,
-                    "scraped": True,
-                    "pdfs": [{
-                        "id": _uid(),
-                        "name": pdf_url.split("/")[-1] or "bando.pdf",
-                        "uploadedAt": datetime.datetime.utcnow().isoformat(),
-                        "analyzed": True,
-                        "textLength": len(text),
-                        "analysis": f"Bando: {nome}\nEnte: {ai_data.get('ente','')}\n"
-                                    f"Scadenza: {ai_data.get('scadenza','n/d')}\n"
-                                    f"Contributo max: {ai_data.get('contributo_max','n/d')}\n"
-                                    f"Beneficiari: {ai_data.get('beneficiari','n/d')}\n"
-                                    f"Descrizione: {ai_data.get('descrizione','n/d')}",
-                        "checklist": [],
-                    }],
-                    "fields": _ai_data_to_fields(ai_data),
-                    "note": f"Importato automaticamente dallo scraper il {datetime.date.today()}",
-                    "status": "active",
-                    "createdAt": datetime.datetime.utcnow().isoformat(),
-                    "updatedAt": datetime.datetime.utcnow().isoformat(),
-                }
-
-                # Salva nel DB
-                now_str = datetime.datetime.utcnow().isoformat()
-                async with aiosqlite.connect(db_path) as db:
-                    await db.execute(
-                        "INSERT INTO bandi (id,data,created_at,updated_at) VALUES (?,?,?,?)",
-                        (bando_obj["id"], json.dumps(bando_obj), now_str, now_str)
-                    )
-                    await db.commit()
-                result["new"] += 1
-                _state["total_new"] += 1
-                _state["run_new"] = _state.get("run_new", 0) + 1
-                print(f"[SCRAPER] ✅ Nuovo bando: {nome}")
-                await asyncio.sleep(3)  # Rate limiting cortese
-
+                if pdf_bytes:
+                    await _process(_extract_pdf_text(pdf_bytes), pdf_url)
             except Exception as e:
                 print(f"[SCRAPER] Errore PDF {pdf_url[:60]}: {e}")
+                result["errors"] += 1
+
+        # 2) Pagine-bando HTML (molti bandi non sono PDF ma pagine web)
+        for page_url in page_links[:6]:
+            if _state.get("run_new", 0) >= MAX_NEW_PER_RUN:
+                break
+            try:
+                sub_html = await _fetch(page_url, timeout=20)
+                if not sub_html:
+                    continue
+                sub_pdfs, _ = _extract_links_and_pdfs(sub_html, {"url": page_url})
+                done = False
+                if sub_pdfs:
+                    pb = await _fetch_pdf_bytes(sub_pdfs[0])
+                    if pb:
+                        done = await _process(_extract_pdf_text(pb), sub_pdfs[0])
+                if not done:
+                    await _process(_html_to_text(sub_html), page_url)
+            except Exception as e:
+                print(f"[SCRAPER] Errore pagina {page_url[:60]}: {e}")
                 result["errors"] += 1
 
         # Aggiorna log
