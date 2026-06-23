@@ -231,6 +231,7 @@ button{cursor:pointer;font-family:'Inter',sans-serif}
 .btn-danger{background:rgba(248,113,113,.08);color:var(--red);border:1px solid rgba(248,113,113,.2)}
 .btn-danger:hover{background:rgba(248,113,113,.15);border-color:rgba(248,113,113,.35)}
 .btn-sm{padding:5px 11px;font-size:12px}
+.btn-xs{padding:3px 7px;font-size:12px;gap:3px;line-height:1}
 .btn-icon{width:32px;height:32px;padding:0;justify-content:center;border-radius:var(--r)}
 
 /* ── CARDS ───────────────────────────────────────── */
@@ -947,38 +948,83 @@ button{cursor:pointer;font-family:'Inter',sans-serif}
       </div>
 
 
-      <!-- ── SCRAPER BANDI ──────────────────────────── -->
+      <!-- ── BANDI MONITORATI (catalogo per regione + admin fonti) ── -->
       <div id="viewScraper" style="display:none">
         <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between">
           <div>
-            <div class="page-title">Scraper Bandi</div>
-            <div class="page-sub">Monitoraggio automatico delle principali fonti italiane di finanza agevolata</div>
+            <div class="page-title">Bandi Monitorati</div>
+            <div class="page-sub">Bandi rilevati automaticamente dalle fonti di finanza agevolata — filtra per la tua regione</div>
           </div>
           <div class="page-actions" style="padding-top:28px">
-            <button class="btn btn-primary" id="scraperRunBtn" onclick="runScraper()">▶ Avvia ora</button>
-            <button class="btn btn-secondary" onclick="loadScraperStatus()">↻ Aggiorna</button>
+            <button class="btn btn-secondary" onclick="loadBandiCatalog()">↻ Aggiorna</button>
+            <button class="btn btn-primary" id="scraperRunBtn" onclick="runScraper()" style="display:none">▶ Avvia scraping</button>
           </div>
         </div>
         <div class="p-content">
-          <div class="grid2">
-            <div>
-              <div class="section-title">Stato</div>
-              <div id="scraperStatusCard" class="card">
-                <div class="loading-wrap"><div class="spinner"></div>Caricamento...</div>
-              </div>
-              <div class="section-title" style="margin-top:20px">Ultime esecuzioni</div>
-              <div id="scraperResults"></div>
+
+          <!-- CATALOGO — visibile a tutti gli utenti -->
+          <div class="card" style="margin-bottom:18px">
+            <div class="flex items-center gap-2" style="flex-wrap:wrap;margin-bottom:14px">
+              <label class="text-sm font-bold" style="margin-right:2px">📍 Regione</label>
+              <select id="catRegione" onchange="loadBandiCatalog()" style="min-width:190px"></select>
+              <button class="btn btn-sm btn-secondary" onclick="catalogForMyCompany()" title="Usa la regione della tua azienda">✨ Per la mia azienda</button>
+              <input id="catSearch" placeholder="cerca: voucher, turismo, digitale..." style="flex:1;min-width:170px" oninput="catSearchDebounced()">
+              <span class="text-sm text-muted" id="catCount"></span>
             </div>
-            <div>
-              <div class="section-title">Fonti monitorate</div>
-              <div id="scraperSources"></div>
-              <div class="card card-sm" style="margin-top:14px;background:rgba(200,168,75,.05);border-color:rgba(200,168,75,.2)">
-                <div class="text-sm font-bold" style="color:var(--gold);margin-bottom:6px">ℹ Come funziona</div>
-                <div class="text-sm text-muted" style="line-height:1.6">
-                  Lo scraper si avvia automaticamente ogni giorno alle <strong>03:00 CET</strong>.<br>
-                  Per ogni fonte: scarica le pagine, trova PDF di bandi, li analizza con AI,
-                  e salva i nuovi bandi in archivio evitando duplicati (hash del contenuto).<br>
-                  Puoi anche avviarlo manualmente con il pulsante a destra.
+            <div id="catalogList"><div class="loading-wrap"><div class="spinner"></div>Caricamento bandi...</div></div>
+          </div>
+
+          <!-- PANNELLO OPERATORE — solo amministratore -->
+          <div id="scraperAdmin" style="display:none">
+            <div class="section-title" style="display:flex;align-items:center;gap:8px">
+              🛠 Pannello scraper
+              <span class="badge" style="background:var(--gold-dim);color:var(--accent);border-color:rgba(99,102,241,.25)">ADMIN</span>
+            </div>
+            <div class="grid2" style="margin-top:10px">
+              <div>
+                <div class="section-title">Stato scraper</div>
+                <div id="scraperStatusCard" class="card">
+                  <div class="loading-wrap"><div class="spinner"></div>Caricamento...</div>
+                </div>
+                <div class="section-title" style="margin-top:20px">Ultime esecuzioni</div>
+                <div id="scraperResults"></div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between gap-2" style="margin-bottom:8px">
+                  <div class="section-title" style="margin:0">Gestione Fonti <span id="srcCount" class="text-sm text-muted"></span></div>
+                  <button class="btn btn-sm btn-primary" onclick="openSourceForm()">+ Aggiungi</button>
+                </div>
+                <!-- form aggiungi/modifica fonte (nascosto) -->
+                <div id="srcForm" class="card card-sm" style="display:none;margin-bottom:10px;background:var(--bg3)">
+                  <input type="hidden" id="srcId">
+                  <div style="margin-bottom:8px"><label class="text-sm font-bold">Nome *</label>
+                    <input id="srcNome" placeholder="es. Regione Sardegna — Bandi" style="width:100%"></div>
+                  <div style="margin-bottom:8px"><label class="text-sm font-bold">URL *</label>
+                    <input id="srcUrl" placeholder="https://..." style="width:100%"></div>
+                  <div class="grid2" style="gap:8px">
+                    <div><label class="text-sm font-bold">Ambito</label>
+                      <select id="srcGeo" onchange="srcGeoChange()" style="width:100%">
+                        <option value="nazionale">Nazionale</option>
+                        <option value="regionale">Regionale</option>
+                        <option value="ue">Unione Europea</option>
+                      </select></div>
+                    <div id="srcRegioneWrap"><label class="text-sm font-bold">Regione</label>
+                      <select id="srcRegione" style="width:100%"></select></div>
+                  </div>
+                  <label class="flex items-center gap-2 text-sm" style="margin:10px 0">
+                    <input type="checkbox" id="srcAttivo" checked> Attiva (inclusa nel monitoraggio)</label>
+                  <div class="flex gap-2">
+                    <button class="btn btn-sm btn-primary" onclick="saveSource()">Salva</button>
+                    <button class="btn btn-sm btn-secondary" onclick="document.getElementById('srcForm').style.display='none'">Annulla</button>
+                  </div>
+                </div>
+                <input id="srcFilter" placeholder="filtra fonti..." style="width:100%;margin-bottom:8px" oninput="renderSourceManager()">
+                <div id="scraperSources" style="max-height:520px;overflow:auto"></div>
+                <div class="card card-sm" style="margin-top:12px;background:rgba(200,168,75,.05);border-color:rgba(200,168,75,.2)">
+                  <div class="text-sm text-muted" style="line-height:1.55">
+                    Lo scraper gira ogni notte alle <strong>03:00 CET</strong> sulle fonti <strong>attive</strong>.
+                    Le modifiche qui sono salvate sul server e persistono. Avvia un run manuale col pulsante in alto.
+                  </div>
                 </div>
               </div>
             </div>
@@ -3486,7 +3532,7 @@ async function loadScraperStatus() {
   try {
     const [status, sources] = await Promise.all([
       fetch(BACKEND_URL+'/scraper/status').then(r=>r.json()),
-      fetch(BACKEND_URL+'/scraper/sources').then(r=>r.json()),
+      fetch(BACKEND_URL+'/scraper/sources',{headers:{'X-Auth-Token':_getAuthToken()}}).then(r=>r.json()),
     ]);
 
     // Badge sidebar
@@ -3538,16 +3584,11 @@ async function loadScraperStatus() {
       resultsEl.innerHTML = '<div class="text-sm text-muted" style="padding:8px 0">Nessun run ancora eseguito. Clicca "Avvia ora" per il primo scraping.</div>';
     }
 
-    // Sources list
-    const srcList = sources.sources || [];
-    sourcesEl.innerHTML = srcList.map(s => `
-      <div class="flex items-center gap-2" style="padding:7px 10px;border-radius:var(--r);border:1px solid var(--border);margin-bottom:5px;background:var(--bg3)">
-        <div style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0"></div>
-        <div style="flex:1">
-          <div class="text-sm font-bold">${esc(s.nome)}</div>
-          ${s.regioni?.length ? `<div style="font-size:10px;color:var(--muted)">${s.regioni.join(', ')}</div>` : ''}
-        </div>
-      </div>`).join('');
+    // Gestione fonti (admin) — render dal manager
+    window._scraperSources = sources.sources || [];
+    const sc = document.getElementById('srcCount');
+    if (sc) sc.textContent = sources.total ? `· ${sources.attive ?? '—'}/${sources.total} attive` : '';
+    renderSourceManager();
 
     // Auto-refresh se in esecuzione
     if (status.running) {
@@ -3568,19 +3609,198 @@ async function runScraper() {
   btn.disabled = true;
   btn.textContent = '⏳ Avvio...';
   try {
-    const r = await fetch(BACKEND_URL+'/scraper/run', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});
+    const r = await fetch(BACKEND_URL+'/scraper/run', {method:'POST',headers:{'Content-Type':'application/json','X-Auth-Token':_getAuthToken()},body:JSON.stringify({})});
     const d = await r.json();
     if (d.ok) {
       toast('Scraping avviato in background — aggiornamento automatico ogni 5 secondi','success');
       setTimeout(loadScraperStatus, 2000);
     } else {
       toast('Errore: '+d.error,'error');
-      btn.disabled = false; btn.textContent = '▶ Avvia ora';
+      btn.disabled = false; btn.textContent = '▶ Avvia scraping';
     }
   } catch(e) {
     toast('Backend non raggiungibile','error');
-    btn.disabled = false; btn.textContent = '▶ Avvia ora';
+    btn.disabled = false; btn.textContent = '▶ Avvia scraping';
   }
+}
+
+// ══ CATALOGO BANDI MONITORATI (per regione / per azienda) ═══════════
+const REGIONI_IT = ["abruzzo","basilicata","calabria","campania","emilia-romagna","friuli-venezia-giulia","lazio","liguria","lombardia","marche","molise","piemonte","puglia","sardegna","sicilia","toscana","trentino-alto-adige","umbria","valle-d-aosta","veneto"];
+function _regLabel(r){ return r.split('-').map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' ').replace('D Aosta',"d'Aosta"); }
+let _catSearchT=null;
+function catSearchDebounced(){ clearTimeout(_catSearchT); _catSearchT=setTimeout(loadBandiCatalog,400); }
+
+function _populateRegioneSelect(counts){
+  const sel=document.getElementById('catRegione'); if(!sel) return;
+  const cur=sel.value;
+  const opt=[`<option value="">Tutte le regioni</option>`,`<option value="__naz">Solo bandi nazionali</option>`]
+    .concat(REGIONI_IT.map(r=>{const n=(counts&&counts[r])||0;return `<option value="${r}">${_regLabel(r)}${n?` (${n})`:''}</option>`;}));
+  sel.innerHTML=opt.join('');
+  if(cur) sel.value=cur;
+}
+
+async function loadBandiCatalog(){
+  const list=document.getElementById('catalogList'); if(!list) return;
+  const sel=document.getElementById('catRegione');
+  let reg=sel?sel.value:'';
+  const q=(document.getElementById('catSearch')||{}).value||'';
+  const nazOnly = reg==='__naz';
+  if(nazOnly) reg='';
+  list.innerHTML='<div class="loading-wrap"><div class="spinner"></div>Caricamento bandi...</div>';
+  try{
+    const url=BACKEND_URL+'/bandi/catalog?regione='+encodeURIComponent(reg)+'&q='+encodeURIComponent(q)+'&limit=150';
+    const d=await fetch(url,{headers:{'X-Auth-Token':_getAuthToken()}}).then(r=>r.json());
+    if(!d.ok){ list.innerHTML=`<div class="text-sm" style="color:var(--red)">${esc(d.error||'Errore')}</div>`; return; }
+    if(!document.getElementById('catRegione').options.length || document.getElementById('catRegione').dataset.filled!=='1'){
+      _populateRegioneSelect(d.counts); document.getElementById('catRegione').dataset.filled='1';
+      if(reg) document.getElementById('catRegione').value=reg;
+    }
+    let results=d.results||[];
+    if(nazOnly) results=results.filter(b=>b.nazionale);
+    const cnt=document.getElementById('catCount'); if(cnt) cnt.textContent=results.length?`${results.length} bandi`:'';
+    if(!results.length){
+      list.innerHTML=`<div class="text-sm text-muted" style="padding:18px;text-align:center">Nessun bando monitorato per questo filtro.${reg?'<br>Prova "Tutte le regioni".':' Avvia lo scraping o attendi il run notturno.'}</div>`;
+      return;
+    }
+    const today=new Date().toISOString().slice(0,10);
+    list.innerHTML=results.map(b=>{
+      const scad=b.scadenza&&b.scadenza!=='null'?b.scadenza:null;
+      let scadHtml='<span class="text-sm text-muted">Scadenza n/d</span>';
+      if(scad){ const exp=scad<today; scadHtml=`<span class="badge ${exp?'badge-red':'badge-green'}">⏱ ${exp?'Scaduto':'Scade'} ${new Date(scad).toLocaleDateString('it-IT')}</span>`; }
+      const regBadge=b.nazionale?'<span class="badge" style="background:var(--gold-dim);color:var(--accent)">🇮🇹 Nazionale</span>':(b.regioni||[]).map(r=>`<span class="badge badge-gray">📍 ${esc(_regLabel(_norm(r)))}</span>`).join(' ');
+      return `<div class="card card-sm" style="margin-bottom:8px">
+        <div class="flex items-center justify-between gap-2" style="flex-wrap:wrap">
+          <div style="flex:1;min-width:200px">
+            <div class="font-bold">${esc(b.name)}</div>
+            <div class="text-sm text-muted">${esc(b.ente||'')}</div>
+            <div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap">${regBadge} ${scadHtml}</div>
+          </div>
+          <div class="flex gap-2">
+            ${b.source_url?`<a class="btn btn-sm btn-secondary" href="${esc(b.source_url)}" target="_blank" rel="noopener">Fonte ↗</a>`:''}
+            <button class="btn btn-sm btn-primary" onclick="catOpenBando('${b.id}')">Apri</button>
+          </div>
+        </div></div>`;
+    }).join('');
+  }catch(e){ list.innerHTML=`<div class="text-sm" style="color:var(--red)">Backend non raggiungibile: ${esc(e.message)}</div>`; }
+}
+function _norm(r){ return (r||'').toString().toLowerCase().trim().replace(/[^a-z]+/g,'-').replace(/^-|-$/g,''); }
+
+function catalogForMyCompany(){
+  // Usa la regione della prima azienda nota (o di quella selezionata nel matching)
+  let reg='';
+  try{
+    const az=(typeof getDB==='function'?(getDB().aziende||[]):[]);
+    const a=az.find(x=>x&&(x.regione||(x.bv&&x.bv.regione)))||az[0];
+    if(a) reg=_norm(a.regione||(a.bv&&a.bv.regione)||'');
+  }catch(e){}
+  const sel=document.getElementById('catRegione');
+  if(reg && REGIONI_IT.includes(reg)){ if(sel) sel.value=reg; toast('Filtro impostato sulla regione della tua azienda: '+_regLabel(reg),'success'); }
+  else { if(sel) sel.value=''; toast('Nessuna regione azienda trovata — mostro tutti i bandi. Imposta la sede in Aziende.','warn'); }
+  loadBandiCatalog();
+}
+
+function catOpenBando(id){
+  // Se il bando è già nell'archivio locale, aprilo; altrimenti vai alla pagina Bandi
+  try{
+    const b=(typeof getDB==='function'?(getDB().bandi||[]):[]).find(x=>x.id===id);
+    if(b && typeof openBandoDetail==='function'){ openBandoDetail(id); return; }
+  }catch(e){}
+  if(typeof nav==='function'){ nav('bandi'); toast('Apri questo bando dall\'archivio Bandi','info'); }
+}
+
+// ══ GESTIONE FONTI (admin) ════════════════════════════════════════
+function _isAdminUser(){ try{ return !!(state&&state.user&&state.user.is_admin); }catch(e){ return false; } }
+
+function srcGeoChange(){
+  const geo=document.getElementById('srcGeo').value;
+  document.getElementById('srcRegioneWrap').style.display = geo==='regionale'?'':'none';
+}
+function _fillRegioneSelect(){
+  const sel=document.getElementById('srcRegione'); if(!sel) return;
+  sel.innerHTML=REGIONI_IT.map(r=>`<option value="${r}">${_regLabel(r)}</option>`).join('');
+}
+function openSourceForm(src){
+  _fillRegioneSelect();
+  const f=document.getElementById('srcForm'); if(!f) return;
+  document.getElementById('srcId').value=src?src.id:'';
+  document.getElementById('srcNome').value=src?src.nome:'';
+  document.getElementById('srcUrl').value=src?src.url:'';
+  document.getElementById('srcGeo').value=src?(src.geo||'nazionale'):'nazionale';
+  document.getElementById('srcRegione').value=(src&&src.regioni&&src.regioni[0])||'sardegna';
+  document.getElementById('srcAttivo').checked=src?!!src.attivo:true;
+  srcGeoChange();
+  f.style.display='';
+  document.getElementById('srcNome').focus();
+}
+async function saveSource(){
+  const geo=document.getElementById('srcGeo').value;
+  const body={
+    id:document.getElementById('srcId').value||undefined,
+    nome:document.getElementById('srcNome').value.trim(),
+    url:document.getElementById('srcUrl').value.trim(),
+    geo:geo,
+    regioni:geo==='regionale'?[document.getElementById('srcRegione').value]:[],
+    attivo:document.getElementById('srcAttivo').checked,
+  };
+  if(!body.nome||!body.url){ toast('Nome e URL sono obbligatori','error'); return; }
+  try{
+    const r=await fetch(BACKEND_URL+'/scraper/sources',{method:'POST',headers:{'Content-Type':'application/json','X-Auth-Token':_getAuthToken()},body:JSON.stringify(body)});
+    const d=await r.json();
+    if(d.ok){ toast('Fonte salvata','success'); document.getElementById('srcForm').style.display='none'; loadScraperStatus(); }
+    else toast('Errore: '+(d.error||'salvataggio'),'error');
+  }catch(e){ toast('Backend non raggiungibile','error'); }
+}
+function editSourceRow(id){
+  const s=(window._scraperSources||[]).find(x=>x.id===id);
+  if(s) openSourceForm(s);
+}
+async function toggleSourceRow(id){
+  const s=(window._scraperSources||[]).find(x=>x.id===id); if(!s) return;
+  try{
+    const r=await fetch(BACKEND_URL+'/scraper/sources',{method:'POST',headers:{'Content-Type':'application/json','X-Auth-Token':_getAuthToken()},body:JSON.stringify({id:s.id,nome:s.nome,url:s.url,geo:s.geo,regioni:s.regioni,attivo:!s.attivo})});
+    const d=await r.json();
+    if(d.ok){ s.attivo=!s.attivo; renderSourceManager(); }
+    else toast('Errore: '+(d.error||''),'error');
+  }catch(e){ toast('Backend non raggiungibile','error'); }
+}
+async function deleteSourceRow(id){
+  const s=(window._scraperSources||[]).find(x=>x.id===id); if(!s) return;
+  if(!confirm('Eliminare la fonte "'+s.nome+'"?')) return;
+  try{
+    const r=await fetch(BACKEND_URL+'/scraper/sources/'+encodeURIComponent(id),{method:'DELETE',headers:{'X-Auth-Token':_getAuthToken()}});
+    const d=await r.json();
+    if(d.ok){ toast('Fonte eliminata','success'); window._scraperSources=(window._scraperSources||[]).filter(x=>x.id!==id); renderSourceManager(); }
+    else toast('Errore eliminazione','error');
+  }catch(e){ toast('Backend non raggiungibile','error'); }
+}
+function renderSourceManager(){
+  const el=document.getElementById('scraperSources'); if(!el) return;
+  let list=window._scraperSources||[];
+  const flt=((document.getElementById('srcFilter')||{}).value||'').toLowerCase();
+  if(flt) list=list.filter(s=>(s.nome||'').toLowerCase().includes(flt)||(s.url||'').toLowerCase().includes(flt)||(s.geo||'').includes(flt)||(s.regioni||[]).join(' ').includes(flt));
+  if(!list.length){ el.innerHTML='<div class="text-sm text-muted" style="padding:10px">Nessuna fonte.</div>'; return; }
+  const geoBadge=g=>g==='nazionale'?'<span class="badge" style="background:var(--gold-dim);color:var(--accent)">Naz</span>':g==='ue'?'<span class="badge badge-gray">UE</span>':'<span class="badge badge-green">Reg</span>';
+  el.innerHTML=list.map(s=>`
+    <div class="flex items-center gap-2" style="padding:8px 10px;border-radius:var(--r);border:1px solid var(--border);margin-bottom:5px;background:var(--bg3);${s.attivo?'':'opacity:.5'}">
+      <div title="${s.attivo?'Attiva':'Disattivata'}" style="width:8px;height:8px;border-radius:50%;background:${s.attivo?'var(--green)':'var(--muted)'};flex-shrink:0"></div>
+      <div style="flex:1;min-width:0">
+        <div class="text-sm font-bold" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(s.nome)}</div>
+        <div style="font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${geoBadge(s.geo)} ${(s.regioni||[]).map(r=>esc(_regLabel(_norm(r)))).join(', ')||esc(s.url||'')}</div>
+      </div>
+      <button class="btn btn-xs btn-secondary" title="${s.attivo?'Disattiva':'Attiva'}" onclick="toggleSourceRow('${s.id}')">${s.attivo?'⏸':'▶'}</button>
+      <button class="btn btn-xs btn-secondary" title="Modifica" onclick="editSourceRow('${s.id}')">✎</button>
+      <button class="btn btn-xs btn-secondary" title="Elimina" onclick="deleteSourceRow('${s.id}')">🗑</button>
+    </div>`).join('');
+}
+
+// Entry point quando si apre la vista Bandi Monitorati
+function openScraperView(){
+  document.getElementById('catRegione').dataset.filled='0';
+  loadBandiCatalog();
+  const admin=_isAdminUser();
+  const ap=document.getElementById('scraperAdmin'); if(ap) ap.style.display=admin?'':'none';
+  const rb=document.getElementById('scraperRunBtn'); if(rb) rb.style.display=admin?'':'none';
+  if(admin) loadScraperStatus();
 }
 
 // ══ SEMANTIC MATCHING UPGRADE ════════════════════════════
@@ -3682,7 +3902,7 @@ window.nav = function(view) {
       .forEach(v=>document.getElementById('nav-'+v)?.classList.remove('active'));
     document.getElementById('viewScraper').style.display = '';
     document.getElementById('nav-scraper').classList.add('active');
-    loadScraperStatus();
+    openScraperView();
   }
 };
 
