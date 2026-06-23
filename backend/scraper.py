@@ -271,8 +271,23 @@ REGIONAL_CATALOG = [
     {"id": 'ven-sviluppo', "nome": 'Veneto Sviluppo', "url": 'https://www.venetosviluppo.it/', "geo": 'regionale', "regioni": ['veneto'], "ambito": 'imprese'},
 ]
 
+# ── CATALOGO SETTORIALE (secondo livello: hub nazionali per settore) ──
+# Fonti tematiche ad alto valore — utili soprattutto a HoReCa (turismo) e
+# alle filiere agroalimentare/cultura. URL verificati live.
+SECTOR_CATALOG = [
+    # Turismo / ricettività (HoReCa)
+    {"id": "set-turismo-ricettive", "nome": "Ministero Turismo — Contributi strutture ricettive", "url": "https://www.ministeroturismo.gov.it/category/associazioni-e-imprese/strumenti-di-sostegno/contributi-strutture-ricettive/", "geo": "nazionale", "regioni": [], "ambito": "turismo"},
+    # Agricoltura / sviluppo rurale (Rete Rurale aggrega i PSR/CSR regionali)
+    {"id": "set-reterurale", "nome": "Rete Rurale Nazionale — PSR/CSR", "url": "https://www.reterurale.it/", "geo": "nazionale", "regioni": [], "ambito": "agricoltura"},
+    # Cultura / imprese culturali e creative
+    {"id": "set-mic-bandi", "nome": "Ministero della Cultura — Bandi e concorsi", "url": "https://cultura.gov.it/comunicati/bandi-e-concorsi", "geo": "nazionale", "regioni": [], "ambito": "cultura"},
+    {"id": "set-cultura-crea", "nome": "Invitalia — Cultura Crea", "url": "https://www.invitalia.it/incentivi-e-strumenti/cultura-crea", "geo": "nazionale", "regioni": [], "ambito": "cultura"},
+    {"id": "set-icc-mimit", "nome": "MIMIT — Imprese culturali e creative", "url": "https://www.mimit.gov.it/it/impresa/competitivita-e-nuove-imprese/imprese-culturali-e-creative", "geo": "nazionale", "regioni": [], "ambito": "cultura"},
+]
+
 SOURCES = _merge_sources(SOURCES, _load_extra_sources())
 SOURCES = _merge_sources(SOURCES, REGIONAL_CATALOG)
+SOURCES = _merge_sources(SOURCES, SECTOR_CATALOG)
 print(f"[SCRAPER] {len(SOURCES)} fonti monitorate")
 
 # Limite di nuovi bandi analizzati per run (controllo costi AI; override via env).
@@ -334,6 +349,12 @@ async def _ensure_sources_table(db_path: str):
             created_at TEXT DEFAULT (datetime('now')),
             updated_at TEXT DEFAULT (datetime('now'))
         )""")
+        # Migrazione idempotente: colonne salute fonte (auto-controllo 404).
+        for _col in ("last_status TEXT", "last_check TEXT", "fail_count INTEGER DEFAULT 0"):
+            try:
+                await db.execute(f"ALTER TABLE scraper_sources ADD COLUMN {_col}")
+            except Exception:
+                pass
         await db.commit()
 
 def _row_to_source(row) -> dict:
@@ -341,6 +362,11 @@ def _row_to_source(row) -> dict:
         regioni = json.loads(row["regioni"] or "[]")
     except Exception:
         regioni = []
+    def g(k, d=None):
+        try:
+            return row[k]
+        except Exception:
+            return d
     return {
         "id": row["id"], "nome": row["nome"], "url": row["url"],
         "tipo": row["tipo"] or "html", "regioni": regioni,
@@ -348,6 +374,8 @@ def _row_to_source(row) -> dict:
         "attivo": bool(row["attivo"]),
         "pdf_selector": row["pdf_selector"] or "a[href$='.pdf']",
         "link_selector": row["link_selector"] or "a",
+        "last_status": g("last_status"), "last_check": g("last_check"),
+        "fail_count": g("fail_count", 0) or 0,
     }
 
 async def seed_sources_if_empty(db_path: str) -> int:
@@ -465,6 +493,62 @@ async def set_all_sources_active(db_path: str, active: bool = True) -> int:
             (1 if active else 0, 1 if active else 0))
         await db.commit()
         return cur.rowcount or 0
+
+# ── AUTO-CONTROLLO FONTI (health-check + auto-disable 404) ─────────
+# Disattiva automaticamente le fonti che restituiscono 404/410 confermato.
+# I blocchi UA/rate-limit (403/429/5xx) e gli errori di rete transitori NON
+# disattivano (il server è su): vengono solo registrati come stato.
+AUTO_DISABLE_AFTER = int(os.getenv("SCRAPER_AUTO_DISABLE_AFTER", "2") or 2)
+
+async def _probe_url(url: str, timeout: int = 15):
+    """Ritorna (ok, status_str, is_gone). is_gone True solo per 404/410."""
+    headers = {"User-Agent": BROWSER_UA, "Accept": "text/html,application/xhtml+xml,*/*;q=0.8"}
+    try:
+        async with httpx.AsyncClient(timeout=timeout, follow_redirects=True,
+                                     headers=headers, verify=False) as client:
+            r = await client.get(url)
+            code = r.status_code
+            return (200 <= code < 400), str(code), code in (404, 410)
+    except Exception:
+        return False, "irraggiungibile", False
+
+async def health_check_all(db_path: str, timeout: int = 15) -> dict:
+    """Verifica tutte le fonti; auto-disattiva quelle con 404/410 confermato
+    (>= AUTO_DISABLE_AFTER volte). Ritorna un riepilogo."""
+    import aiosqlite
+    await _ensure_sources_table(db_path)
+    srcs = await list_sources_db(db_path)
+    now = datetime.datetime.utcnow().isoformat()
+    checked = ok_n = gone_n = disabled_n = unreachable_n = 0
+    async with aiosqlite.connect(db_path) as db:
+        for s in srcs:
+            checked += 1
+            ok, status, gone = await _probe_url(s["url"], timeout)
+            if ok:
+                await db.execute(
+                    "UPDATE scraper_sources SET last_status=?, last_check=?, fail_count=0 WHERE id=?",
+                    (status, now, s["id"]))
+                ok_n += 1
+            elif gone:  # 404/410: pagina rimossa
+                fc = (s.get("fail_count") or 0) + 1
+                do_disable = fc >= AUTO_DISABLE_AFTER and bool(s.get("attivo"))
+                await db.execute(
+                    "UPDATE scraper_sources SET last_status=?, last_check=?, fail_count=?, attivo=? WHERE id=?",
+                    (status, now, fc, 0 if do_disable else (1 if s.get("attivo") else 0), s["id"]))
+                gone_n += 1
+                if do_disable:
+                    disabled_n += 1
+            else:  # 403/429/5xx/timeout: server su o errore transitorio → solo stato
+                await db.execute(
+                    "UPDATE scraper_sources SET last_status=?, last_check=? WHERE id=?",
+                    (status, now, s["id"]))
+                unreachable_n += 1
+            await asyncio.sleep(0.25)
+        await db.commit()
+    print(f"[SCRAPER] Health-check: {checked} fonti · {ok_n} ok · {gone_n} 404/410 · "
+          f"{unreachable_n} non raggiungibili · {disabled_n} auto-disattivate")
+    return {"checked": checked, "ok": ok_n, "gone": gone_n,
+            "unreachable": unreachable_n, "disabled": disabled_n}
 
 async def import_sources_to_db(db_path: str) -> dict:
     """Aggiunge al DB le fonti del catalogo (SOURCES = curate + JSON + REGIONAL_CATALOG)
@@ -884,6 +968,13 @@ def start_scheduler(db_path: str):
         lambda: asyncio.ensure_future(_cleanup_expired(db_path)),
         trigger=CronTrigger(hour="*/6", timezone="Europe/Rome"),
         id="cleanup_expired",
+        replace_existing=True,
+    )
+    # Job auto-controllo fonti (settimanale, lunedì 02:00): disattiva i 404
+    sched.add_job(
+        lambda: asyncio.ensure_future(health_check_all(db_path)),
+        trigger=CronTrigger(day_of_week="mon", hour=2, minute=0, timezone="Europe/Rome"),
+        id="health_check_sources",
         replace_existing=True,
     )
     sched.start()

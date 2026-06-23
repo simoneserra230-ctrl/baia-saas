@@ -992,7 +992,8 @@ button{cursor:pointer;font-family:'Inter',sans-serif}
               <div>
                 <div class="flex items-center justify-between gap-2" style="margin-bottom:8px;flex-wrap:wrap">
                   <div class="section-title" style="margin:0">Gestione Fonti <span id="srcCount" class="text-sm text-muted"></span></div>
-                  <div class="flex gap-2">
+                  <div class="flex gap-2" style="flex-wrap:wrap">
+                    <button class="btn btn-sm btn-secondary" onclick="checkSourcesHealth()" title="Verifica che le fonti siano raggiungibili; disattiva i 404">🔍 Verifica fonti</button>
                     <button class="btn btn-sm btn-secondary" onclick="activateAllSources()" title="Attiva tutte le fonti (le include nel monitoraggio)">✓ Attiva tutte</button>
                     <button class="btn btn-sm btn-secondary" onclick="importSourceCatalog()" title="Aggiunge le fonti del catalogo (tutta Italia + 20 regioni) non ancora presenti">📥 Importa catalogo</button>
                     <button class="btn btn-sm btn-primary" onclick="openSourceForm()">+ Aggiungi</button>
@@ -3681,6 +3682,7 @@ async function loadBandiCatalog(){
           </div>
           <div class="flex gap-2">
             ${b.source_url?`<a class="btn btn-sm btn-secondary" href="${esc(b.source_url)}" target="_blank" rel="noopener">Fonte ↗</a>`:''}
+            <button class="btn btn-sm btn-secondary" onclick="catAddToMine('${b.id}',this)" title="Copia questo bando nel tuo archivio personale">➕ Salva</button>
             <button class="btn btn-sm btn-primary" onclick="catOpenBando('${b.id}')">Apri</button>
           </div>
         </div></div>`;
@@ -3703,6 +3705,22 @@ function catalogForMyCompany(){
   loadBandiCatalog();
 }
 
+async function catAddToMine(id, btn){
+  // Copia un bando monitorato nell'archivio personale dell'utente (sincronizzato su cloud)
+  try{
+    const db=getDB(); db.bandi=db.bandi||[];
+    if(db.bandi.some(x=>x.id===id || (x.source_url&&x.source_url===id))){ toast('Questo bando è già nel tuo archivio','info'); return; }
+    if(btn){ btn.disabled=true; btn.textContent='…'; }
+    const d=await fetch(BACKEND_URL+'/bandi/catalog/'+encodeURIComponent(id),{headers:{'X-Auth-Token':_getAuthToken()}}).then(r=>r.json());
+    if(!d.ok||!d.bando){ toast('Bando non trovato','error'); if(btn){btn.disabled=false;btn.textContent='➕ Salva';} return; }
+    const b=d.bando;
+    if(db.bandi.some(x=>x.id===b.id)){ toast('Già presente','info'); return; }
+    db.bandi.unshift(b); saveDB(db);
+    if(typeof renderAll==='function') renderAll();
+    toast('Bando salvato nel tuo archivio','success');
+    if(btn){ btn.textContent='✓ Salvato'; }
+  }catch(e){ toast('Errore nel salvataggio','error'); if(btn){btn.disabled=false;btn.textContent='➕ Salva';} }
+}
 function catOpenBando(id){
   // Se il bando è già nell'archivio locale, aprilo; altrimenti vai alla pagina Bandi
   try{
@@ -3754,6 +3772,15 @@ async function saveSource(){
     else toast('Errore: '+(d.error||'salvataggio'),'error');
   }catch(e){ toast('Backend non raggiungibile','error'); }
 }
+async function checkSourcesHealth(){
+  toast('Controllo fonti avviato… potrebbe richiedere 1-2 minuti','info');
+  try{
+    const r=await fetch(BACKEND_URL+'/scraper/sources/health-check',{method:'POST',headers:{'Content-Type':'application/json','X-Auth-Token':_getAuthToken()},body:'{}'});
+    const d=await r.json();
+    if(d.ok){ setTimeout(loadScraperStatus, 20000); }
+    else toast('Errore: '+(d.error||'controllo'),'error');
+  }catch(e){ toast('Backend non raggiungibile','error'); }
+}
 async function activateAllSources(){
   try{
     const r=await fetch(BACKEND_URL+'/scraper/sources/activate-all',{method:'POST',headers:{'Content-Type':'application/json','X-Auth-Token':_getAuthToken()},body:'{}'});
@@ -3801,11 +3828,12 @@ function renderSourceManager(){
   if(flt) list=list.filter(s=>(s.nome||'').toLowerCase().includes(flt)||(s.url||'').toLowerCase().includes(flt)||(s.geo||'').includes(flt)||(s.regioni||[]).join(' ').includes(flt));
   if(!list.length){ el.innerHTML='<div class="text-sm text-muted" style="padding:10px">Nessuna fonte.</div>'; return; }
   const geoBadge=g=>g==='nazionale'?'<span class="badge" style="background:var(--gold-dim);color:var(--accent)">Naz</span>':g==='ue'?'<span class="badge badge-gray">UE</span>':'<span class="badge badge-green">Reg</span>';
+  const healthBadge=s=>{ const st=s.last_status; if(!st) return ''; const dead=/^(404|410|irraggiungibile)$/.test(st); const cls=dead?'badge-red':(/^2|^3/.test(st)?'badge-green':'badge-gray'); const lbl=dead?('⚠ '+st+(s.fail_count>1?' ×'+s.fail_count:'')):(/^2|^3/.test(st)?'✓':st); return ` <span class="badge ${cls}" title="Ultimo controllo: ${esc(st)}">${esc(lbl)}</span>`; };
   el.innerHTML=list.map(s=>`
     <div class="flex items-center gap-2" style="padding:8px 10px;border-radius:var(--r);border:1px solid var(--border);margin-bottom:5px;background:var(--bg3);${s.attivo?'':'opacity:.5'}">
       <div title="${s.attivo?'Attiva':'Disattivata'}" style="width:8px;height:8px;border-radius:50%;background:${s.attivo?'var(--green)':'var(--muted)'};flex-shrink:0"></div>
       <div style="flex:1;min-width:0">
-        <div class="text-sm font-bold" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(s.nome)}</div>
+        <div class="text-sm font-bold" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(s.nome)}${healthBadge(s)}</div>
         <div style="font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${geoBadge(s.geo)} ${(s.regioni||[]).map(r=>esc(_regLabel(_norm(r)))).join(', ')||esc(s.url||'')}</div>
       </div>
       <button class="btn btn-xs btn-secondary" title="${s.attivo?'Disattiva':'Attiva'}" onclick="toggleSourceRow('${s.id}')">${s.attivo?'⏸':'▶'}</button>

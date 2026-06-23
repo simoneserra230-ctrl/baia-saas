@@ -1501,6 +1501,23 @@ async def scraper_sources_activate_all(request: Request):
     except Exception as e:
         return JSONResponse({"ok": False, "error": str(e)}, 500)
 
+@app.post("/scraper/sources/health-check")
+async def scraper_sources_health_check(request: Request):
+    """Verifica la raggiungibilità di tutte le fonti e auto-disattiva i 404/410
+    confermati (admin). Gira in background; lo stato è poi visibile nella lista."""
+    me = await _get_user(request)
+    if not me or not me.get("is_admin"):
+        return JSONResponse({"ok": False, "error": "Non autorizzato"}, 403)
+    db_path = os.environ.get("DB_PATH", "./data/ai-bandi.db")
+    try:
+        from scraper import health_check_all
+        import asyncio
+        asyncio.ensure_future(health_check_all(db_path))
+        await log_action("admin.scraper_health_check", user_id=me["id"], user_email=me["email"])
+        return {"ok": True, "message": "Controllo fonti avviato in background. Aggiorna tra poco per vedere lo stato."}
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, 500)
+
 @app.delete("/scraper/sources/{source_id}")
 async def scraper_sources_delete(source_id: str, request: Request):
     """Elimina una fonte (admin)."""
@@ -1574,6 +1591,26 @@ async def bandi_catalog(request: Request, regione: str = "", settore: str = "",
         out.sort(key=lambda b: (b.get("scadenza") in (None, "", "null"), b.get("scadenza") or "9999"))
         return {"ok": True, "total": len(out), "regione": reg, "counts": counts,
                 "regioni": REGIONI_ITALIANE, "results": out}
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, 500)
+
+@app.get("/bandi/catalog/{bando_id}")
+async def bandi_catalog_get(bando_id: str):
+    """Restituisce il bando completo dall'archivio monitorato (per copiarlo nei
+    bandi personali dell'utente). Read-only, dati pubblici dei bandi scraped."""
+    db_path = os.environ.get("DB_PATH", "./data/ai-bandi.db")
+    try:
+        async with aiosqlite.connect(db_path) as db:
+            db.row_factory = aiosqlite.Row
+            async with db.execute(
+                "SELECT id, data FROM bandi WHERE id=? AND deleted_at IS NULL", (bando_id,)) as cur:
+                row = await cur.fetchone()
+        if not row:
+            return JSONResponse({"ok": False, "error": "Bando non trovato"}, 404)
+        d = json.loads(row["data"])
+        d["id"] = row["id"]
+        d.pop("_embedding", None)  # non serve al client, è pesante
+        return {"ok": True, "bando": d}
     except Exception as e:
         return JSONResponse({"ok": False, "error": str(e)}, 500)
 
