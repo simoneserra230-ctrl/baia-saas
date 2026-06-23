@@ -455,6 +455,17 @@ async def delete_source(db_path: str, source_id: str) -> bool:
         await db.commit()
         return (cur.rowcount or 0) > 0
 
+async def set_all_sources_active(db_path: str, active: bool = True) -> int:
+    """Attiva (o disattiva) TUTTE le fonti. Ritorna il numero di righe aggiornate."""
+    import aiosqlite
+    await _ensure_sources_table(db_path)
+    async with aiosqlite.connect(db_path) as db:
+        cur = await db.execute(
+            "UPDATE scraper_sources SET attivo=?, updated_at=datetime('now') WHERE attivo<>?",
+            (1 if active else 0, 1 if active else 0))
+        await db.commit()
+        return cur.rowcount or 0
+
 async def import_sources_to_db(db_path: str) -> dict:
     """Aggiunge al DB le fonti del catalogo (SOURCES = curate + JSON + REGIONAL_CATALOG)
     non ancora presenti (match per URL). Idempotente: non duplica e non tocca le fonti

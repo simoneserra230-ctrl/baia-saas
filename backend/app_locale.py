@@ -1479,6 +1479,28 @@ async def scraper_sources_import(request: Request):
     except Exception as e:
         return JSONResponse({"ok": False, "error": str(e)}, 500)
 
+@app.post("/scraper/sources/activate-all")
+async def scraper_sources_activate_all(request: Request):
+    """Attiva TUTTE le fonti (admin). Body opzionale {active:false} per disattivarle."""
+    me = await _get_user(request)
+    if not me or not me.get("is_admin"):
+        return JSONResponse({"ok": False, "error": "Non autorizzato"}, 403)
+    db_path = os.environ.get("DB_PATH", "./data/ai-bandi.db")
+    try:
+        body = {}
+        try:
+            body = await request.json()
+        except Exception:
+            pass
+        active = body.get("active", True) is not False
+        from scraper import set_all_sources_active
+        updated = await set_all_sources_active(db_path, active)
+        await log_action("admin.scraper_sources_activate_all", user_id=me["id"],
+                         user_email=me["email"], details={"active": active, "updated": updated})
+        return {"ok": True, "active": active, "updated": updated}
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, 500)
+
 @app.delete("/scraper/sources/{source_id}")
 async def scraper_sources_delete(source_id: str, request: Request):
     """Elimina una fonte (admin)."""

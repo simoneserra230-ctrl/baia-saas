@@ -993,6 +993,7 @@ button{cursor:pointer;font-family:'Inter',sans-serif}
                 <div class="flex items-center justify-between gap-2" style="margin-bottom:8px;flex-wrap:wrap">
                   <div class="section-title" style="margin:0">Gestione Fonti <span id="srcCount" class="text-sm text-muted"></span></div>
                   <div class="flex gap-2">
+                    <button class="btn btn-sm btn-secondary" onclick="activateAllSources()" title="Attiva tutte le fonti (le include nel monitoraggio)">✓ Attiva tutte</button>
                     <button class="btn btn-sm btn-secondary" onclick="importSourceCatalog()" title="Aggiunge le fonti del catalogo (tutta Italia + 20 regioni) non ancora presenti">📥 Importa catalogo</button>
                     <button class="btn btn-sm btn-primary" onclick="openSourceForm()">+ Aggiungi</button>
                   </div>
@@ -3751,6 +3752,14 @@ async function saveSource(){
     const d=await r.json();
     if(d.ok){ toast('Fonte salvata','success'); document.getElementById('srcForm').style.display='none'; loadScraperStatus(); }
     else toast('Errore: '+(d.error||'salvataggio'),'error');
+  }catch(e){ toast('Backend non raggiungibile','error'); }
+}
+async function activateAllSources(){
+  try{
+    const r=await fetch(BACKEND_URL+'/scraper/sources/activate-all',{method:'POST',headers:{'Content-Type':'application/json','X-Auth-Token':_getAuthToken()},body:'{}'});
+    const d=await r.json();
+    if(d.ok){ toast(d.updated?`${d.updated} fonti attivate (tutte attive)`:'Tutte le fonti erano già attive','success'); loadScraperStatus(); }
+    else toast('Errore: '+(d.error||'attivazione'),'error');
   }catch(e){ toast('Backend non raggiungibile','error'); }
 }
 async function importSourceCatalog(){
