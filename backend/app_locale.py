@@ -127,6 +127,16 @@ async def init_auth_db():
                 data TEXT,
                 updated_at TEXT DEFAULT (datetime('now'))
             )""")
+        # Migrazione idempotente: colonne aggiunte dopo lo schema iniziale.
+        # Su SQLite la tabella users nasce senza plan/trial_ends_at/role; in
+        # produzione (Postgres) ci sono già. ADD COLUMN con DEFAULT riempie le
+        # righe esistenti. try/except ignora "duplicate column" ai boot successivi.
+        for _col in ("plan TEXT DEFAULT 'trial'", "trial_ends_at TEXT",
+                     "role TEXT DEFAULT 'consulente'"):
+            try:
+                await db.execute(f"ALTER TABLE users ADD COLUMN {_col}")
+            except Exception:
+                pass
         await db.commit()
     print("[AUTH] Tabelle utenti pronte")
 
