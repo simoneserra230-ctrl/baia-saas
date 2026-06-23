@@ -5,7 +5,9 @@
   "url": "https://www.politichecoesione.governo.it/it/piattaforma-per-le-tecnologie-strategiche-per-leuropa-step/portale-step-e-notizie-relative-ai-bandi/bandi-sui-programmi-della-politica-di-coesione-europea-in-italia/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Competitività Imprese/innovazione"
+  "ambito": "Competitività Imprese/innovazione",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "pnric-21-27",
@@ -13,7 +15,9 @@
   "url": "https://www.pnric.gov.it/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Innovazione/Spoke, Ambiente/ecologia, Ambiente/Rinnovabili, Rinnovabili, Energia/Ue"
+  "ambito": "Innovazione/Spoke, Ambiente/ecologia, Ambiente/Rinnovabili, Rinnovabili, Energia/Ue",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "sardegna-ambiente",
@@ -23,7 +27,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": "Ambiente/Rinnovabili"
+  "ambito": "Ambiente/Rinnovabili",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "ministero-ambiente-e-sicurezza-energetic",
@@ -31,7 +37,9 @@
   "url": "https://www.mite.gov.it/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Ambiente/Rinnovabili"
+  "ambito": "Ambiente/Rinnovabili",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "regione-sardegna",
@@ -41,7 +49,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": "Ambiente/Rinnovabili"
+  "ambito": "Ambiente/Rinnovabili",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "mase",
@@ -49,7 +59,9 @@
   "url": "https://www.mase.gov.it/comunicati/nasce-il-ministero-della-transizione-ecologica",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Ambiente/ecologia"
+  "ambito": "Ambiente/ecologia",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "gse",
@@ -57,7 +69,9 @@
   "url": "https://www.gse.it/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Rinnovabili"
+  "ambito": "Rinnovabili",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "ministero-infrastrutture-e-trasporti",
@@ -65,7 +79,9 @@
   "url": "https://www.governo.it/it/ministeri/ministero-delle-infrastrutture-e-dei-trasporti",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Infrastrutture/Trasporti"
+  "ambito": "Infrastrutture/Trasporti",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "logistica-infrastrutture-e-trasporti",
@@ -73,7 +89,9 @@
   "url": "https://www.ramspa.it/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Infrastrutture/Trasporti"
+  "ambito": "Infrastrutture/Trasporti",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "mimit",
@@ -81,7 +99,9 @@
   "url": "https://www.mimit.gov.it/index.php/it/incentivi",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Green/Rinnovabili"
+  "ambito": "Green/Rinnovabili",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "ue-energia",
@@ -89,7 +109,9 @@
   "url": "https://european-union.europa.eu/priorities-and-actions/actions-topic/energy_it",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Energia/Ue"
+  "ambito": "Energia/Ue",
+  "geo": "ue",
+  "attivo": true
  },
  {
   "id": "ue-ambiente",
@@ -97,7 +119,9 @@
   "url": "https://european-union.europa.eu/priorities-and-actions/actions-topic/environment_it",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Ambiente/Ue"
+  "ambito": "Ambiente/Ue",
+  "geo": "ue",
+  "attivo": true
  },
  {
   "id": "ue-trasporti",
@@ -105,7 +129,9 @@
   "url": "https://european-union.europa.eu/priorities-and-actions/actions-topic/transport_it",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Trasporti/Ue"
+  "ambito": "Trasporti/Ue",
+  "geo": "ue",
+  "attivo": true
  },
  {
   "id": "ministero-del-turismo",
@@ -113,7 +139,9 @@
   "url": "https://www.ministeroturismo.gov.it",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Turismo"
+  "ambito": "Turismo",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "mimit-incentivi-gov",
@@ -121,7 +149,9 @@
   "url": "https://www.mimit.gov.it/it/per-l-impresa",
   "tipo": "html",
   "regioni": [],
-  "ambito": ""
+  "ambito": "",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "dipartimento-coesione",
@@ -129,7 +159,9 @@
   "url": "https://www.politichecoesione.governo.it/it/",
   "tipo": "html",
   "regioni": [],
-  "ambito": ""
+  "ambito": "",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "invitalia",
@@ -137,7 +169,9 @@
   "url": "https://www.invitalia.it/",
   "tipo": "html",
   "regioni": [],
-  "ambito": ""
+  "ambito": "",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "sardegna-programmazione",
@@ -147,7 +181,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": ""
+  "ambito": "",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "italia-domani",
@@ -155,7 +191,9 @@
   "url": "https://www.italiadomani.gov.it/content/sogei-ng/it/it/home.html",
   "tipo": "html",
   "regioni": [],
-  "ambito": ""
+  "ambito": "",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "interreg-marittimo",
@@ -163,7 +201,9 @@
   "url": "https://interreg-marittimo.eu/",
   "tipo": "html",
   "regioni": [],
-  "ambito": ""
+  "ambito": "",
+  "geo": "ue",
+  "attivo": true
  },
  {
   "id": "interreg-next-med",
@@ -171,7 +211,9 @@
   "url": "https://www.interregnextmed.eu/",
   "tipo": "html",
   "regioni": [],
-  "ambito": ""
+  "ambito": "",
+  "geo": "ue",
+  "attivo": true
  },
  {
   "id": "interreg-europe",
@@ -179,7 +221,9 @@
   "url": "https://www.interregeurope.eu/",
   "tipo": "html",
   "regioni": [],
-  "ambito": ""
+  "ambito": "",
+  "geo": "ue",
+  "attivo": true
  },
  {
   "id": "eni-cbc-med",
@@ -187,7 +231,9 @@
   "url": "https://www.enicbcmed.eu/",
   "tipo": "html",
   "regioni": [],
-  "ambito": ""
+  "ambito": "",
+  "geo": "ue",
+  "attivo": true
  },
  {
   "id": "urban-innovative-action",
@@ -195,7 +241,9 @@
   "url": "https://www.uia-initiative.eu/en",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Ricerca/Innovazione"
+  "ambito": "Ricerca/Innovazione",
+  "geo": "ue",
+  "attivo": true
  },
  {
   "id": "sardegna-ricerche",
@@ -205,7 +253,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": "Ricerca/Innovazione"
+  "ambito": "Ricerca/Innovazione",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "sardegna-lavoro",
@@ -215,7 +265,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": "Formazione/Assunzioni"
+  "ambito": "Formazione/Assunzioni",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "gazzetta-ufficiale",
@@ -223,7 +275,9 @@
   "url": "https://www.gazzettaufficiale.it/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Normativa"
+  "ambito": "Normativa",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "cribis",
@@ -231,7 +285,9 @@
   "url": "https://www2.cribisx.com",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Ricerca bandi"
+  "ambito": "Ricerca bandi",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "camera-di-commercio-cagliari-or",
@@ -241,7 +297,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": ""
+  "ambito": "",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "camera-commercio-nuoro",
@@ -251,7 +309,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": ""
+  "ambito": "",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "camera-di-commercio-sassari",
@@ -261,7 +321,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": ""
+  "ambito": "",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "promocamera-sassari",
@@ -271,7 +333,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": ""
+  "ambito": "",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "csr-sardegna",
@@ -281,7 +345,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": "Agricoltura"
+  "ambito": "Agricoltura",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "sardegna-agricoltura-laore-argea-agris",
@@ -291,7 +357,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": "Agricoltura"
+  "ambito": "Agricoltura",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "ministero-politiche-agricole",
@@ -299,7 +367,9 @@
   "url": "https://www.politicheagricole.it/flex/cm/pages/ServeBLOB.php/L/IT/IDPagina/202",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Agricoltura"
+  "ambito": "Agricoltura",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "argea",
@@ -309,7 +379,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": "Agricoltura"
+  "ambito": "Agricoltura",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "ismea",
@@ -317,7 +389,9 @@
   "url": "https://www.ismea.it/istituto-di-servizi-per-il-mercato-agricolo-alimentare",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Agricoltura"
+  "ambito": "Agricoltura",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "cdp",
@@ -325,7 +399,9 @@
   "url": "https://www.cdp.it/sitointernet/it/soluzioni_imprese.page",
   "tipo": "html",
   "regioni": [],
-  "ambito": ""
+  "ambito": "",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "simest",
@@ -333,7 +409,9 @@
   "url": "https://www.simest.it/",
   "tipo": "html",
   "regioni": [],
-  "ambito": ""
+  "ambito": "",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "anci",
@@ -341,7 +419,9 @@
   "url": "https://www.anci.it/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "PA"
+  "ambito": "PA",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "anci-sardegna",
@@ -351,7 +431,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": "PA"
+  "ambito": "PA",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "comune-cagliari",
@@ -361,7 +443,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": "PA"
+  "ambito": "PA",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "citta-metropolitana-di-cagliari",
@@ -371,7 +455,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": "PA"
+  "ambito": "PA",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "comune-nuoro",
@@ -381,7 +467,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": "PA"
+  "ambito": "PA",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "comune-sassari",
@@ -391,7 +479,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": "PA"
+  "ambito": "PA",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "comune-oristano",
@@ -401,7 +491,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": "PA"
+  "ambito": "PA",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "consorzio-industriale-provinciale-di-sas",
@@ -411,7 +503,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": "PA"
+  "ambito": "PA",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "consorzio-industriale-provinciale-di-cag",
@@ -421,7 +515,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": "PA"
+  "ambito": "PA",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "sardegna-impresa",
@@ -429,9 +525,12 @@
   "url": "https://www.sardegnaimpresa.eu/it/agevolazioni",
   "tipo": "html",
   "regioni": [
-   "sardegna"
+   "sardegna",
+   "lazio"
   ],
-  "ambito": "PA"
+  "ambito": "PA",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "pnrr-comuni",
@@ -439,7 +538,9 @@
   "url": "https://pnrrcomuni.fondazioneifel.it/bandi_public/Home/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "PA"
+  "ambito": "PA",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "bnl",
@@ -447,7 +548,9 @@
   "url": "https://bnl.it/it",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Banche"
+  "ambito": "Banche",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "unicredit",
@@ -455,7 +558,9 @@
   "url": "https://www.unicredit.it/it/privati.html",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Banche"
+  "ambito": "Banche",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "banco-di-sardegna",
@@ -465,7 +570,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": "Banche"
+  "ambito": "Banche",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "intesa-san-paolo",
@@ -473,7 +580,9 @@
   "url": "https://www.intesasanpaolo.com/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Banche"
+  "ambito": "Banche",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "fondo-garanzia",
@@ -481,7 +590,9 @@
   "url": "https://www.fondidigaranzia.it/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Banche"
+  "ambito": "Banche",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "mimit-2",
@@ -489,7 +600,9 @@
   "url": "https://www.mimit.gov.it/it/incentivi/piano-transizione-5-0",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Credito 5.0"
+  "ambito": "Credito 5.0",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "agenzia-delle-entrate",
@@ -497,7 +610,9 @@
   "url": "https://www.agenziaentrate.gov.it/portale/credito-d-imposta-per-investimenti-nella-zes-unica-2025",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Credito ZES"
+  "ambito": "Credito ZES",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "invitalia-2",
@@ -505,15 +620,21 @@
   "url": "https://www.invitalia.it/cosa-facciamo/sosteniamo-grandi-investimenti/contratto-di-sviluppo",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Contratti di sviluppo standard/Contratti di sviluppo ZES Unica"
+  "ambito": "Contratti di sviluppo standard/Contratti di sviluppo ZES Unica",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "inail",
   "nome": "Inail",
   "url": "https://www.inail.it/portale/it.html",
   "tipo": "html",
-  "regioni": [],
-  "ambito": "Sicurezza-Agevolazioni Imprese"
+  "regioni": [
+   "lazio"
+  ],
+  "ambito": "Sicurezza-Agevolazioni Imprese",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "riforme-istituzionali",
@@ -521,7 +642,9 @@
   "url": "https://www.riformeistituzionali.gov.it/it/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Istituzioni/normativa"
+  "ambito": "Istituzioni/normativa",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "ministero-interno",
@@ -529,7 +652,9 @@
   "url": "https://www.interno.gov.it/it",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Istituzioni/normativa"
+  "ambito": "Istituzioni/normativa",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "buras",
@@ -539,7 +664,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": "Istituzioni/normativa"
+  "ambito": "Istituzioni/normativa",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "ministero-economia-e-finanze",
@@ -547,7 +674,9 @@
   "url": "https://www.mef.gov.it",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Istituzioni/normativa"
+  "ambito": "Istituzioni/normativa",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "bandi-step",
@@ -555,7 +684,9 @@
   "url": "https://strategic-technologies.europa.eu/get-funding_en",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Tecnologie"
+  "ambito": "Tecnologie",
+  "geo": "ue",
+  "attivo": true
  },
  {
   "id": "mimit-3",
@@ -563,7 +694,9 @@
   "url": "https://www.mimit.gov.it/it/",
   "tipo": "html",
   "regioni": [],
-  "ambito": ""
+  "ambito": "",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "open-coesione",
@@ -571,7 +704,9 @@
   "url": "https://opencoesione.gov.it/it/",
   "tipo": "html",
   "regioni": [],
-  "ambito": ""
+  "ambito": "",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "fasi",
@@ -579,7 +714,9 @@
   "url": "https://fasi.eu/it",
   "tipo": "html",
   "regioni": [],
-  "ambito": ""
+  "ambito": "",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "misure-pnrr",
@@ -587,15 +724,21 @@
   "url": "https://www.italiadomani.gov.it/content/sogei-ng/it/it/Interventi/investimenti/ricerca-avanzata.html?orderby=%40jcr%3Acontent%2Fjcr%3Atitle&sort=asc",
   "tipo": "html",
   "regioni": [],
-  "ambito": ""
+  "ambito": "",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "bandi-vari",
   "nome": "Bandi Vari",
   "url": "https://first.art-er.it/",
   "tipo": "html",
-  "regioni": [],
-  "ambito": ""
+  "regioni": [
+   "emilia-romagna"
+  ],
+  "ambito": "",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "made",
@@ -603,7 +746,9 @@
   "url": "https://www.made-cc.eu/it/",
   "tipo": "html",
   "regioni": [],
-  "ambito": ""
+  "ambito": "",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "c-quadra",
@@ -611,7 +756,9 @@
   "url": "https://www.c-quadra.it/bandi-innovazione-2/",
   "tipo": "html",
   "regioni": [],
-  "ambito": ""
+  "ambito": "",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "easy-europe",
@@ -619,7 +766,9 @@
   "url": "https://www.easy-europe.com/chi-siamo.html",
   "tipo": "html",
   "regioni": [],
-  "ambito": ""
+  "ambito": "",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "golden-gruop",
@@ -627,7 +776,9 @@
   "url": "https://www.goldengroup.biz/",
   "tipo": "html",
   "regioni": [],
-  "ambito": ""
+  "ambito": "",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "dipartimento-casa-italia",
@@ -635,7 +786,9 @@
   "url": "https://www.casaitalia.governo.it/generali/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Edilizia nazionale"
+  "ambito": "Edilizia nazionale",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "maeci",
@@ -643,7 +796,9 @@
   "url": "https://www.esteri.it/it/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Affari internazionali"
+  "ambito": "Affari internazionali",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "ministero-della-cultura",
@@ -651,7 +806,9 @@
   "url": "https://cultura.gov.it/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Cultura e Varie"
+  "ambito": "Cultura e Varie",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "fondazione-con-il-sud",
@@ -659,7 +816,9 @@
   "url": "https://www.fondazioneconilsud.it/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Cultura e Varie"
+  "ambito": "Cultura e Varie",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "pn-cultura-2021-2027",
@@ -667,7 +826,9 @@
   "url": "https://pncultura2127.cultura.gov.it/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Cultura e Varie"
+  "ambito": "Cultura e Varie",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "csv-net",
@@ -675,7 +836,9 @@
   "url": "https://infobandi.csvnet.it/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Cultura e Varie"
+  "ambito": "Cultura e Varie",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "ministero-universita-e-ricerca",
@@ -683,7 +846,9 @@
   "url": "https://www.mur.gov.it",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Cultura e Varie"
+  "ambito": "Cultura e Varie",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "sardegna-cat",
@@ -693,7 +858,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": "Bandi di gara"
+  "ambito": "Bandi di gara",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "mepa",
@@ -701,7 +868,9 @@
   "url": "https://www.mepa.it/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Bandi di gara"
+  "ambito": "Bandi di gara",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "eins-sardegna",
@@ -711,7 +880,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": "Innovazione/Spoke"
+  "ambito": "Innovazione/Spoke",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "bandi-a-cascata-italia",
@@ -719,7 +890,9 @@
   "url": "https://www.mur.gov.it/it/pnrr/attuazione-misure-pnrr/bandi-cascata",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Innovazione/Spoke"
+  "ambito": "Innovazione/Spoke",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "spoke-2",
@@ -729,7 +902,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": "Innovazione/Spoke"
+  "ambito": "Innovazione/Spoke",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "spoke-1-2-5",
@@ -739,7 +914,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": "Innovazione/Spoke"
+  "ambito": "Innovazione/Spoke",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "spoke-3",
@@ -749,7 +926,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": "Innovazione/Spoke"
+  "ambito": "Innovazione/Spoke",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "spoke-4",
@@ -759,7 +938,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": "Innovazione/Spoke"
+  "ambito": "Innovazione/Spoke",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "spoke-6-7-9",
@@ -769,7 +950,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": "Innovazione/Spoke"
+  "ambito": "Innovazione/Spoke",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "programma-nazionale-2021-2027",
@@ -777,7 +960,9 @@
   "url": "https://www.lavoro.gov.it/pn-giovani-donne-lavoro/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Giovani"
+  "ambito": "Giovani",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "fapi-fondo-formazione-piccole-medie-impr",
@@ -785,7 +970,9 @@
   "url": "https://www.fondopmi.com/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Formazione"
+  "ambito": "Formazione",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "fba-fondo-banche-assicurazioni",
@@ -793,7 +980,9 @@
   "url": "https://fondofba.it/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Formazione"
+  "ambito": "Formazione",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "fonarcom",
@@ -801,7 +990,9 @@
   "url": "https://www.fonarcom.it/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Formazione"
+  "ambito": "Formazione",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "fon-coop",
@@ -809,7 +1000,9 @@
   "url": "https://www.foncoop.coop/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Formazione"
+  "ambito": "Formazione",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "fondartigianato",
@@ -817,7 +1010,9 @@
   "url": "https://www.fondartigianato.it/home",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Formazione"
+  "ambito": "Formazione",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "fond-e-r-fondo-enti-religiosi",
@@ -825,7 +1020,9 @@
   "url": "https://www.fonder.it/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Formazione"
+  "ambito": "Formazione",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "fondimpresa",
@@ -833,7 +1030,9 @@
   "url": "https://www.fondimpresa.it/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Formazione"
+  "ambito": "Formazione",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "fondir",
@@ -841,7 +1040,9 @@
   "url": "https://www.fondir.it/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Formazione"
+  "ambito": "Formazione",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "fondirigenti",
@@ -849,7 +1050,9 @@
   "url": "https://www.fondirigenti.it/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Formazione"
+  "ambito": "Formazione",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "fonditalia-fondo-formazione-italia",
@@ -857,7 +1060,9 @@
   "url": "https://www.fonditalia.org/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Formazione"
+  "ambito": "Formazione",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "fondo-conoscenza",
@@ -865,7 +1070,9 @@
   "url": "https://www.fondoconoscenza.it/newsite/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Formazione"
+  "ambito": "Formazione",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "fondolavoro",
@@ -873,7 +1080,9 @@
   "url": "https://fondolavoro.it/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Formazione"
+  "ambito": "Formazione",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "fondoprofessioni",
@@ -881,7 +1090,9 @@
   "url": "https://www.fondoprofessioni.it/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Formazione"
+  "ambito": "Formazione",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "fonservizi-fondo-formazione-servizi-pubb",
@@ -889,7 +1100,9 @@
   "url": "https://www.fonservizi.it/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Formazione"
+  "ambito": "Formazione",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "fonter",
@@ -897,7 +1110,9 @@
   "url": "https://www.fonter.it/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Formazione"
+  "ambito": "Formazione",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "for-agri",
@@ -905,7 +1120,9 @@
   "url": "https://www.foragri.com/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Formazione"
+  "ambito": "Formazione",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "formazienda",
@@ -913,7 +1130,9 @@
   "url": "https://www.formazienda.com/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Formazione"
+  "ambito": "Formazione",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "for-te",
@@ -921,7 +1140,9 @@
   "url": "https://www.fondoforte.it/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Formazione"
+  "ambito": "Formazione",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "ministero-istruzione",
@@ -929,7 +1150,9 @@
   "url": "https://www.miur.gov.it",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Istruzione"
+  "ambito": "Istruzione",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "ministero-lavoro-e-pol-soc",
@@ -937,7 +1160,9 @@
   "url": "https://www.lavoro.gov.it",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Lavoro"
+  "ambito": "Lavoro",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "aspal",
@@ -947,7 +1172,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": "Lavoro/Formazione"
+  "ambito": "Lavoro/Formazione",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "universita-di-cagliari",
@@ -957,7 +1184,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": "Istruzione Universitaria"
+  "ambito": "Istruzione Universitaria",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "universita-di-oristano",
@@ -967,7 +1196,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": "Istruzione Universitaria"
+  "ambito": "Istruzione Universitaria",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "universita-di-nuoro",
@@ -977,7 +1208,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": "Istruzione Universitaria"
+  "ambito": "Istruzione Universitaria",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "universita-di-sassari",
@@ -987,7 +1220,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": "Istruzione Universitaria"
+  "ambito": "Istruzione Universitaria",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "pon-miur",
@@ -995,7 +1230,9 @@
   "url": "https://www.istruzione.it/pon/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Istruzione/formazione/PON"
+  "ambito": "Istruzione/formazione/PON",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "pon",
@@ -1003,7 +1240,9 @@
   "url": "http://www.pongovernance1420.gov.it/it/category/avvisi-e-bandi/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Istruzione/formazione/PON"
+  "ambito": "Istruzione/formazione/PON",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "dipartimento-politiche-giovanili",
@@ -1011,7 +1250,9 @@
   "url": "https://www.politichegiovanili.gov.it/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Giovani"
+  "ambito": "Giovani",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "european-education-area",
@@ -1019,7 +1260,9 @@
   "url": "https://education.ec.europa.eu/education-levels/vocational-education-and-training",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Formazione UE"
+  "ambito": "Formazione UE",
+  "geo": "ue",
+  "attivo": true
  },
  {
   "id": "istruzione-e-formazioneue",
@@ -1027,7 +1270,9 @@
   "url": "https://european-union.europa.eu/priorities-and-actions/actions-topic/education-training-and-youth_it",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Formazione UE"
+  "ambito": "Formazione UE",
+  "geo": "ue",
+  "attivo": true
  },
  {
   "id": "ministero-della-salute",
@@ -1035,7 +1280,9 @@
   "url": "https://www.salute.gov.it/portale/home.html",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Salute"
+  "ambito": "Salute",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "ares-sardegna",
@@ -1045,7 +1292,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": "Salute"
+  "ambito": "Salute",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "sport-e-salute",
@@ -1053,7 +1302,9 @@
   "url": "https://bandi.sportesalute.eu/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Salute"
+  "ambito": "Salute",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "dipartimento-dello-sport",
@@ -1061,7 +1312,9 @@
   "url": "https://www.sport.governo.it/it/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Sport"
+  "ambito": "Sport",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "dipartimento-dello-sport-2",
@@ -1069,7 +1322,9 @@
   "url": "https://avvisibandi.sport.governo.it/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Sport"
+  "ambito": "Sport",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "coni-sardegna",
@@ -1079,7 +1334,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": "Sport"
+  "ambito": "Sport",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "coni",
@@ -1087,7 +1344,9 @@
   "url": "https://www.coni.it/it/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Sport"
+  "ambito": "Sport",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "istituto-di-credito-sportivo",
@@ -1095,7 +1354,9 @@
   "url": "https://www.creditosportivo.it/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Sport"
+  "ambito": "Sport",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "gal-ogliastra",
@@ -1105,7 +1366,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": ""
+  "ambito": "",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "gal-sulcis",
@@ -1115,7 +1378,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": ""
+  "ambito": "",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "gal-sarrabus",
@@ -1125,7 +1390,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": ""
+  "ambito": "",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "gal-barbagia",
@@ -1135,7 +1402,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": ""
+  "ambito": "",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "gal-linas",
@@ -1145,7 +1414,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": ""
+  "ambito": "",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "gal-anglona",
@@ -1155,15 +1426,21 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": ""
+  "ambito": "",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "gal-terre-shardana",
   "nome": "GAL Terre shardana",
   "url": "https://www.reterurale.it/flex/cm/pages/ServeBLOB.php/L/IT/IDPagina/7663",
   "tipo": "html",
-  "regioni": [],
-  "ambito": ""
+  "regioni": [
+   "sardegna"
+  ],
+  "ambito": "",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "gal-gallura",
@@ -1173,7 +1450,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": ""
+  "ambito": "",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "gal-logudoro",
@@ -1183,7 +1462,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": ""
+  "ambito": "",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "gal-marghine",
@@ -1193,7 +1474,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": ""
+  "ambito": "",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "gal-marmilla",
@@ -1203,7 +1486,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": ""
+  "ambito": "",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "gal-nuorese",
@@ -1213,7 +1498,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": ""
+  "ambito": "",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "gal-sarcidano",
@@ -1223,7 +1510,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": ""
+  "ambito": "",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "flag-sardegna",
@@ -1233,7 +1522,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": ""
+  "ambito": "",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "agenzia-entrate",
@@ -1241,7 +1532,9 @@
   "url": "https://www.agenziaentrate.gov.it/portale/",
   "tipo": "html",
   "regioni": [],
-  "ambito": "Zes Agricoltura"
+  "ambito": "Zes Agricoltura",
+  "geo": "nazionale",
+  "attivo": true
  },
  {
   "id": "ase",
@@ -1249,9 +1542,12 @@
   "url": "https://www.agenziasardaentrate.it/",
   "tipo": "html",
   "regioni": [
-   "sardegna"
+   "sardegna",
+   "lazio"
   ],
-  "ambito": "Agevolazioni fiscali Sardegna"
+  "ambito": "Agevolazioni fiscali Sardegna",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "autorit",
@@ -1261,7 +1557,9 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": "Porti"
+  "ambito": "Porti",
+  "geo": "regionale",
+  "attivo": true
  },
  {
   "id": "kalport",
@@ -1271,6 +1569,8 @@
   "regioni": [
    "sardegna"
   ],
-  "ambito": ""
+  "ambito": "",
+  "geo": "regionale",
+  "attivo": true
  }
 ]
