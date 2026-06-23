@@ -178,7 +178,109 @@ def _merge_sources(curated: list, extra: list) -> list:
         merged.append(s)
     return merged
 
+# ── CATALOGO CURATO: TUTTA ITALIA + 20 REGIONI + 2 PROVINCE AUTONOME ──
+# Portali ufficiali bandi/finanza agevolata (enti nazionali + finanziarie
+# regionali, che ospitano la maggior parte dei bandi territoriali).
+# Lo scraper segue i link-bando da queste pagine (match per keyword), quindi
+# anche la home della finanziaria regionale è una fonte valida.
+# URL preferite: domini/landing stabili delle finanziarie regionali e dei portali
+# bandi (lo scraper segue i link-bando dalla pagina, quindi la home dell'agenzia
+# regionale è una fonte valida). Evitati i deep-link volatili che cambiano spesso.
+REGIONAL_CATALOG = [
+    # ── NAZIONALI ──────────────────────────────────────────
+    {"id": "naz-invitalia-incentivi", "nome": "Invitalia — Incentivi imprese", "url": "https://www.invitalia.it/cosa-facciamo/rafforziamo-le-imprese", "geo": "nazionale", "regioni": [], "ambito": "imprese"},
+    {"id": "naz-mimit-incentivi", "nome": "MIMIT — Incentivi", "url": "https://www.mimit.gov.it/it/incentivi", "geo": "nazionale", "regioni": [], "ambito": "imprese"},
+    {"id": "naz-simest", "nome": "SIMEST — Internazionalizzazione", "url": "https://www.simest.it/", "geo": "nazionale", "regioni": [], "ambito": "export"},
+    {"id": "naz-ministero-turismo", "nome": "Ministero del Turismo", "url": "https://www.ministeroturismo.gov.it/", "geo": "nazionale", "regioni": [], "ambito": "turismo"},
+    {"id": "naz-ismea", "nome": "ISMEA — Agricoltura", "url": "https://www.ismea.it/", "geo": "nazionale", "regioni": [], "ambito": "agricoltura"},
+    {"id": "naz-inail", "nome": "INAIL — Incentivi sicurezza (ISI)", "url": "https://www.inail.it/", "geo": "nazionale", "regioni": [], "ambito": "sicurezza"},
+    {"id": "naz-gse", "nome": "GSE — Energia rinnovabile", "url": "https://www.gse.it/", "geo": "nazionale", "regioni": [], "ambito": "energia"},
+    {"id": "naz-fondo-garanzia", "nome": "Fondo di Garanzia PMI (MCC)", "url": "https://www.fondidigaranzia.it/", "geo": "nazionale", "regioni": [], "ambito": "credito"},
+    {"id": "naz-cdp-imprese", "nome": "CDP — Imprese", "url": "https://www.cdp.it/", "geo": "nazionale", "regioni": [], "ambito": "imprese"},
+    {"id": "naz-italiadomani-pnrr", "nome": "Italia Domani — PNRR", "url": "https://www.italiadomani.gov.it/", "geo": "nazionale", "regioni": [], "ambito": "pnrr"},
+    {"id": "naz-masaf", "nome": "MASAF — Politiche agricole", "url": "https://www.politicheagricole.it/", "geo": "nazionale", "regioni": [], "ambito": "agricoltura"},
+    {"id": "naz-cariplo", "nome": "Fondazione Cariplo — Bandi", "url": "https://www.fondazionecariplo.it/it/bandi/", "geo": "nazionale", "regioni": [], "ambito": "no-profit"},
+
+    # ── ABRUZZO ───────────────────────────────────────────
+    {"id": "abr-fira", "nome": "FIRA — Finanziaria Abruzzese", "url": "https://www.fira.it/", "geo": "regionale", "regioni": ["abruzzo"], "ambito": "imprese"},
+    {"id": "abr-regione", "nome": "Regione Abruzzo", "url": "https://www.regione.abruzzo.it/", "geo": "regionale", "regioni": ["abruzzo"], "ambito": "imprese"},
+
+    # ── BASILICATA ────────────────────────────────────────
+    {"id": "bas-sviluppo", "nome": "Sviluppo Basilicata", "url": "https://www.sviluppobasilicata.it/", "geo": "regionale", "regioni": ["basilicata"], "ambito": "imprese"},
+    {"id": "bas-europa", "nome": "Basilicata Europa — FESR", "url": "https://europa.basilicata.it/", "geo": "regionale", "regioni": ["basilicata"], "ambito": "imprese"},
+
+    # ── CALABRIA ──────────────────────────────────────────
+    {"id": "cal-fincalabra", "nome": "Fincalabra", "url": "https://www.fincalabra.it/", "geo": "regionale", "regioni": ["calabria"], "ambito": "imprese"},
+    {"id": "cal-europa", "nome": "Calabria Europa — PR FESR", "url": "https://calabriaeuropa.regione.calabria.it/", "geo": "regionale", "regioni": ["calabria"], "ambito": "imprese"},
+
+    # ── CAMPANIA ──────────────────────────────────────────
+    {"id": "cam-sviluppo-bandi", "nome": "Sviluppo Campania — Bandi", "url": "https://www.sviluppocampania.it/bandi-e-agevolazioni/", "geo": "regionale", "regioni": ["campania"], "ambito": "imprese"},
+    {"id": "cam-porfesr", "nome": "Campania FESR — Opportunità", "url": "https://porfesr.regione.campania.it/it/opportunita-e-bandi/opportunita-di-finanziamento", "geo": "regionale", "regioni": ["campania"], "ambito": "imprese"},
+
+    # ── EMILIA-ROMAGNA ────────────────────────────────────
+    {"id": "emr-regione-bandi", "nome": "Regione Emilia-Romagna — Bandi", "url": "https://www.regione.emilia-romagna.it/bandi", "geo": "regionale", "regioni": ["emilia-romagna"], "ambito": "imprese"},
+    {"id": "emr-fesr", "nome": "Emilia-Romagna — Fondi europei", "url": "https://fesr.regione.emilia-romagna.it/", "geo": "regionale", "regioni": ["emilia-romagna"], "ambito": "imprese"},
+
+    # ── FRIULI-VENEZIA GIULIA ─────────────────────────────
+    {"id": "fvg-regione", "nome": "Regione FVG — Economia e imprese", "url": "https://www.regione.fvg.it/", "geo": "regionale", "regioni": ["friuli-venezia-giulia"], "ambito": "imprese"},
+
+    # ── LAZIO ─────────────────────────────────────────────
+    {"id": "laz-lazioinnova", "nome": "Lazio Innova — Bandi", "url": "https://www.lazioinnova.it/bandi/", "geo": "regionale", "regioni": ["lazio"], "ambito": "imprese"},
+    {"id": "laz-regione", "nome": "Regione Lazio", "url": "https://www.regione.lazio.it/", "geo": "regionale", "regioni": ["lazio"], "ambito": "imprese"},
+
+    # ── LIGURIA ───────────────────────────────────────────
+    {"id": "lig-filse", "nome": "FILSE — Finanziaria Ligure", "url": "https://www.filse.it/", "geo": "regionale", "regioni": ["liguria"], "ambito": "imprese"},
+    {"id": "lig-regione", "nome": "Regione Liguria", "url": "https://www.regione.liguria.it/", "geo": "regionale", "regioni": ["liguria"], "ambito": "imprese"},
+
+    # ── LOMBARDIA ─────────────────────────────────────────
+    {"id": "lom-bandi-online", "nome": "Regione Lombardia — Bandi Online", "url": "https://www.bandi.regione.lombardia.it/", "geo": "regionale", "regioni": ["lombardia"], "ambito": "imprese"},
+
+    # ── MARCHE ────────────────────────────────────────────
+    {"id": "mar-regione", "nome": "Regione Marche", "url": "https://www.regione.marche.it/", "geo": "regionale", "regioni": ["marche"], "ambito": "imprese"},
+
+    # ── MOLISE ────────────────────────────────────────────
+    {"id": "mol-sviluppo-italia", "nome": "Sviluppo Italia Molise", "url": "https://www.sviluppoitaliamolise.com/", "geo": "regionale", "regioni": ["molise"], "ambito": "imprese"},
+    {"id": "mol-regione", "nome": "Regione Molise", "url": "https://www.regione.molise.it/", "geo": "regionale", "regioni": ["molise"], "ambito": "imprese"},
+
+    # ── PIEMONTE ──────────────────────────────────────────
+    {"id": "pie-finpiemonte", "nome": "Finpiemonte — Agevolazioni", "url": "https://www.finpiemonte.it/agevolazioni", "geo": "regionale", "regioni": ["piemonte"], "ambito": "imprese"},
+    {"id": "pie-bandi-regione", "nome": "Regione Piemonte — Contributi", "url": "https://bandi.regione.piemonte.it/contributi-finanziamenti", "geo": "regionale", "regioni": ["piemonte"], "ambito": "imprese"},
+
+    # ── PUGLIA ────────────────────────────────────────────
+    {"id": "pug-sistema", "nome": "Sistema Puglia", "url": "https://www.sistema.puglia.it/", "geo": "regionale", "regioni": ["puglia"], "ambito": "imprese"},
+    {"id": "pug-sviluppo", "nome": "Puglia Sviluppo", "url": "https://pugliasviluppo.eu/", "geo": "regionale", "regioni": ["puglia"], "ambito": "imprese"},
+
+    # ── SARDEGNA ──────────────────────────────────────────
+    {"id": "sar-impresa", "nome": "Sardegna Impresa — Bandi", "url": "https://www.sardegnaimpresa.eu/", "geo": "regionale", "regioni": ["sardegna"], "ambito": "imprese"},
+    {"id": "sar-regione", "nome": "Regione Sardegna", "url": "https://www.regione.sardegna.it/", "geo": "regionale", "regioni": ["sardegna"], "ambito": "imprese"},
+
+    # ── SICILIA ───────────────────────────────────────────
+    {"id": "sic-irfis", "nome": "IRFIS FinSicilia", "url": "https://www.irfis.it/", "geo": "regionale", "regioni": ["sicilia"], "ambito": "imprese"},
+    {"id": "sic-euroinfo", "nome": "Euro Info Sicilia — FESR", "url": "https://www.euroinfosicilia.it/", "geo": "regionale", "regioni": ["sicilia"], "ambito": "imprese"},
+
+    # ── TOSCANA ───────────────────────────────────────────
+    {"id": "tos-sviluppo", "nome": "Sviluppo Toscana — Bandi", "url": "https://www.sviluppo.toscana.it/bandi", "geo": "regionale", "regioni": ["toscana"], "ambito": "imprese"},
+    {"id": "tos-regione", "nome": "Regione Toscana — Imprese", "url": "https://www.regione.toscana.it/imprese", "geo": "regionale", "regioni": ["toscana"], "ambito": "imprese"},
+
+    # ── TRENTINO-ALTO ADIGE (province autonome) ───────────
+    {"id": "taa-trentino-sviluppo", "nome": "Trentino Sviluppo", "url": "https://www.trentinosviluppo.it/", "geo": "regionale", "regioni": ["trentino-alto-adige"], "ambito": "imprese"},
+    {"id": "taa-bolzano", "nome": "Provincia Autonoma di Bolzano", "url": "https://www.provincia.bz.it/", "geo": "regionale", "regioni": ["trentino-alto-adige"], "ambito": "imprese"},
+    {"id": "taa-idm-suedtirol", "nome": "IDM Südtirol — Alto Adige", "url": "https://www.idm-suedtirol.com/it", "geo": "regionale", "regioni": ["trentino-alto-adige"], "ambito": "imprese"},
+
+    # ── UMBRIA ────────────────────────────────────────────
+    {"id": "umb-sviluppumbria", "nome": "Sviluppumbria", "url": "https://www.sviluppumbria.it/", "geo": "regionale", "regioni": ["umbria"], "ambito": "imprese"},
+    {"id": "umb-regione", "nome": "Regione Umbria", "url": "https://www.regione.umbria.it/", "geo": "regionale", "regioni": ["umbria"], "ambito": "imprese"},
+
+    # ── VALLE D'AOSTA ─────────────────────────────────────
+    {"id": "vda-finaosta", "nome": "Finaosta", "url": "https://www.finaosta.com/", "geo": "regionale", "regioni": ["valle-d-aosta"], "ambito": "imprese"},
+
+    # ── VENETO ────────────────────────────────────────────
+    {"id": "ven-bandi-regione", "nome": "Regione Veneto — Bandi", "url": "https://bandi.regione.veneto.it/", "geo": "regionale", "regioni": ["veneto"], "ambito": "imprese"},
+    {"id": "ven-sviluppo", "nome": "Veneto Sviluppo", "url": "https://www.venetosviluppo.it/", "geo": "regionale", "regioni": ["veneto"], "ambito": "imprese"},
+]
+
 SOURCES = _merge_sources(SOURCES, _load_extra_sources())
+SOURCES = _merge_sources(SOURCES, REGIONAL_CATALOG)
 print(f"[SCRAPER] {len(SOURCES)} fonti monitorate")
 
 # Limite di nuovi bandi analizzati per run (controllo costi AI; override via env).
@@ -360,6 +462,45 @@ async def delete_source(db_path: str, source_id: str) -> bool:
         cur = await db.execute("DELETE FROM scraper_sources WHERE id=?", (source_id,))
         await db.commit()
         return (cur.rowcount or 0) > 0
+
+async def import_sources_to_db(db_path: str) -> dict:
+    """Aggiunge al DB le fonti del catalogo (SOURCES = curate + JSON + REGIONAL_CATALOG)
+    non ancora presenti (match per URL). Idempotente: non duplica e non tocca le fonti
+    già esistenti. Serve a portare nuove fonti in produzione dove il seed non rigira."""
+    import aiosqlite
+    from urllib.parse import urlparse
+    await _ensure_sources_table(db_path)
+    def _key(u):
+        try:
+            p = urlparse(u)
+            return (p.netloc.lower().lstrip("www."), p.path.rstrip("/").lower())
+        except Exception:
+            return (u, "")
+    existing = await list_sources_db(db_path)
+    have_url = {_key(s["url"]) for s in existing}
+    have_ids = {s["id"] for s in existing}
+    added = 0
+    async with aiosqlite.connect(db_path) as db:
+        for s in SOURCES:
+            u = s.get("url", "")
+            if not u or _key(u) in have_url:
+                continue
+            sid = s.get("id") or _slugify_id(s.get("nome", ""), u)
+            while sid in have_ids:
+                sid = _slugify_id(s.get("nome", ""), u)
+            have_ids.add(sid); have_url.add(_key(u))
+            await db.execute(
+                "INSERT INTO scraper_sources (id,nome,url,tipo,regioni,geo,ambito,attivo,pdf_selector,link_selector) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?)",
+                (sid, s.get("nome", ""), u, s.get("tipo", "html"),
+                 json.dumps([_norm_regione(r) for r in s.get("regioni", [])]),
+                 _geo_for(s), s.get("ambito", ""), 1 if s.get("attivo", True) else 0,
+                 s.get("pdf_selector", ""), s.get("link_selector", "")))
+            added += 1
+        await db.commit()
+    print(f"[SCRAPER] Import catalogo: +{added} fonti (totale catalogo {len(SOURCES)})")
+    return {"added": added, "catalog_total": len(SOURCES),
+            "in_db_before": len(existing), "in_db_after": len(existing) + added}
 
 # ── SCRAPER STATE ─────────────────────────────────────────
 _state = {

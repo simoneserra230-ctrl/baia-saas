@@ -1462,6 +1462,23 @@ async def scraper_sources_upsert(request: Request):
     except Exception as e:
         return JSONResponse({"ok": False, "error": str(e)}, 500)
 
+@app.post("/scraper/sources/import")
+async def scraper_sources_import(request: Request):
+    """Importa nel DB le fonti del catalogo (tutta Italia + 20 regioni + nazionali)
+    non ancora presenti. Idempotente (match per URL). Admin-only."""
+    me = await _get_user(request)
+    if not me or not me.get("is_admin"):
+        return JSONResponse({"ok": False, "error": "Non autorizzato"}, 403)
+    db_path = os.environ.get("DB_PATH", "./data/ai-bandi.db")
+    try:
+        from scraper import import_sources_to_db
+        res = await import_sources_to_db(db_path)
+        await log_action("admin.scraper_sources_import", user_id=me["id"], user_email=me["email"],
+                         details=res)
+        return {"ok": True, **res}
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, 500)
+
 @app.delete("/scraper/sources/{source_id}")
 async def scraper_sources_delete(source_id: str, request: Request):
     """Elimina una fonte (admin)."""

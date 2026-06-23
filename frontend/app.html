@@ -990,9 +990,12 @@ button{cursor:pointer;font-family:'Inter',sans-serif}
                 <div id="scraperResults"></div>
               </div>
               <div>
-                <div class="flex items-center justify-between gap-2" style="margin-bottom:8px">
+                <div class="flex items-center justify-between gap-2" style="margin-bottom:8px;flex-wrap:wrap">
                   <div class="section-title" style="margin:0">Gestione Fonti <span id="srcCount" class="text-sm text-muted"></span></div>
-                  <button class="btn btn-sm btn-primary" onclick="openSourceForm()">+ Aggiungi</button>
+                  <div class="flex gap-2">
+                    <button class="btn btn-sm btn-secondary" onclick="importSourceCatalog()" title="Aggiunge le fonti del catalogo (tutta Italia + 20 regioni) non ancora presenti">📥 Importa catalogo</button>
+                    <button class="btn btn-sm btn-primary" onclick="openSourceForm()">+ Aggiungi</button>
+                  </div>
                 </div>
                 <!-- form aggiungi/modifica fonte (nascosto) -->
                 <div id="srcForm" class="card card-sm" style="display:none;margin-bottom:10px;background:var(--bg3)">
@@ -3748,6 +3751,15 @@ async function saveSource(){
     const d=await r.json();
     if(d.ok){ toast('Fonte salvata','success'); document.getElementById('srcForm').style.display='none'; loadScraperStatus(); }
     else toast('Errore: '+(d.error||'salvataggio'),'error');
+  }catch(e){ toast('Backend non raggiungibile','error'); }
+}
+async function importSourceCatalog(){
+  if(!confirm('Importare le fonti del catalogo (tutta Italia + 20 regioni + enti nazionali) non ancora presenti? Le fonti esistenti non vengono toccate.')) return;
+  try{
+    const r=await fetch(BACKEND_URL+'/scraper/sources/import',{method:'POST',headers:{'Content-Type':'application/json','X-Auth-Token':_getAuthToken()},body:'{}'});
+    const d=await r.json();
+    if(d.ok){ toast(`Catalogo importato: +${d.added} nuove fonti (totale ${d.in_db_after})`,'success'); loadScraperStatus(); }
+    else toast('Errore: '+(d.error||'import'),'error');
   }catch(e){ toast('Backend non raggiungibile','error'); }
 }
 function editSourceRow(id){
