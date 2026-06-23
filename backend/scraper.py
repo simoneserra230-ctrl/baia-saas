@@ -187,96 +187,88 @@ def _merge_sources(curated: list, extra: list) -> list:
 # bandi (lo scraper segue i link-bando dalla pagina, quindi la home dell'agenzia
 # regionale è una fonte valida). Evitati i deep-link volatili che cambiano spesso.
 REGIONAL_CATALOG = [
-    # ── NAZIONALI ──────────────────────────────────────────
-    {"id": "naz-invitalia-incentivi", "nome": "Invitalia — Incentivi imprese", "url": "https://www.invitalia.it/cosa-facciamo/rafforziamo-le-imprese", "geo": "nazionale", "regioni": [], "ambito": "imprese"},
-    {"id": "naz-mimit-incentivi", "nome": "MIMIT — Incentivi", "url": "https://www.mimit.gov.it/it/incentivi", "geo": "nazionale", "regioni": [], "ambito": "imprese"},
-    {"id": "naz-simest", "nome": "SIMEST — Internazionalizzazione", "url": "https://www.simest.it/", "geo": "nazionale", "regioni": [], "ambito": "export"},
-    {"id": "naz-ministero-turismo", "nome": "Ministero del Turismo", "url": "https://www.ministeroturismo.gov.it/", "geo": "nazionale", "regioni": [], "ambito": "turismo"},
-    {"id": "naz-ismea", "nome": "ISMEA — Agricoltura", "url": "https://www.ismea.it/", "geo": "nazionale", "regioni": [], "ambito": "agricoltura"},
-    {"id": "naz-inail", "nome": "INAIL — Incentivi sicurezza (ISI)", "url": "https://www.inail.it/", "geo": "nazionale", "regioni": [], "ambito": "sicurezza"},
-    {"id": "naz-gse", "nome": "GSE — Energia rinnovabile", "url": "https://www.gse.it/", "geo": "nazionale", "regioni": [], "ambito": "energia"},
-    {"id": "naz-fondo-garanzia", "nome": "Fondo di Garanzia PMI (MCC)", "url": "https://www.fondidigaranzia.it/", "geo": "nazionale", "regioni": [], "ambito": "credito"},
-    {"id": "naz-cdp-imprese", "nome": "CDP — Imprese", "url": "https://www.cdp.it/", "geo": "nazionale", "regioni": [], "ambito": "imprese"},
-    {"id": "naz-italiadomani-pnrr", "nome": "Italia Domani — PNRR", "url": "https://www.italiadomani.gov.it/", "geo": "nazionale", "regioni": [], "ambito": "pnrr"},
-    {"id": "naz-masaf", "nome": "MASAF — Politiche agricole", "url": "https://www.politicheagricole.it/", "geo": "nazionale", "regioni": [], "ambito": "agricoltura"},
-    {"id": "naz-cariplo", "nome": "Fondazione Cariplo — Bandi", "url": "https://www.fondazionecariplo.it/it/bandi/", "geo": "nazionale", "regioni": [], "ambito": "no-profit"},
-
-    # ── ABRUZZO ───────────────────────────────────────────
-    {"id": "abr-fira", "nome": "FIRA — Finanziaria Abruzzese", "url": "https://www.fira.it/", "geo": "regionale", "regioni": ["abruzzo"], "ambito": "imprese"},
-    {"id": "abr-regione", "nome": "Regione Abruzzo", "url": "https://www.regione.abruzzo.it/", "geo": "regionale", "regioni": ["abruzzo"], "ambito": "imprese"},
-
-    # ── BASILICATA ────────────────────────────────────────
-    {"id": "bas-sviluppo", "nome": "Sviluppo Basilicata", "url": "https://www.sviluppobasilicata.it/", "geo": "regionale", "regioni": ["basilicata"], "ambito": "imprese"},
-    {"id": "bas-europa", "nome": "Basilicata Europa — FESR", "url": "https://europa.basilicata.it/", "geo": "regionale", "regioni": ["basilicata"], "ambito": "imprese"},
-
-    # ── CALABRIA ──────────────────────────────────────────
-    {"id": "cal-fincalabra", "nome": "Fincalabra", "url": "https://www.fincalabra.it/", "geo": "regionale", "regioni": ["calabria"], "ambito": "imprese"},
-    {"id": "cal-europa", "nome": "Calabria Europa — PR FESR", "url": "https://calabriaeuropa.regione.calabria.it/", "geo": "regionale", "regioni": ["calabria"], "ambito": "imprese"},
-
-    # ── CAMPANIA ──────────────────────────────────────────
-    {"id": "cam-sviluppo-bandi", "nome": "Sviluppo Campania — Bandi", "url": "https://www.sviluppocampania.it/bandi-e-agevolazioni/", "geo": "regionale", "regioni": ["campania"], "ambito": "imprese"},
-    {"id": "cam-porfesr", "nome": "Campania FESR — Opportunità", "url": "https://porfesr.regione.campania.it/it/opportunita-e-bandi/opportunita-di-finanziamento", "geo": "regionale", "regioni": ["campania"], "ambito": "imprese"},
-
-    # ── EMILIA-ROMAGNA ────────────────────────────────────
-    {"id": "emr-regione-bandi", "nome": "Regione Emilia-Romagna — Bandi", "url": "https://www.regione.emilia-romagna.it/bandi", "geo": "regionale", "regioni": ["emilia-romagna"], "ambito": "imprese"},
-    {"id": "emr-fesr", "nome": "Emilia-Romagna — Fondi europei", "url": "https://fesr.regione.emilia-romagna.it/", "geo": "regionale", "regioni": ["emilia-romagna"], "ambito": "imprese"},
-
-    # ── FRIULI-VENEZIA GIULIA ─────────────────────────────
-    {"id": "fvg-regione", "nome": "Regione FVG — Economia e imprese", "url": "https://www.regione.fvg.it/", "geo": "regionale", "regioni": ["friuli-venezia-giulia"], "ambito": "imprese"},
-
-    # ── LAZIO ─────────────────────────────────────────────
-    {"id": "laz-lazioinnova", "nome": "Lazio Innova — Bandi", "url": "https://www.lazioinnova.it/bandi/", "geo": "regionale", "regioni": ["lazio"], "ambito": "imprese"},
-    {"id": "laz-regione", "nome": "Regione Lazio", "url": "https://www.regione.lazio.it/", "geo": "regionale", "regioni": ["lazio"], "ambito": "imprese"},
-
-    # ── LIGURIA ───────────────────────────────────────────
-    {"id": "lig-filse", "nome": "FILSE — Finanziaria Ligure", "url": "https://www.filse.it/", "geo": "regionale", "regioni": ["liguria"], "ambito": "imprese"},
-    {"id": "lig-regione", "nome": "Regione Liguria", "url": "https://www.regione.liguria.it/", "geo": "regionale", "regioni": ["liguria"], "ambito": "imprese"},
-
-    # ── LOMBARDIA ─────────────────────────────────────────
-    {"id": "lom-bandi-online", "nome": "Regione Lombardia — Bandi Online", "url": "https://www.bandi.regione.lombardia.it/", "geo": "regionale", "regioni": ["lombardia"], "ambito": "imprese"},
-
-    # ── MARCHE ────────────────────────────────────────────
-    {"id": "mar-regione", "nome": "Regione Marche", "url": "https://www.regione.marche.it/", "geo": "regionale", "regioni": ["marche"], "ambito": "imprese"},
-
-    # ── MOLISE ────────────────────────────────────────────
-    {"id": "mol-sviluppo-italia", "nome": "Sviluppo Italia Molise", "url": "https://www.sviluppoitaliamolise.com/", "geo": "regionale", "regioni": ["molise"], "ambito": "imprese"},
-    {"id": "mol-regione", "nome": "Regione Molise", "url": "https://www.regione.molise.it/", "geo": "regionale", "regioni": ["molise"], "ambito": "imprese"},
-
-    # ── PIEMONTE ──────────────────────────────────────────
-    {"id": "pie-finpiemonte", "nome": "Finpiemonte — Agevolazioni", "url": "https://www.finpiemonte.it/agevolazioni", "geo": "regionale", "regioni": ["piemonte"], "ambito": "imprese"},
-    {"id": "pie-bandi-regione", "nome": "Regione Piemonte — Contributi", "url": "https://bandi.regione.piemonte.it/contributi-finanziamenti", "geo": "regionale", "regioni": ["piemonte"], "ambito": "imprese"},
-
-    # ── PUGLIA ────────────────────────────────────────────
-    {"id": "pug-sistema", "nome": "Sistema Puglia", "url": "https://www.sistema.puglia.it/", "geo": "regionale", "regioni": ["puglia"], "ambito": "imprese"},
-    {"id": "pug-sviluppo", "nome": "Puglia Sviluppo", "url": "https://pugliasviluppo.eu/", "geo": "regionale", "regioni": ["puglia"], "ambito": "imprese"},
-
-    # ── SARDEGNA ──────────────────────────────────────────
-    {"id": "sar-impresa", "nome": "Sardegna Impresa — Bandi", "url": "https://www.sardegnaimpresa.eu/", "geo": "regionale", "regioni": ["sardegna"], "ambito": "imprese"},
-    {"id": "sar-regione", "nome": "Regione Sardegna", "url": "https://www.regione.sardegna.it/", "geo": "regionale", "regioni": ["sardegna"], "ambito": "imprese"},
-
-    # ── SICILIA ───────────────────────────────────────────
-    {"id": "sic-irfis", "nome": "IRFIS FinSicilia", "url": "https://www.irfis.it/", "geo": "regionale", "regioni": ["sicilia"], "ambito": "imprese"},
-    {"id": "sic-euroinfo", "nome": "Euro Info Sicilia — FESR", "url": "https://www.euroinfosicilia.it/", "geo": "regionale", "regioni": ["sicilia"], "ambito": "imprese"},
-
-    # ── TOSCANA ───────────────────────────────────────────
-    {"id": "tos-sviluppo", "nome": "Sviluppo Toscana — Bandi", "url": "https://www.sviluppo.toscana.it/bandi", "geo": "regionale", "regioni": ["toscana"], "ambito": "imprese"},
-    {"id": "tos-regione", "nome": "Regione Toscana — Imprese", "url": "https://www.regione.toscana.it/imprese", "geo": "regionale", "regioni": ["toscana"], "ambito": "imprese"},
-
-    # ── TRENTINO-ALTO ADIGE (province autonome) ───────────
-    {"id": "taa-trentino-sviluppo", "nome": "Trentino Sviluppo", "url": "https://www.trentinosviluppo.it/", "geo": "regionale", "regioni": ["trentino-alto-adige"], "ambito": "imprese"},
-    {"id": "taa-bolzano", "nome": "Provincia Autonoma di Bolzano", "url": "https://www.provincia.bz.it/", "geo": "regionale", "regioni": ["trentino-alto-adige"], "ambito": "imprese"},
-    {"id": "taa-idm-suedtirol", "nome": "IDM Südtirol — Alto Adige", "url": "https://www.idm-suedtirol.com/it", "geo": "regionale", "regioni": ["trentino-alto-adige"], "ambito": "imprese"},
-
-    # ── UMBRIA ────────────────────────────────────────────
-    {"id": "umb-sviluppumbria", "nome": "Sviluppumbria", "url": "https://www.sviluppumbria.it/", "geo": "regionale", "regioni": ["umbria"], "ambito": "imprese"},
-    {"id": "umb-regione", "nome": "Regione Umbria", "url": "https://www.regione.umbria.it/", "geo": "regionale", "regioni": ["umbria"], "ambito": "imprese"},
-
-    # ── VALLE D'AOSTA ─────────────────────────────────────
-    {"id": "vda-finaosta", "nome": "Finaosta", "url": "https://www.finaosta.com/", "geo": "regionale", "regioni": ["valle-d-aosta"], "ambito": "imprese"},
-
-    # ── VENETO ────────────────────────────────────────────
-    {"id": "ven-bandi-regione", "nome": "Regione Veneto — Bandi", "url": "https://bandi.regione.veneto.it/", "geo": "regionale", "regioni": ["veneto"], "ambito": "imprese"},
-    {"id": "ven-sviluppo", "nome": "Veneto Sviluppo", "url": "https://www.venetosviluppo.it/", "geo": "regionale", "regioni": ["veneto"], "ambito": "imprese"},
+    # ── NAZIONALI ──
+    {"id": 'naz-incentivi-gov', "nome": 'Incentivi.gov.it — Catalogo nazionale', "url": 'https://www.incentivi.gov.it/it/catalogo', "geo": 'nazionale', "regioni": [], "ambito": 'imprese'},
+    {"id": 'naz-invitalia', "nome": 'Invitalia — Incentivi imprese', "url": 'https://www.invitalia.it/cosa-facciamo/rafforziamo-le-imprese', "geo": 'nazionale', "regioni": [], "ambito": 'imprese'},
+    {"id": 'naz-mimit', "nome": 'MIMIT — Incentivi', "url": 'https://www.mimit.gov.it/it/incentivi', "geo": 'nazionale', "regioni": [], "ambito": 'imprese'},
+    {"id": 'naz-simest', "nome": 'SIMEST — Internazionalizzazione', "url": 'https://www.simest.it/', "geo": 'nazionale', "regioni": [], "ambito": 'export'},
+    {"id": 'naz-ministero-turismo', "nome": 'Ministero del Turismo', "url": 'https://www.ministeroturismo.gov.it/', "geo": 'nazionale', "regioni": [], "ambito": 'turismo'},
+    {"id": 'naz-ismea', "nome": 'ISMEA — Agricoltura', "url": 'https://www.ismea.it/', "geo": 'nazionale', "regioni": [], "ambito": 'agricoltura'},
+    {"id": 'naz-inail', "nome": 'INAIL — Incentivi sicurezza (ISI)', "url": 'https://www.inail.it/', "geo": 'nazionale', "regioni": [], "ambito": 'sicurezza'},
+    {"id": 'naz-gse', "nome": 'GSE — Energia rinnovabile', "url": 'https://www.gse.it/', "geo": 'nazionale', "regioni": [], "ambito": 'energia'},
+    {"id": 'naz-fondo-garanzia', "nome": 'Fondo di Garanzia PMI (MCC)', "url": 'https://www.fondidigaranzia.it/', "geo": 'nazionale', "regioni": [], "ambito": 'credito'},
+    {"id": 'naz-cdp', "nome": 'CDP — Imprese', "url": 'https://www.cdp.it/', "geo": 'nazionale', "regioni": [], "ambito": 'imprese'},
+    {"id": 'naz-italiadomani', "nome": 'Italia Domani — PNRR', "url": 'https://www.italiadomani.gov.it/', "geo": 'nazionale', "regioni": [], "ambito": 'pnrr'},
+    {"id": 'naz-masaf', "nome": 'MASAF — Politiche agricole', "url": 'https://www.politicheagricole.it/', "geo": 'nazionale', "regioni": [], "ambito": 'agricoltura'},
+    {"id": 'naz-cariplo', "nome": 'Fondazione Cariplo — Bandi', "url": 'https://www.fondazionecariplo.it/it/bandi/', "geo": 'nazionale', "regioni": [], "ambito": 'no-profit'},
+    # ── ABRUZZO ──
+    {"id": 'abr-fira', "nome": 'FIRA — Bandi e agevolazioni', "url": 'https://www.fira.it/bandi_e_agevolazioni/', "geo": 'regionale', "regioni": ['abruzzo'], "ambito": 'imprese'},
+    {"id": 'abr-regione', "nome": 'Regione Abruzzo', "url": 'https://www.regione.abruzzo.it/', "geo": 'regionale', "regioni": ['abruzzo'], "ambito": 'imprese'},
+    # ── BASILICATA ──
+    {"id": 'bas-portalebandi', "nome": 'Regione Basilicata — Portale bandi (CeBas)', "url": 'https://portalebandi.regione.basilicata.it/', "geo": 'regionale', "regioni": ['basilicata'], "ambito": 'imprese'},
+    {"id": 'bas-sviluppo', "nome": 'Sviluppo Basilicata', "url": 'https://www.sviluppobasilicata.it/', "geo": 'regionale', "regioni": ['basilicata'], "ambito": 'imprese'},
+    {"id": 'bas-europa', "nome": 'Basilicata Europa — FESR FSE+', "url": 'https://europa.basilicata.it/', "geo": 'regionale', "regioni": ['basilicata'], "ambito": 'imprese'},
+    # ── CALABRIA ──
+    {"id": 'cal-europa', "nome": 'Calabria Europa — Bandi PR FESR FSE', "url": 'https://calabriaeuropa.regione.calabria.it/', "geo": 'regionale', "regioni": ['calabria'], "ambito": 'imprese'},
+    {"id": 'cal-fincalabra', "nome": 'Fincalabra', "url": 'https://www.fincalabra.it/', "geo": 'regionale', "regioni": ['calabria'], "ambito": 'imprese'},
+    # ── CAMPANIA ──
+    {"id": 'cam-sviluppo', "nome": 'Sviluppo Campania — Bandi', "url": 'https://www.sviluppocampania.it/bandi-e-agevolazioni/', "geo": 'regionale', "regioni": ['campania'], "ambito": 'imprese'},
+    {"id": 'cam-porfesr', "nome": 'Campania FESR — Opportunita', "url": 'https://porfesr.regione.campania.it/it/opportunita-e-bandi/opportunita-di-finanziamento', "geo": 'regionale', "regioni": ['campania'], "ambito": 'imprese'},
+    # ── EMILIA-ROMAGNA ──
+    {"id": 'emr-fesr', "nome": 'Emilia-Romagna FESR — Opportunita', "url": 'https://fesr.regione.emilia-romagna.it/opportunita/opportunita-di-finanziamento', "geo": 'regionale', "regioni": ['emilia-romagna'], "ambito": 'imprese'},
+    {"id": 'emr-regione', "nome": 'Regione Emilia-Romagna — Bandi', "url": 'https://www.regione.emilia-romagna.it/bandi', "geo": 'regionale', "regioni": ['emilia-romagna'], "ambito": 'imprese'},
+    # ── FRIULI-VENEZIA GIULIA ──
+    {"id": 'fvg-catalogo', "nome": 'Regione FVG — Catalogo incentivi', "url": 'https://www.regione.fvg.it/rafvg/cms/RAFVG/economia-imprese/rilancimpresa/FOGLIA100/', "geo": 'regionale', "regioni": ['friuli-venezia-giulia'], "ambito": 'imprese'},
+    {"id": 'fvg-regione', "nome": 'Regione FVG — Economia e imprese', "url": 'https://www.regione.fvg.it/rafvg/cms/RAFVG/economia-imprese/', "geo": 'regionale', "regioni": ['friuli-venezia-giulia'], "ambito": 'imprese'},
+    # ── LAZIO ──
+    {"id": 'laz-lazioinnova', "nome": 'Lazio Innova — Bandi aperti', "url": 'https://www.lazioinnova.it/bandi-aperti/', "geo": 'regionale', "regioni": ['lazio'], "ambito": 'imprese'},
+    {"id": 'laz-farelazio', "nome": 'Fare Lazio — Strumenti finanziari', "url": 'https://www.farelazio.it/', "geo": 'regionale', "regioni": ['lazio'], "ambito": 'imprese'},
+    {"id": 'laz-fesr', "nome": 'Lazio FESR 2021-2027', "url": 'https://fesr.regione.lazio.it/', "geo": 'regionale', "regioni": ['lazio'], "ambito": 'imprese'},
+    # ── LIGURIA ──
+    {"id": 'lig-filseonline', "nome": 'FILSE — Bandi online', "url": 'https://filseonline.regione.liguria.it/', "geo": 'regionale', "regioni": ['liguria'], "ambito": 'imprese'},
+    {"id": 'lig-filse', "nome": 'FILSE — Finanziaria Ligure', "url": 'https://www.filse.it/it/', "geo": 'regionale', "regioni": ['liguria'], "ambito": 'imprese'},
+    {"id": 'lig-regione', "nome": 'Regione Liguria', "url": 'https://www.regione.liguria.it/', "geo": 'regionale', "regioni": ['liguria'], "ambito": 'imprese'},
+    # ── LOMBARDIA ──
+    {"id": 'lom-bandi-imprese', "nome": 'Regione Lombardia — Bandi imprese', "url": 'https://www.bandi.regione.lombardia.it/servizi/servizio/catalogo/target/IMPRESE', "geo": 'regionale', "regioni": ['lombardia'], "ambito": 'imprese'},
+    {"id": 'lom-unioncamere', "nome": 'Unioncamere Lombardia — Bandi', "url": 'https://www.unioncamerelombardia.it/bandi-e-incentivi-alle-imprese', "geo": 'regionale', "regioni": ['lombardia'], "ambito": 'imprese'},
+    # ── MARCHE ──
+    {"id": 'mar-sigef', "nome": 'Regione Marche — SIGEF bandi pubblici', "url": 'https://sigef.regione.marche.it/web/Public/Bandi.aspx', "geo": 'regionale', "regioni": ['marche'], "ambito": 'imprese'},
+    {"id": 'mar-fesr', "nome": 'Regione Marche — Bandi FESR', "url": 'https://www.regione.marche.it/Entra-in-Regione/Fondi-Europei/bandi-Fesr', "geo": 'regionale', "regioni": ['marche'], "ambito": 'imprese'},
+    # ── MOLISE ──
+    {"id": 'mol-coesione', "nome": 'Coesione Molise — Opportunita/Finanziamenti', "url": 'https://prfesrfse2127.regione.molise.it/opportunita-finanziamenti/', "geo": 'regionale', "regioni": ['molise'], "ambito": 'imprese'},
+    {"id": 'mol-sviluppo-italia', "nome": 'Sviluppo Italia Molise', "url": 'https://www.sviluppoitaliamolise.com/', "geo": 'regionale', "regioni": ['molise'], "ambito": 'imprese'},
+    # ── PIEMONTE ──
+    {"id": 'pie-bandi', "nome": 'Regione Piemonte — Contributi e finanziamenti', "url": 'https://bandi.regione.piemonte.it/contributi-finanziamenti', "geo": 'regionale', "regioni": ['piemonte'], "ambito": 'imprese'},
+    {"id": 'pie-finpiemonte', "nome": 'Finpiemonte — Agevolazioni', "url": 'https://www.finpiemonte.it/agevolazioni', "geo": 'regionale', "regioni": ['piemonte'], "ambito": 'imprese'},
+    # ── PUGLIA ──
+    {"id": 'pug-pr2127', "nome": 'PR Puglia FESR FSE+ — Avvisi pubblicati', "url": 'https://pr2127.regione.puglia.it/elenco-avvisi-pubblicati', "geo": 'regionale', "regioni": ['puglia'], "ambito": 'imprese'},
+    {"id": 'pug-sistema', "nome": 'Sistema Puglia', "url": 'https://www.sistema.puglia.it/', "geo": 'regionale', "regioni": ['puglia'], "ambito": 'imprese'},
+    {"id": 'pug-sviluppo', "nome": 'Puglia Sviluppo', "url": 'https://pugliasviluppo.eu/', "geo": 'regionale', "regioni": ['puglia'], "ambito": 'imprese'},
+    # ── SARDEGNA ──
+    {"id": 'sar-impresa', "nome": 'SardegnaImpresa — Agevolazioni', "url": 'https://www.sardegnaimpresa.eu/it/agevolazioni', "geo": 'regionale', "regioni": ['sardegna'], "ambito": 'imprese'},
+    {"id": 'sar-regione', "nome": 'Regione Sardegna', "url": 'https://www.regione.sardegna.it/', "geo": 'regionale', "regioni": ['sardegna'], "ambito": 'imprese'},
+    # ── SICILIA ──
+    {"id": 'sic-euroinfo', "nome": 'EuroInfoSicilia — Bandi e avvisi aperti', "url": 'https://www.euroinfosicilia.it/bandi-e-avvisi-aperti/', "geo": 'regionale', "regioni": ['sicilia'], "ambito": 'imprese'},
+    {"id": 'sic-irfis', "nome": 'IRFIS — Sportello incentivi Sicilia', "url": 'https://incentivisicilia.irfis.it/', "geo": 'regionale', "regioni": ['sicilia'], "ambito": 'imprese'},
+    {"id": 'sic-fse', "nome": 'Sicilia FSE+ — Avvisi e bandi', "url": 'https://www.sicilia-fse.it/avvisi-e-bandi', "geo": 'regionale', "regioni": ['sicilia'], "ambito": 'imprese'},
+    # ── TOSCANA ──
+    {"id": 'tos-sviluppo', "nome": 'Sviluppo Toscana — Bandi', "url": 'https://www.sviluppo.toscana.it/', "geo": 'regionale', "regioni": ['toscana'], "ambito": 'imprese'},
+    {"id": 'tos-regione', "nome": 'Regione Toscana — Bandi aperti', "url": 'https://www.regione.toscana.it/bandi-aperti', "geo": 'regionale', "regioni": ['toscana'], "ambito": 'imprese'},
+    # ── TRENTINO-ALTO ADIGE (province autonome) ──
+    {"id": 'taa-trentino-sviluppo', "nome": 'Trentino Sviluppo — Incentivi', "url": 'https://www.trentinosviluppo.it/', "geo": 'regionale', "regioni": ['trentino-alto-adige'], "ambito": 'imprese'},
+    {"id": 'taa-apiae', "nome": 'Provincia Trento — APIAE bandi', "url": 'http://www.apiae.provincia.tn.it/bandi/', "geo": 'regionale', "regioni": ['trentino-alto-adige'], "ambito": 'imprese'},
+    {"id": 'taa-bolzano', "nome": 'Provincia Bolzano — Agevolazioni economia', "url": 'https://economia.provincia.bz.it/it/agevolazioni-all-economia', "geo": 'regionale', "regioni": ['trentino-alto-adige'], "ambito": 'imprese'},
+    {"id": 'taa-idm', "nome": 'IDM Sudtirol — Alto Adige', "url": 'https://www.idm-suedtirol.com/it', "geo": 'regionale', "regioni": ['trentino-alto-adige'], "ambito": 'imprese'},
+    # ── UMBRIA ──
+    {"id": 'umb-sviluppumbria', "nome": 'Sviluppumbria', "url": 'https://www.sviluppumbria.it/', "geo": 'regionale', "regioni": ['umbria'], "ambito": 'imprese'},
+    {"id": 'umb-regione', "nome": 'Regione Umbria', "url": 'https://www.regione.umbria.it/', "geo": 'regionale', "regioni": ['umbria'], "ambito": 'imprese'},
+    # ── VALLE D'AOSTA ──
+    {"id": 'vda-imprese', "nome": "Valle d'Aosta — Portale imprese (finanziamenti)", "url": 'https://imprese.regione.vda.it/fare-impresa/finanziamenti-alle-imprese', "geo": 'regionale', "regioni": ['valle-d-aosta'], "ambito": 'imprese'},
+    {"id": 'vda-finaosta', "nome": 'Finaosta', "url": 'https://www.finaosta.com/', "geo": 'regionale', "regioni": ['valle-d-aosta'], "ambito": 'imprese'},
+    # ── VENETO ──
+    {"id": 'ven-bandi', "nome": 'Regione Veneto — Bandi', "url": 'https://bandi.regione.veneto.it/', "geo": 'regionale', "regioni": ['veneto'], "ambito": 'imprese'},
+    {"id": 'ven-innovazione', "nome": 'Veneto Innovazione — Fondi FESR', "url": 'https://www.venetoinnovazione.it/', "geo": 'regionale', "regioni": ['veneto'], "ambito": 'imprese'},
+    {"id": 'ven-sviluppo', "nome": 'Veneto Sviluppo', "url": 'https://www.venetosviluppo.it/', "geo": 'regionale', "regioni": ['veneto'], "ambito": 'imprese'},
 ]
 
 SOURCES = _merge_sources(SOURCES, _load_extra_sources())
