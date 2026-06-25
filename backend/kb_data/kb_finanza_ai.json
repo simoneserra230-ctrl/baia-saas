@@ -1,0 +1,185 @@
+{
+  "meta": {
+    "name": "BA.IA — Knowledge Base Finanza Agevolata & AI",
+    "version": "1.0",
+    "generated": "2026-06-24",
+    "purpose": "Base di conoscenza interna per (a) chatbot BA.IA e (b) blog automatico. Sintesi originali degli spunti su AI applicata alla finanza agevolata.",
+    "license_note": "Contenuto TRASFORMATIVO e originale: sintesi con parole proprie, NESSUN testo verbatim. Le fonti sono citate solo per attribuzione/ispirazione (URL+titolo+data). Non riprodurre i testi originali. Verificare sempre importi/percentuali/norme su fonti ufficiali prima della pubblicazione.",
+    "source_site": "incentivimpresa.it/approfondimenti",
+    "themes": ["automazione studio bandi", "tool AI per consulenti", "knowledge base bandi", "generazione contenuti AI", "pitch deck & business plan AI", "comunicazione cliente AI"]
+  },
+
+  "articles": [
+    {
+      "id": "automazioni-studio-bandi",
+      "url": "https://www.incentivimpresa.it/automazioni-studio-bandi-risparmiare-tempo/",
+      "title": "Automazioni per lo Studio: risparmiare ore a settimana sui bandi",
+      "date": "2026-06-24",
+      "theme": "automazione studio bandi",
+      "summary": "Un consulente che segue 30-60 clienti perde 20-25 ore a settimana in attività ripetitive (monitoraggio scadenze, raccolta documenti, follow-up, notifiche di stato). Automatizzando questi flussi si recuperano ~10 ore/settimana, da reinvestire in acquisizione e consulenza di qualità.",
+      "takeaways": [
+        "I colli di bottiglia sono operativi, non consulenziali: scadenze, DURC, raccolta doc, reportistica.",
+        "Sequenza d'implementazione: infrastruttura → database bandi → automazioni → firma documenti, in 30-45 giorni.",
+        "Soglia di ROI: recuperare ~50% del tempo operativo entro 90 giorni."
+      ],
+      "baia_implications": [
+        "Screening automatico di ammissibilità su più bandi regionali/nazionali (BA.IA ha già matcher + advisor).",
+        "Deadline intelligence con monitoraggio portali in tempo reale (estendere scraper + regulatory_monitor).",
+        "Monitor compliance (DURC, regolarità contributiva) che alimenta i suggerimenti di match.",
+        "Dashboard di portafoglio: pipeline, scadenze, tasso di successo (estendere portal)."
+      ]
+    },
+    {
+      "id": "case-study-5-tool-ai",
+      "url": "https://www.incentivimpresa.it/case-study-consulente-5-tool-ai-produttivita-bandi/",
+      "title": "Case study: consulente che raddoppia la produttività con 5 tool AI",
+      "date": "2026-06-21",
+      "theme": "tool AI per consulenti",
+      "summary": "Un consulente ridisegna la giornata con 5 tool AI: scouting bandi, analisi PDF, knowledge base condivisa, generazione business plan, creazione pitch deck. Passa da ~5 ore a ~1,8 ore per lo stesso output; il tempo liberato viene reinvestito gestendo più pratiche (più domande presentate a trimestre).",
+      "takeaways": [
+        "Catena del valore: scouting → analisi PDF requisiti → KB → business plan → pitch deck → domanda.",
+        "Il tempo risparmiato si reinveste in volume e strategia, non in riduzione del lavoro.",
+        "La validazione umana resta non negoziabile: ogni output AI passa una revisione prima della consegna."
+      ],
+      "baia_implications": [
+        "Aggregazione opportunità da feed/portali/email in un'unica coda di scouting.",
+        "Parsing intelligente PDF: estrarre criteri, scadenze, massimali dai testi non strutturati e popolare i campi del bando.",
+        "Knowledge base collaborativa con dashboard rivolta al cliente (portal already presente).",
+        "Template di automazione per business plan e pitch (nuovi moduli generativi).",
+        "Checkpoint di qualità human-in-the-loop prima della consegna al cliente."
+      ]
+    },
+    {
+      "id": "notion-ai-database-bandi",
+      "url": "https://www.incentivimpresa.it/notion-ai-database-bandi-personalizzato/",
+      "title": "Knowledge base personalizzata dei bandi: struttura e query in linguaggio naturale",
+      "date": "2026-06-20",
+      "theme": "knowledge base bandi",
+      "summary": "Gestire 30-80 bandi attivi richiede di superare i fogli di calcolo: serve un database relazionale interrogabile in linguaggio naturale, condivisibile col cliente con permessi granulari. Si passa da filtri manuali (minuti) a risposte istantanee.",
+      "takeaways": [
+        "Tassonomia consigliata (~12 campi): nome/ente, tipo & beneficiari, parametri finanziari (dotazione, max per beneficiario, % copertura), tempistiche (apertura/scadenza/decisione), regime di aiuto (de minimis vs GBER), stato pipeline, cliente assegnato, documentazione allegata.",
+        "Viste multiple: tabella, calendario, kanban per scadenza/cliente/ente.",
+        "Query in linguaggio naturale: 'tutti i bandi per startup tech in scadenza tra 30 giorni'."
+      ],
+      "baia_implications": [
+        "Chatbot Q&A in linguaggio naturale sopra il DB bandi BA.IA (questa è la feature chiave per la chatbot).",
+        "Auto-summary del bando: regime, copertura, beneficiari, generato dal testo.",
+        "Dashboard condivise condizionali: ogni cliente vede solo i bandi che lo riguardano + stato domanda.",
+        "Parsing massivo PDF → popolamento automatico dei campi della tassonomia.",
+        "Reportistica multi-vista (timeline Gantt, kanban stato, analisi mensile)."
+      ]
+    },
+    {
+      "id": "jasper-vs-copyai-contenuti",
+      "url": "https://www.incentivimpresa.it/jasper-ai-vs-copy-ai-contenuti-finanza-agevolata/",
+      "title": "Copywriting AI per la finanza agevolata: criteri di scelta",
+      "date": "2026-06-18",
+      "theme": "generazione contenuti AI",
+      "summary": "Gli strumenti di copywriting AI producono articoli blog (1.500+ parole), post social con varianti A/B, email, FAQ e materiali marketing sui bandi, riducendo la produzione di un articolo da 4-5 ore a 1-2 ore. Il post-editing per verificare importi, percentuali e citazioni normative resta obbligatorio.",
+      "takeaways": [
+        "Casi d'uso: articoli su singoli programmi, post LinkedIn, email, FAQ, brochure.",
+        "Criteri di scelta: brand voice, integrazione SEO, automazione di workflow, API, prezzo.",
+        "Vincolo: fact-checking obbligatorio su fonti ufficiali (Invitalia, portali regionali)."
+      ],
+      "baia_implications": [
+        "Generatore blog automatico BA.IA con template per-bando e SEO su keyword ('Nuova Sabatini 2026').",
+        "Validazione automatica dei fatti con link alle fonti ufficiali (anti-allucinazione).",
+        "Generazione multi-regione (varianti regionali italiane).",
+        "Cattura della brand voice del consulente dai suoi testi.",
+        "Flag di compliance per informazioni obsolete (importi/ammissibilità scaduti)."
+      ]
+    },
+    {
+      "id": "canva-ai-comunicazione",
+      "url": "https://www.incentivimpresa.it/canva-ai-materiali-comunicazione-bandi/",
+      "title": "Materiali di comunicazione sui bandi con AI: infografiche, post, brochure",
+      "date": "2026-06-14",
+      "theme": "comunicazione cliente AI",
+      "summary": "Si producono 4 tipi di asset: infografiche finanziarie (fasce di finanziamento, % copertura, massimali), post social (aperture bando, success story), brochure cliente a 3 ante, campagne multi-canale. Da un singolo design si riusano 5+ formati; ~25-45 min per asset, ~2 ore per una campagna completa.",
+      "takeaways": [
+        "Workflow: scelta template → inserimento dati → brand kit → copy AI → conversione formati → distribuzione.",
+        "Riuso di un design su più canali (LinkedIn, email, social, web).",
+        "Serve un layer di compliance: fact-check, linguaggio normativo, audit trail versioni."
+      ],
+      "baia_implications": [
+        "Intake cliente → raccomandazione bandi → brochure cliente pre-compilata automaticamente.",
+        "Generazione batch di campagne mappando più clienti sui bandi compatibili.",
+        "Layer di compliance integrato: fact-check vs fonti ufficiali + audit trail di versioni/approvazioni.",
+        "Orchestrazione distribuzione: scheduling one-click multi-canale."
+      ]
+    },
+    {
+      "id": "gamma-ai-pitch-deck",
+      "url": "https://www.incentivimpresa.it/gamma-ai-pitch-deck-presentazioni-bandi/",
+      "title": "Pitch deck per bandi generati con AI: struttura e tempi",
+      "date": "2026-06-13",
+      "theme": "pitch deck & business plan AI",
+      "summary": "Per bandi come Smart&Start e Resto al Sud, generare un deck di 12 slide da un prompt richiede ~90 secondi contro 8-12 ore manuali, liberando tempo per la strategia e la validazione dati — il lavoro umano che le commissioni valutano davvero.",
+      "takeaways": [
+        "Struttura deck competitiva: 1-3 identità/problema/soluzione; 4-5 mercato (TAM/SAM/SOM) e modello ricavi; 6-8 traction/team/competitor; 9-11 roadmap 3 anni, proiezioni, richiesta di finanziamento e allocazione; 12 contatti.",
+        "Il layout rispecchia come le commissioni (es. Invitalia) leggono decine di domande.",
+        "La scelta strategica e la competenza di dominio restano insostituibili."
+      ],
+      "baia_implications": [
+        "Template di deck suggeriti in base alle regole del bando (Smart&Start vs Resto al Sud).",
+        "Generatore di business plan integrato: narrativa + modello finanziario export Excel.",
+        "Checker di compliance: segnala quando il contenuto del pitch confligge con i criteri del bando.",
+        "Inserimento dati localizzati: sizing mercato italiano e benchmark economici regionali."
+      ]
+    }
+  ],
+
+  "baia_roadmap_signals": {
+    "gia_presenti_in_baia": [
+      "Scouting/scraper bandi (scraper.py + 216 fonti)",
+      "Analisi PDF bando in streaming (ai_advisor.stream_analysis)",
+      "Matching bando×azienda TF-IDF + Claude (matcher.py + ai_advisor)",
+      "Report strategico di finanziabilità (ai_advisor_report)",
+      "Portale cliente / multi-azienda (portal.py)",
+      "Monitoraggio normativo (regulatory_monitor.py)",
+      "Rendicontazione (rendicontazione.py)"
+    ],
+    "da_costruire_alto_valore": [
+      "Chatbot Q&A in linguaggio naturale sul DB bandi (tassonomia 12 campi) — usa questa KB come contesto",
+      "Generatore blog automatico SEO per-bando con fact-check su fonti ufficiali",
+      "Generatore business plan (proiezioni 3 anni, export Excel)",
+      "Generatore pitch deck 12-slide bando-specifico",
+      "Generatore materiali comunicazione cliente (brochure/infografica/post) batch",
+      "Monitor compliance DURC/de minimis/GBER che alimenta il match",
+      "Mappatura requisiti documentali per tipo di bando",
+      "Dashboard cliente condizionale: vede solo i suoi bandi + stato domanda"
+    ],
+    "principio_trasversale": "Human-in-the-loop non negoziabile: ogni output AI (testo, importo, citazione normativa) va verificato su fonte ufficiale prima della consegna/pubblicazione. Inserire sempre disclaimer + link fonte."
+  },
+
+  "blog_seeds": [
+    {"titolo": "Quanto tempo perde davvero un consulente bandi (e come l'AI lo recupera)", "angolo": "produttività/automazione", "keyword": "automazione bandi consulente", "cta": "Prova BA.IA per lo screening automatico"},
+    {"titolo": "Knowledge base dei bandi: 12 campi che ogni studio dovrebbe tracciare", "angolo": "metodo/organizzazione", "keyword": "database bandi", "cta": "BA.IA struttura i tuoi bandi automaticamente"},
+    {"titolo": "De minimis vs GBER: come capire subito il regime di aiuto di un bando", "angolo": "normativo/educativo", "keyword": "de minimis GBER differenza", "cta": "BA.IA segnala il regime di aiuto per ogni bando"},
+    {"titolo": "Dal PDF del bando ai requisiti in 30 secondi: il parsing intelligente", "angolo": "AI/tecnico", "keyword": "analisi bando PDF AI", "cta": "Analizza un bando con BA.IA"},
+    {"titolo": "Pitch deck per Smart&Start e Resto al Sud: la struttura che convince le commissioni", "angolo": "operativo/startup", "keyword": "pitch deck bando startup", "cta": "Genera il tuo deck con BA.IA"},
+    {"titolo": "Matching azienda-bando: perché il punteggio conta più della lista", "angolo": "prodotto/AI", "keyword": "matching bandi azienda", "cta": "Scopri i tuoi bandi compatibili con BA.IA"},
+    {"titolo": "Domanda respinta: come ripresentarla senza ripartire da zero", "angolo": "operativo", "keyword": "bando respinto ricorso", "cta": "BA.IA tiene traccia di scadenze e ripresentazioni"},
+    {"titolo": "Economia circolare 2026: i bandi per riciclare e riusare", "angolo": "opportunità/green", "keyword": "bandi economia circolare 2026", "cta": "Trova i bandi green adatti a te con BA.IA"}
+  ],
+
+  "chatbot_seed_faq": [
+    {"q": "Cos'è il regime de minimis?", "a_guida": "Spiega in modo semplice il tetto cumulativo di aiuti pubblici in un triennio e che va verificato il plafond residuo; rimanda alla fonte ufficiale e suggerisce di controllare il singolo bando in BA.IA."},
+    {"q": "Quanto posso ottenere da un bando?", "a_guida": "Spiega che dipende da dotazione, massimale per beneficiario e % di copertura del bando; invita a usare il matching BA.IA per la stima sul profilo azienda."},
+    {"q": "Come faccio a sapere se la mia azienda è compatibile con un bando?", "a_guida": "Descrive il matching per settore (ATECO), dimensione, geografia e requisiti; rimanda alla funzione di analisi compatibilità di BA.IA."},
+    {"q": "Cosa succede se la domanda viene respinta?", "a_guida": "Spiega che spesso si può ripresentare o fare ricorso correggendo i punti deboli; suggerisce di tracciare scadenze e motivazioni in BA.IA."}
+  ],
+
+  "queued_sources": [
+    {"url": "https://www.incentivimpresa.it/resto-al-sud-vs-autoimpiego-decision-framework/", "title": "Resto al Sud 2.0 vs Autoimpiego Centro-Nord: decision framework", "date": "2026-06-21", "theme": "strategia/decisione"},
+    {"url": "https://www.incentivimpresa.it/varianti-progetto-bando-revoca-contributo/", "title": "Modifiche al progetto finanziato: quando rischi la revoca", "date": "2026-06-20", "theme": "operativo/rendicontazione"},
+    {"url": "https://www.incentivimpresa.it/variazioni-corso-opera-bandi-mantenere-agevolazione/", "title": "Variazioni in corso d'opera senza perdere l'agevolazione", "date": "2026-06-19", "theme": "operativo/rendicontazione"},
+    {"url": "https://www.incentivimpresa.it/burocrazia-bandi-numeri-verita-tempo-roi/", "title": "Paura della burocrazia bandi: numeri, verità e ROI", "date": "2026-06-19", "theme": "produttività/ROI"},
+    {"url": "https://www.incentivimpresa.it/bando-respinto-ricorso-ripresentazione-operativa/", "title": "Domanda respinta: cosa fare e come ripresentarla", "date": "2026-06-18", "theme": "operativo"},
+    {"url": "https://www.incentivimpresa.it/consulente-export-simest-15-clienti-internazionalizzazione/", "title": "Consulente export e SIMEST: 15 clienti internazionalizzati", "date": "2026-06-17", "theme": "verticale/export"},
+    {"url": "https://www.incentivimpresa.it/bandi-economia-circolare-2026-riciclare-riusare/", "title": "Bandi economia circolare 2026: riciclare e riusare", "date": "2026-06-16", "theme": "opportunità/green"},
+    {"url": "https://www.incentivimpresa.it/triangolo-decisionale-investimento-timing-agevolazione/", "title": "Triangolo decisionale: investimento, timing, agevolazione", "date": "2026-06-14", "theme": "strategia"},
+    {"url": "https://www.incentivimpresa.it/crediti-rs-2026-strategia-liquidita-cash-flow/", "title": "Crediti R&S 2026: innovazione in cash flow", "date": "2026-06-12", "theme": "fiscale/credito imposta"},
+    {"url": "https://www.incentivimpresa.it/bandi-ecommerce-2026-vendere-online-pmi/", "title": "E-commerce 2026: bandi per vendere online", "date": "2026-06-11", "theme": "opportunità/digitale"}
+  ]
+}

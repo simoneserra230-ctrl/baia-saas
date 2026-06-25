@@ -17,7 +17,12 @@ import re
 from functools import lru_cache
 from typing import Optional
 
-_KB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "kb_finanza_ai.json")
+# La KB vive in backend/kb_data/ (versionata → arriva in prod). Fallback: data/ (gitignored, solo locale).
+_KB_CANDIDATES = [
+    os.path.join(os.path.dirname(__file__), "kb_data", "kb_finanza_ai.json"),
+    os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "kb_finanza_ai.json"),
+]
+_KB_PATH = next((p for p in _KB_CANDIDATES if os.path.exists(p)), _KB_CANDIDATES[0])
 
 _STOP = {"di", "a", "da", "in", "con", "su", "per", "tra", "fra", "il", "lo", "la",
          "i", "gli", "le", "un", "una", "e", "che", "come", "cosa", "del", "dei",
