@@ -198,6 +198,10 @@ async def analyze_auto(text: str) -> str:
     print(f"[INFO] Testo lungo ({len(text)} car) → chunking")
     return await analyze_in_chunks(text)
 
+# ─── BA.IA AI FEATURES (chatbot · blog · business plan · pitch · compliance) ──
+from baia_ai import make_ai_router
+app.include_router(make_ai_router(anthropic_call, require_auth, DB_PATH))
+
 # ─── ENDPOINTS CORE ───────────────────────────────────────
 
 @app.get("/")

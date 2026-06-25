@@ -6193,5 +6193,76 @@ function copyDraft() {
   setTimeout(onApp,1300);
   window.bvCloudPush=function(){return push(true);};   // push manuale (debug)
 })();</script>
+
+<!-- ══ ASSISTENTE BA.IA — chatbot KB finanza+AI ══ -->
+<script>
+(function(){
+  var base = (typeof BACKEND_URL!=='undefined') ? BACKEND_URL
+    : (location.protocol==='file:' ? 'http://localhost:8000'
+       : (location.hostname==='localhost'||location.hostname==='127.0.0.1') ? 'http://'+location.hostname+':8000'
+       : location.origin+'/api');
+  function token(){ try{ return (typeof _getAuthToken==='function'?_getAuthToken():'') || localStorage.getItem('baia_auth_token') || ''; }catch(e){ return ''; } }
+  var history=[], shownDisc=false;
+
+  var css = document.createElement('style');
+  css.textContent =
+    '#baia-fab{position:fixed;bottom:22px;right:22px;z-index:9000;width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;'
+    +'background:linear-gradient(135deg,#0e7490,#0891b2);color:#fff;font-size:22px;box-shadow:0 6px 22px rgba(8,145,178,.45);transition:transform .15s}'
+    +'#baia-fab:hover{transform:translateY(-2px)}'
+    +'#baia-chat{position:fixed;bottom:84px;right:22px;z-index:9000;width:360px;max-width:calc(100vw - 36px);height:480px;max-height:72vh;display:none;flex-direction:column;'
+    +'background:#0b1220;border:1px solid rgba(8,145,178,.35);border-radius:16px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.5);font-family:inherit}'
+    +'#baia-chat .hd{padding:12px 14px;background:rgba(8,145,178,.12);border-bottom:1px solid rgba(8,145,178,.25);display:flex;align-items:center;gap:8px;color:#e2f5fb}'
+    +'#baia-chat .hd b{font-size:13px}#baia-chat .hd small{color:#7fbed0;font-size:10px}'
+    +'#baia-chat .x{margin-left:auto;background:none;border:none;color:#7fbed0;font-size:18px;cursor:pointer}'
+    +'#baia-msgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:9px;background:#0b1220}'
+    +'.bm{max-width:88%;padding:8px 12px;border-radius:12px;font-size:13px;line-height:1.5;white-space:pre-wrap;word-break:break-word}'
+    +'.bm.u{align-self:flex-end;background:linear-gradient(135deg,#0e7490,#0891b2);color:#fff;border-bottom-right-radius:3px}'
+    +'.bm.a{align-self:flex-start;background:#13203a;color:#dce7f5;border:1px solid rgba(255,255,255,.06);border-bottom-left-radius:3px}'
+    +'.bm.dsc{align-self:stretch;background:rgba(234,179,8,.08);border:1px solid rgba(234,179,8,.3);color:#e8c25a;font-size:11px}'
+    +'.bm .src{display:block;margin-top:6px;font-size:10.5px;color:#7fbed0}'
+    +'#baia-chat .ft{display:flex;gap:6px;padding:10px;border-top:1px solid rgba(8,145,178,.18);background:#0b1220}'
+    +'#baia-in{flex:1;background:#13203a;border:1px solid rgba(8,145,178,.25);border-radius:9px;padding:9px 11px;color:#e2f5fb;font-size:13px;outline:none;font-family:inherit}'
+    +'#baia-send{background:linear-gradient(135deg,#0e7490,#0891b2);border:none;border-radius:9px;width:40px;color:#fff;font-size:16px;cursor:pointer}';
+  document.head.appendChild(css);
+
+  var fab=document.createElement('button'); fab.id='baia-fab'; fab.title='Assistente BA.IA'; fab.textContent='💬';
+  var box=document.createElement('div'); box.id='baia-chat';
+  box.innerHTML='<div class="hd"><span>🤖</span><div><b>Assistente BA.IA</b><br><small>Finanza agevolata · KB AI</small></div>'
+    +'<button class="x" title="Chiudi">×</button></div>'
+    +'<div id="baia-msgs"></div>'
+    +'<div class="ft"><input id="baia-in" placeholder="Chiedi su bandi, de minimis, requisiti…" autocomplete="off"><button id="baia-send">→</button></div>';
+  document.body.appendChild(fab); document.body.appendChild(box);
+
+  function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function md(s){ return esc(s).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>'); }
+  function add(cls, html){ var m=document.getElementById('baia-msgs'); var d=document.createElement('div'); d.className='bm '+cls; d.innerHTML=html; m.appendChild(d); m.scrollTop=m.scrollHeight; return d; }
+
+  function toggle(){ var open=box.style.display==='flex'; box.style.display=open?'none':'flex';
+    if(!open){ document.getElementById('baia-in').focus();
+      if(!document.getElementById('baia-msgs').children.length){ add('a','Ciao! Sono l\'assistente di BA.IA. Posso aiutarti su bandi, regimi di aiuto (de minimis/GBER), requisiti e compatibilità. Come posso aiutarti?'); } } }
+  fab.onclick=toggle; box.querySelector('.x').onclick=toggle;
+
+  async function send(){
+    var inp=document.getElementById('baia-in'); var q=(inp.value||'').trim(); if(!q) return;
+    if(!token()){ add('a','🔒 Accedi a BA.IA per usare l\'assistente.'); return; }
+    inp.value=''; add('u', esc(q));
+    var t=add('a','…'); t.style.opacity='.6';
+    try{
+      var r=await fetch(base+'/ai/chat',{method:'POST',headers:{'Content-Type':'application/json','X-Auth-Token':token()},
+        body:JSON.stringify({message:q, history:history.slice(-6)})});
+      var d=await r.json(); t.remove();
+      if(d && d.ok){
+        if(!shownDisc && d.disclaimer){ add('dsc', esc(d.disclaimer)); shownDisc=true; }
+        var html=md(d.answer||'(nessuna risposta)');
+        if(d.sources && d.sources.length){ html+='<span class="src">Fonti: '+d.sources.filter(function(s){return s.url;}).map(function(s){return '<a href="'+s.url+'" target="_blank" rel="noopener" style="color:#7fbed0">'+esc(s.title||'fonte')+'</a>';}).join(' · ')+'</span>'; }
+        add('a', html);
+        history.push({role:'user',content:q}); history.push({role:'assistant',content:d.answer||''});
+      } else { add('a','⚠️ '+esc((d&&d.error)||'Assistente non disponibile.')); }
+    }catch(e){ t.remove(); add('a','⚠️ Connessione non riuscita. Riprova.'); }
+  }
+  document.getElementById('baia-send').onclick=send;
+  document.getElementById('baia-in').addEventListener('keydown',function(e){ if(e.key==='Enter') send(); });
+})();
+</script>
 </body>
 </html>
