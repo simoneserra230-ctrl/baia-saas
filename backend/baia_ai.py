@@ -85,6 +85,14 @@ class ComplianceBody(BaseModel):
     plafond_de_minimis: Optional[float] = None  # default indicativo se assente
 
 
+class EmailBody(BaseModel):
+    azienda: dict                              # {nome, referente, settore, ...}
+    bando: Optional[dict] = None               # {name, ente, scadenza, importo, percentuale, settori}
+    mittente: Optional[dict] = None            # {nome_consulente, studio, contatto}
+    tono: Optional[str] = "professionale"      # professionale | cordiale | diretto
+    note: Optional[str] = None                 # istruzioni extra
+
+
 AnthropicCall = Callable[..., Awaitable[tuple]]
 
 
@@ -243,5 +251,30 @@ def make_ai_router(anthropic_call: AnthropicCall, require_auth, db_path: str) ->
             ai_part = {"error": f"AI non raggiungibile: {e}"}
         return {"ok": True, "de_minimis_calcolo": de_minimis, "checklist": ai_part,
                 "stato": "bozza", "disclaimer": DISCLAIMER}
+
+    # ── 6. EMAIL OUTREACH (bozza email cliente per un bando) ─────────────
+    @router.post("/email/outreach", summary="Genera bozza email di contatto cliente per un bando")
+    async def email_outreach(body: EmailBody, _user: dict = Depends(require_auth)):
+        az = body.azienda or {}
+        ba = body.bando or {}
+        mit = body.mittente or {}
+        prompt = (
+            "Sei un consulente di finanza agevolata italiana. Scrivi una BOZZA di email "
+            "professionale in italiano per proporre a un'azienda un'opportunità di "
+            "finanziamento (bando). Tono: " + (body.tono or "professionale") + ". "
+            "Personalizza sui dati forniti. NON inventare importi/percentuali/scadenze: "
+            "se un dato non è fornito usa un segnaposto tipo [verifica sul bando]. "
+            "Struttura: Oggetto, saluto al referente, 1-2 paragrafi sul perché il bando è "
+            "rilevante per QUESTA azienda, una CTA per fissare una call, firma.\n\n"
+            f"AZIENDA: {json.dumps(az, ensure_ascii=False)}\n"
+            f"BANDO: {json.dumps(ba, ensure_ascii=False)}\n"
+            f"MITTENTE/FIRMA: {json.dumps(mit, ensure_ascii=False)}\n"
+            + (f"NOTE: {body.note}\n" if body.note else "")
+        )
+        try:
+            draft, _ = await anthropic_call(prompt, timeout=90)
+        except Exception as e:
+            return {"ok": False, "error": f"AI non raggiungibile: {e}"}
+        return {"ok": True, "email": _flag_figures(draft), "stato": "bozza", "disclaimer": DISCLAIMER}
 
     return router

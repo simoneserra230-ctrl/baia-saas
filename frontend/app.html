@@ -6314,6 +6314,7 @@ function copyDraft() {
     +'<button class="aist-tab" data-m="bp">📊 Business Plan</button>'
     +'<button class="aist-tab" data-m="pitch">🎤 Pitch</button>'
     +'<button class="aist-tab" data-m="comp">✅ Compliance</button>'
+    +'<button class="aist-tab" data-m="email">✉️ Email</button>'
     +'</div><div id="aist-ctx"></div>'
     +'<button id="aist-go">Genera bozza</button>'
     +'<div id="aist-out" style="color:#7a8aa0">Scegli cosa generare. Tutto è una <b>bozza</b> da verificare prima di usarla.</div>';
@@ -6329,6 +6330,7 @@ function copyDraft() {
     var c=document.getElementById('aist-ctx');
     if(mode==='blog'){ c.innerHTML='<div style="font-size:11.5px;color:#9fb0c8">Genera una bozza di articolo SEO dal prossimo spunto della knowledge base. Nessun dato richiesto.</div>'; }
     else if(mode==='comp'){ c.innerHTML=azSelect()+'<label style="font-size:11px;color:#a78bda;margin-top:8px;display:block">Aiuti già ricevuti (€, uno per riga) — opzionale</label><textarea id="aist-aiuti" rows="2" placeholder="120000&#10;50000"></textarea>'; }
+    else if(mode==='email'){ c.innerHTML=azSelect()+'<label style="font-size:11px;color:#a78bda;margin-top:8px;display:block">Bando (titolo, ente, scadenza) — opzionale</label><textarea id="aist-bando" rows="2" placeholder="Es. Bando Digitalizzazione PMI Sardegna, ente Regione, scad. 30/09"></textarea>'; }
     else { c.innerHTML=azSelect(); }
   }
   function selAzienda(){ var s=document.getElementById('aist-az'); if(!s) return null; return aziende()[parseInt(s.value)]||null; }
@@ -6362,6 +6364,13 @@ function copyDraft() {
         if(!d.ok){ out.innerHTML='⚠️ '+esc(d.error||'Errore'); return; }
         var slides=(d.pitch_deck&&d.pitch_deck.slides)||[];
         out.innerHTML=disc(d)+slides.map(function(s){return '<div style="border:1px solid rgba(124,58,237,.2);border-radius:8px;padding:8px;margin-bottom:6px"><b style="color:#c4b5fd">'+esc(s.n||'')+'. '+esc(s.titolo||'')+'</b>'+renderObj(s.bullet||[])+'</div>';}).join('');
+      } else if(mode==='email'){
+        var a=selAzienda(); if(!a){ out.innerHTML='Seleziona un\'azienda.'; return; }
+        var bt=((document.getElementById('aist-bando')||{}).value||'').trim();
+        var d=await call('/ai/email/outreach',{azienda:a, bando: bt?{descrizione:bt}:null});
+        if(!d.ok){ out.innerHTML='⚠️ '+esc(d.error||'Errore'); return; }
+        out.innerHTML=disc(d)+'<button class="aist-copy" id="aist-cp">📋 Copia email</button><div>'+md(d.email||'')+'</div>';
+        var raw=d.email||''; var cp=document.getElementById('aist-cp'); if(cp) cp.onclick=function(){ navigator.clipboard&&navigator.clipboard.writeText(raw); cp.textContent='✓ Copiato'; };
       } else {
         var a=selAzienda();
         var aiuti=((document.getElementById('aist-aiuti')||{}).value||'').split('\n').map(function(x){return parseFloat(x.replace(/[^0-9.,]/g,'').replace(',','.'));}).filter(function(n){return !isNaN(n);}).map(function(n){return {importo:n};});
