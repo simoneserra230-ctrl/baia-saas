@@ -6315,6 +6315,7 @@ function copyDraft() {
     +'<button class="aist-tab" data-m="pitch">🎤 Pitch</button>'
     +'<button class="aist-tab" data-m="comp">✅ Compliance</button>'
     +'<button class="aist-tab" data-m="email">✉️ Email</button>'
+    +'<button class="aist-tab" data-m="rag">📚 Chiedi ai bandi</button>'
     +'</div><div id="aist-ctx"></div>'
     +'<button id="aist-go">Genera bozza</button>'
     +'<div id="aist-out" style="color:#7a8aa0">Scegli cosa generare. Tutto è una <b>bozza</b> da verificare prima di usarla.</div>';
@@ -6331,7 +6332,9 @@ function copyDraft() {
     if(mode==='blog'){ c.innerHTML='<div style="font-size:11.5px;color:#9fb0c8">Genera una bozza di articolo SEO dal prossimo spunto della knowledge base. Nessun dato richiesto.</div>'; }
     else if(mode==='comp'){ c.innerHTML=azSelect()+'<label style="font-size:11px;color:#a78bda;margin-top:8px;display:block">Aiuti già ricevuti (€, uno per riga) — opzionale</label><textarea id="aist-aiuti" rows="2" placeholder="120000&#10;50000"></textarea>'; }
     else if(mode==='email'){ c.innerHTML=azSelect()+'<label style="font-size:11px;color:#a78bda;margin-top:8px;display:block">Bando (titolo, ente, scadenza) — opzionale</label><textarea id="aist-bando" rows="2" placeholder="Es. Bando Digitalizzazione PMI Sardegna, ente Regione, scad. 30/09"></textarea>'; }
+    else if(mode==='rag'){ c.innerHTML='<label style="font-size:11px;color:#a78bda">La tua domanda sui bandi salvati</label><textarea id="aist-q" rows="3" placeholder="Es. Quali bandi per hotel e turismo in Sardegna sono ancora aperti? Che spese coprono?"></textarea><div style="font-size:10.5px;color:#7a8aa0;margin-top:4px">Risponde SOLO sui tuoi bandi in archivio, con citazioni.</div>'; }
     else { c.innerHTML=azSelect(); }
+    var goBtn=document.getElementById('aist-go'); if(goBtn) goBtn.textContent=(mode==='rag'?'Chiedi ai bandi':'Genera bozza');
   }
   function selAzienda(){ var s=document.getElementById('aist-az'); if(!s) return null; return aziende()[parseInt(s.value)]||null; }
 
@@ -6371,6 +6374,13 @@ function copyDraft() {
         if(!d.ok){ out.innerHTML='⚠️ '+esc(d.error||'Errore'); return; }
         out.innerHTML=disc(d)+'<button class="aist-copy" id="aist-cp">📋 Copia email</button><div>'+md(d.email||'')+'</div>';
         var raw=d.email||''; var cp=document.getElementById('aist-cp'); if(cp) cp.onclick=function(){ navigator.clipboard&&navigator.clipboard.writeText(raw); cp.textContent='✓ Copiato'; };
+      } else if(mode==='rag'){
+        var q=((document.getElementById('aist-q')||{}).value||'').trim();
+        if(!q){ out.innerHTML='Scrivi una domanda sui tuoi bandi.'; return; }
+        var d=await call('/ai/rag/ask',{question:q});
+        if(!d.ok){ out.innerHTML='⚠️ '+esc(d.error||'Errore'); return; }
+        var cites=(d.bandi_usati||[]).map(function(b){return '<li>'+esc(b.name||'(senza nome)')+(b.ente?' · '+esc(b.ente):'')+(b.scadenza?' · scad. '+esc(b.scadenza):'')+'</li>';}).join('');
+        out.innerHTML=disc(d)+'<div>'+md(d.answer||'')+'</div>'+(cites?'<h4>📚 Bandi usati</h4><ul style="margin:4px 0 0 16px">'+cites+'</ul>':'');
       } else {
         var a=selAzienda();
         var aiuti=((document.getElementById('aist-aiuti')||{}).value||'').split('\n').map(function(x){return parseFloat(x.replace(/[^0-9.,]/g,'').replace(',','.'));}).filter(function(n){return !isNaN(n);}).map(function(n){return {importo:n};});
