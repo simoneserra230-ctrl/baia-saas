@@ -68,6 +68,42 @@ def _tokenize(q: str):
     raw = re.split(r"[^a-z0-9]+", _strip_accents((q or "").lower()))
     return [t for t in raw if len(t) >= 3 and t not in _RAG_STOP]
 
+# Espansione sinonimi di dominio (finanza agevolata/HoReCa): i valori sono STEM
+# (sottostringhe accent-free) così "ricettiv" aggancia ricettiva/ricettive/ricettività.
+# I sinonimi pesano meno dei termini esatti (vedi _query_terms): più recall, senza drift.
+_SYNONYMS = {
+    "hotel":        ["albergh", "ricettiv", "struttur ricettiv", "ospitalit", "turism"],
+    "albergo":      ["albergh", "ricettiv", "hotel", "ospitalit"],
+    "turismo":      ["turist", "ricettiv", "albergh", "ospitalit", "hotel"],
+    "ristorazione": ["ristorant", "somministr", "bar", "horeca", "food"],
+    "ristorante":   ["ristorazion", "somministr", "horeca"],
+    "bar":          ["somministr", "caffetteri", "horeca", "ristorazion"],
+    "fotovoltaico": ["pannell", "solar", "rinnovabil", "energi", "autoconsum"],
+    "solare":       ["fotovoltaic", "pannell", "rinnovabil", "energi"],
+    "energia":      ["energet", "rinnovabil", "efficienta", "efficient", "fotovoltaic"],
+    "digitale":     ["digitalizz", "informatic", "software", "ecommerce", "web", "innovazion"],
+    "digitalizzazione": ["digital", "informatic", "software", "ecommerce"],
+    "innovazione":  ["innovativ", "ricerca", "sviluppo", "tecnolog", "startup"],
+    "agricoltura":  ["agricol", "agroaliment", "rurale", "psr", "filiera"],
+    "assunzione":   ["occupazion", "lavoro", "personale", "contratt", "assunz"],
+    "occupazione":  ["assunz", "lavoro", "occupazional", "personale"],
+    "formazione":   ["formativ", "corsi", "competenz", "aggiornament"],
+    "export":       ["estero", "internazional", "mercati ester", "internazionalizz"],
+    "internazionalizzazione": ["export", "estero", "internazional"],
+    "giovani":      ["under", "giovan", "neoimprend"],
+    "donne":        ["femminil", "imprenditoria femminil", "donna"],
+    "sud":          ["mezzogiorno", "meridional", "resto al sud"],
+}
+
+def _query_terms(q: str):
+    """Termini di ricerca: token della domanda (peso 1.0) + sinonimi di dominio (peso 0.5)."""
+    base = _tokenize(q)
+    terms = [(t, 1.0) for t in base]
+    for t in base:
+        for syn in _SYNONYMS.get(t, []):
+            terms.append((_strip_accents(syn), 0.5))
+    return terms
+
 
 # ── Pydantic bodies ─────────────────────────────────────────────────────
 class ChatBody(BaseModel):
@@ -321,12 +357,12 @@ def make_ai_router(anthropic_call: AnthropicCall, require_auth, db_path: str) ->
         except Exception as e:
             return {"ok": False, "error": f"Archivio bandi non raggiungibile: {e}"}
 
-        toks = _tokenize(q)
+        terms = _query_terms(q)   # token domanda + sinonimi di dominio (RAG v2)
         scored = []
         for b in bandi:
             blob = _strip_accents(json.dumps(b, ensure_ascii=False).lower())
             ne = _strip_accents((str(b.get("name", "")) + " " + str(b.get("ente", ""))).lower())
-            score = sum(blob.count(t) + 2 * ne.count(t) for t in toks)   # nome/ente pesano di più
+            score = sum((blob.count(t) + 2 * ne.count(t)) * w for t, w in terms)  # nome/ente x2; sinonimi peso 0.5
             if score > 0:
                 scored.append((score, b))
         scored.sort(key=lambda x: x[0], reverse=True)
