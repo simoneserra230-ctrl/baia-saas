@@ -12,7 +12,7 @@ FastAPI + frontend JS + Anthropic API. Auth X-Auth-Token. Chiave API propria (fi
 ✅ Docker + docker-compose + render.yaml + vercel.json pronti
 ✅ Repo GitHub: simoneserra230-ctrl/baia-saas
 ✅ Skill Claude in .claude/
-⬜ Deploy produzione MAI eseguito (Render + Vercel)
+✅ Deploy LIVE su Vercel — auto-deploy a OGNI push su main (verificato giu 2026 via connettore: ultimo deploy READY = commit RAG `fdba4bf`). Backend Render ridispiega sullo stesso push (verifica solo che ANTHROPIC_API_KEY sia settata su Render). Entrypoint prod: `backend.app_locale:app` (estende `main.py` via `from main import app`; NON è una variante locale — NON eliminarlo).
 ⬜ Prezzo e pagamenti (Stripe) non configurati
 ⬜ Zero clienti
 
@@ -24,7 +24,7 @@ Stato 12/6/2026 — deploy-ready:
 - ✅ Funnel: `frontend/index.html` = landing marketing con prezzi; `frontend/app.html` = app
 - ✅ Pricing definito: Base €29 · Pro €79 · B2B €1.990 (già nel landing)
 - ✅ CTA collegate (Inizia gratis → app; demo/team → WhatsApp)
-- ⬜ Restano i passi sugli account (Supabase, Render, Vercel, Stripe) → vedi LANCIO_BAIA.md
+- ✅ AGGIORNAMENTO giu 2026: Vercel + Render configurati e LIVE (auto-deploy su push). Resta SOLO **Stripe** + primi clienti.
 - ⬜ Primi 10 clienti: suite AGENTI_FINANZA come servizio, content marketing scadenze bandi
 
 ## Collegamenti ecosistema
