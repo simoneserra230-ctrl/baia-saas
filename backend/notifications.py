@@ -112,6 +112,69 @@ async def check_bandi_scadenze():
         print(f"[NOTIF] Errore check scadenze: {e}")
 
 
+# ── SCHEDULER: notifica NUOVI bandi trovati dallo scraper ─
+async def check_nuovi_bandi():
+    """
+    Notifica gli utenti attivi quando lo scraper ha aggiunto NUOVI bandi dall'ultimo controllo.
+    Deduplica tramite tabella notif_state (marker su rowid crescente).
+    Al PRIMO run fissa solo la baseline, senza notificare (evita spam sui bandi preesistenti).
+    """
+    try:
+        async with aiosqlite.connect(DB()) as db:
+            await db.execute("CREATE TABLE IF NOT EXISTS notif_state (k TEXT PRIMARY KEY, v TEXT)")
+            await db.commit()
+            db.row_factory = aiosqlite.Row
+
+            async with db.execute("SELECT v FROM notif_state WHERE k='last_bando_rowid'") as c:
+                r = await c.fetchone()
+            last = int(r["v"]) if r and str(r["v"]).isdigit() else None
+
+            # primo run: baseline al massimo rowid corrente, nessuna notifica
+            if last is None:
+                async with db.execute("SELECT COALESCE(MAX(rowid),0) AS m FROM bandi") as c:
+                    m = (await c.fetchone())["m"]
+                await db.execute("INSERT INTO notif_state (k,v) VALUES ('last_bando_rowid',?) "
+                                 "ON CONFLICT(k) DO UPDATE SET v=excluded.v", (str(m),))
+                await db.commit()
+                return
+
+            async with db.execute(
+                "SELECT rowid AS rid, id, data FROM bandi "
+                "WHERE deleted_at IS NULL AND rowid > ? ORDER BY rowid ASC LIMIT 100", (last,)
+            ) as c:
+                nuovi = await c.fetchall()
+            if not nuovi:
+                return
+
+            maxrid = max(row["rid"] for row in nuovi)
+            async with db.execute(
+                "SELECT DISTINCT user_id FROM sessions WHERE expires_at > datetime('now')"
+            ) as c:
+                users = await c.fetchall()
+
+            n = len(nuovi)
+            for u in users:
+                if n == 1:
+                    try:
+                        d = json.loads(nuovi[0]["data"])
+                    except Exception:
+                        d = {}
+                    await push_notification(u["user_id"], "nuovo_bando",
+                        "🆕 Nuovo bando disponibile", d.get("name", "Nuovo bando"),
+                        f"/bando/{nuovi[0]['id']}")
+                else:
+                    await push_notification(u["user_id"], "nuovi_bandi",
+                        f"🆕 {n} nuovi bandi disponibili",
+                        "Nuove opportunità dallo scouting automatico. Apri il catalogo per vederle.",
+                        "/app")
+
+            await db.execute("INSERT INTO notif_state (k,v) VALUES ('last_bando_rowid',?) "
+                             "ON CONFLICT(k) DO UPDATE SET v=excluded.v", (str(maxrid),))
+            await db.commit()
+    except Exception as e:
+        print(f"[NOTIF] Errore check nuovi bandi: {e}")
+
+
 # ── ENDPOINTS ────────────────────────────────────────────
 def register_notification_endpoints(app):
     from main import require_auth

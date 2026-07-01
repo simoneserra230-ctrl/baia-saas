@@ -65,7 +65,7 @@ except Exception as _e:
 
 from main import app, init_db  # noqa
 from audit import init_audit_db, log_action, get_client_ip, register_audit_endpoints
-from notifications import init_notifications_db, register_notification_endpoints, check_bandi_scadenze
+from notifications import init_notifications_db, register_notification_endpoints, check_bandi_scadenze, check_nuovi_bandi
 
 # ═══════════════════════════════════════════════════════
 # DB INIT ESTESO — aggiunge tabelle auth
@@ -1384,8 +1384,9 @@ async def start_scraper_scheduler():
         from apscheduler.schedulers.asyncio import AsyncIOScheduler
         _notif_scheduler = AsyncIOScheduler(timezone="Europe/Rome")
         _notif_scheduler.add_job(check_bandi_scadenze, "cron", hour=8, minute=0)
+        _notif_scheduler.add_job(check_nuovi_bandi, "cron", hour="*/6")   # notifica nuovi bandi ogni 6h
         _notif_scheduler.start()
-        print("[NOTIF] Scheduler scadenze avviato (08:00 ogni giorno)")
+        print("[NOTIF] Scheduler scadenze (08:00) + nuovi bandi (ogni 6h) avviato")
     except Exception as e:
         print(f"[NOTIF] Scheduler non avviato: {e}")
 
